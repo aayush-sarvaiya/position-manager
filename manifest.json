@@ -1,6 +1,6 @@
 {
   "name": "Position Manager",
-  "short_name": "Positions",
+  "short_name": "Position Manager",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0d1117",
