@@ -193,6 +193,9 @@
     </div>
   </div>
 
+<button class="btn btn-secondary" onclick="updateAllPrices()">🔄 Refresh</button>
+<span id="last-updated" style="font-size:11px;color:#6b7280;font-family:'DM Mono',monospace">--</span>
+
   <!-- Metrics -->
   <div class="metrics" id="metricsBar"></div>
 
@@ -391,7 +394,49 @@ function sparklineSVG(entry, cmp, width=80, height=30) {
   return `<svg width="${width}" height="${height}" style="overflow:visible;display:block"><polyline points="${points}" fill="none" stroke="${c}" stroke-width="1.5" stroke-linejoin="round" opacity="0.85"/></svg>`;
 }
 
-// ══════════════════════════════════════════
+// Added later
+
+// 🔥 TWELVEDATA CONFIG
+const TD_API_KEY = "096ccc0b70d04207a0021e80f08ba2f6";
+
+async function fetchLivePrice(symbol) {
+  try {
+    const res = await fetch(
+      `https://api.twelvedata.com/price?symbol=${symbol}&exchange=NSE&apikey=${TD_API_KEY}`
+    );
+    const data = await res.json();
+    if (data.price) return parseFloat(data.price);
+  } catch (e) {
+    console.log("Price fetch error:", e);
+  }
+  return null;
+}
+
+// 🔄 UPDATE ALL PRICES
+async function updateAllPrices() {
+  for (let p of state.positions) {
+    const price = await fetchLivePrice(p.symbol);
+
+    if (price && price > 0) {
+      p.cmp = price;
+    }
+  }
+
+  saveState();
+  render();
+
+  lastUpdated = new Date().toLocaleTimeString();
+  updateHeaderTime();
+}
+
+let lastUpdated = "--";
+
+function updateHeaderTime() {
+  const el = document.getElementById("last-updated");
+  if (el) el.textContent = "Updated: " + lastUpdated;
+}
+
+ ══════════════════════════════════════════
 //  METRICS CALCULATIONS
 // ══════════════════════════════════════════
 function calcMetrics() {
@@ -735,6 +780,12 @@ document.addEventListener('keydown', e=>{
 // ══════════════════════════════════════════
 loadState();
 render();
+
+// ⏱ Auto refresh every 60 sec
+setInterval(updateAllPrices, 60000);
+
+// First fetch after load
+setTimeout(updateAllPrices, 2000);
 </script>
 <script>
 if ('serviceWorker' in navigator) {
