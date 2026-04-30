@@ -59,6 +59,34 @@
   .btn-backup { background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.25) !important; color: var(--blue); }
   .btn:disabled { opacity: .45; cursor: not-allowed; }
 
+  /* ── NEW: price pill + spin ── */
+  .price-pill { display: flex; align-items: center; gap: 5px; padding: 5px 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: 7px; font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; white-space: nowrap; }
+  .price-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text4); flex-shrink: 0; transition: background .3s; }
+  .price-dot.live    { background: var(--green);  box-shadow: 0 0 5px var(--green); }
+  .price-dot.loading { background: var(--yellow); }
+  .price-dot.partial { background: var(--orange); }
+  .price-dot.error   { background: var(--red); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .btn-refresh { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25) !important; color: var(--green); }
+  .btn-refresh.fetching { opacity: .7; cursor: not-allowed; }
+  .btn-refresh .ico { display: inline-block; }
+  .btn-refresh.fetching .ico { animation: spin .7s linear infinite; }
+
+  /* ── NEW: live badges on cards ── */
+  .badge-live    { background: rgba(34,197,94,0.1);  border-color: rgba(34,197,94,0.25);  color: var(--green); }
+  .badge-loading { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.25); color: var(--yellow); }
+  .badge-err     { background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.25);  color: var(--red); }
+  .badge-sl      { background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.5);   color: #ff6b6b; font-weight: 700; }
+
+  /* ── NEW: SL breached card glow ── */
+  .card.sl-hit { border-color: rgba(239,68,68,0.45) !important; box-shadow: 0 0 16px rgba(239,68,68,0.13); }
+
+  /* ── NEW: SL toast ── */
+  .sl-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1c0a0a; border: 1px solid rgba(239,68,68,0.55); border-radius: 12px; padding: 14px 20px; z-index: 9999; min-width: 270px; max-width: 90vw; box-shadow: 0 8px 32px rgba(0,0,0,0.55); cursor: pointer; animation: toastUp .28s ease; }
+  @keyframes toastUp { from { opacity:0; transform: translateX(-50%) translateY(16px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+  .sl-toast-title { font-size: 12px; font-weight: 700; color: #ff6b6b; font-family: 'DM Mono', monospace; margin-bottom: 4px; }
+  .sl-toast-body  { font-size: 11px; color: var(--text2); font-family: 'DM Mono', monospace; line-height: 1.55; }
+
   /* Metrics */
   .metrics { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
   .metric { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; flex: 1; min-width: 110px; }
@@ -172,6 +200,7 @@
     .trade-summary { grid-template-columns: 1fr 1fr; }
     .form-grid { grid-template-columns: 1fr; }
     .form-grid .form-group { grid-column: 1; }
+    .price-pill { display: none; }
   }
 </style>
 </head>
@@ -185,6 +214,15 @@
       <h1>Position Manager</h1>
     </div>
     <div class="header-right">
+      <!-- Live price status -->
+      <div class="price-pill">
+        <span class="price-dot" id="priceDot"></span>
+        <span id="priceText">NSE PRICES</span>
+      </div>
+      <button class="btn btn-refresh" id="btnRefresh" onclick="fetchAllPrices()">
+        <span class="ico">⟳</span> Prices
+      </button>
+      <!-- Original buttons unchanged -->
       <button class="btn btn-backup" onclick="backupData()">⬇ Backup</button>
       <button class="btn btn-backup" onclick="document.getElementById('restoreInput').click()">⬆ Restore</button>
       <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(event)">
@@ -232,7 +270,7 @@
         </select>
       </div>
     </div>
-    <p class="form-hint">💡 Click any card later to update CMP or other details.</p>
+    <p class="form-hint">💡 Enter symbol exactly as on NSE — e.g. SCI, HDFCBANK, BAJFINANCE. Click any card to update CMP manually anytime.</p>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-add')">Cancel</button>
       <button class="btn btn-primary" id="btn-save-pos" onclick="savePosition()">Add Position</button>
@@ -310,9 +348,15 @@ let state = {
   ],
   journal: []
 };
-let editingId = null;
-let closingId = null;
+let editingId  = null;
+let closingId  = null;
 let currentTab = 'positions';
+
+// ── price fetch state ──
+let priceStatus  = {}; // id → 'idle'|'loading'|'ok'|'error'
+let lastFetchAt  = null;
+let isFetching   = false;
+let toastTimer   = null;
 
 // ══════════════════════════════════════════
 //  PERSIST
@@ -321,43 +365,144 @@ function saveState() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
 }
 function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) state = JSON.parse(raw);
-  } catch(e) {}
+  try { const r = localStorage.getItem(STORAGE_KEY); if (r) state = JSON.parse(r); } catch(e) {}
 }
 
 // ══════════════════════════════════════════
 //  BACKUP / RESTORE
 // ══════════════════════════════════════════
 function backupData() {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type:'application/json' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `positions-backup-${today()}.json`;
-  a.click();
+  a.href = url; a.download = `positions-backup-${today()}.json`; a.click();
   URL.revokeObjectURL(url);
 }
 function restoreData(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+  const file = event.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
     try {
       const data = JSON.parse(e.target.result);
-      if (!data.positions || !Array.isArray(data.positions)) throw new Error('Invalid format');
+      if (!data.positions || !Array.isArray(data.positions)) throw new Error();
       if (!confirm(`Restore backup? This will replace your current ${state.positions.length} positions and ${state.journal.length} journal entries.`)) return;
-      state = data;
-      saveState();
-      render();
-      alert('✅ Backup restored successfully!');
-    } catch(err) {
-      alert('❌ Invalid backup file. Please use a file exported from this app.');
-    }
+      state = data; saveState(); render(); alert('✅ Backup restored successfully!');
+    } catch { alert('❌ Invalid backup file. Please use a file exported from this app.'); }
     event.target.value = '';
   };
   reader.readAsText(file);
+}
+
+// ══════════════════════════════════════════
+//  LIVE PRICES — Yahoo Finance via CORS proxy
+//
+//  How it works:
+//  Yahoo Finance has free, public price data for NSE stocks.
+//  Symbols need a ".NS" suffix: SCI → SCI.NS, RELIANCE → RELIANCE.NS
+//  Direct fetch is blocked by CORS, so we route through allorigins.win
+//  which simply relays the request. Works fine from any hosted site.
+//
+//  You just type the plain NSE ticker (SCI, HDFCBANK, etc.) —
+//  the app adds ".NS" automatically.
+// ══════════════════════════════════════════
+
+async function fetchPrice(symbol) {
+  // Strip any exchange prefix if user typed it, then add .NS
+  const clean  = symbol.replace(/^NSE:/i, '').trim().toUpperCase();
+  const ticker = clean.endsWith('.NS') ? clean : clean + '.NS';
+  const yahoo  = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`;
+  const proxy  = `https://api.allorigins.win/get?url=${encodeURIComponent(yahoo)}`;
+
+  const res  = await fetch(proxy, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const outer = await res.json();
+  if (!outer.contents) throw new Error('empty proxy response');
+  const data  = JSON.parse(outer.contents);
+  const meta  = data?.chart?.result?.[0]?.meta;
+  if (!meta?.regularMarketPrice) throw new Error('no price in response');
+  return meta.regularMarketPrice;
+}
+
+async function fetchAllPrices() {
+  if (isFetching || !state.positions.length) return;
+  isFetching = true;
+
+  const btn = document.getElementById('btnRefresh');
+  btn.classList.add('fetching');
+  btn.disabled = true;
+
+  // Mark all as loading
+  state.positions.forEach(p => { priceStatus[p.id] = 'loading'; });
+  setPricePill('loading', 'FETCHING…');
+  if (currentTab === 'positions') renderPositions();
+
+  let ok = 0, fail = 0;
+  const slHit = [];
+
+  // Fetch one by one (proxy can't batch Yahoo calls)
+  for (const p of state.positions) {
+    try {
+      const price = await fetchPrice(p.symbol);
+      p.cmp = Math.round(price * 100) / 100;
+      priceStatus[p.id] = 'ok';
+      ok++;
+      if (p.stopLoss && p.cmp <= p.stopLoss) slHit.push(p);
+    } catch(e) {
+      priceStatus[p.id] = 'error';
+      fail++;
+      console.warn(`Price fetch failed for ${p.symbol}:`, e.message);
+    }
+    // Re-render after each so user sees progress
+    if (currentTab === 'positions') renderPositions();
+  }
+
+  saveState();
+  lastFetchAt = new Date();
+  const t = lastFetchAt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+
+  if (fail === 0)  setPricePill('live',    `● LIVE · ${t}`);
+  else if (ok > 0) setPricePill('partial', `PARTIAL ${ok}/${ok+fail} · ${t}`);
+  else             setPricePill('error',   'FAILED — see console');
+
+  // SL alerts
+  slHit.forEach(p => showSLToast(p));
+
+  // Browser notification (if allowed)
+  if (slHit.length && 'Notification' in window && Notification.permission === 'granted') {
+    slHit.forEach(p => new Notification(`⚠️ SL Hit — ${p.symbol}`, {
+      body: `CMP ₹${fmt(p.cmp)} has hit your SL of ₹${fmt(p.stopLoss)}`,
+      icon: 'icons/icon-192.png'
+    }));
+  }
+
+  btn.classList.remove('fetching');
+  btn.disabled = false;
+  isFetching = false;
+  render();
+}
+
+function setPricePill(status, text) {
+  const dot = document.getElementById('priceDot');
+  const txt = document.getElementById('priceText');
+  if (dot) dot.className = 'price-dot ' + status;
+  if (txt) txt.textContent = text;
+}
+
+function showSLToast(p) {
+  const old = document.getElementById('slToast');
+  if (old) old.remove();
+  if (toastTimer) clearTimeout(toastTimer);
+  const t = document.createElement('div');
+  t.id = 'slToast'; t.className = 'sl-toast';
+  t.innerHTML = `<div class="sl-toast-title">⚠️ STOP LOSS HIT — ${p.symbol}</div>
+    <div class="sl-toast-body">CMP ₹${fmt(p.cmp)} ≤ SL ₹${fmt(p.stopLoss)}<br>Consider closing this position.</div>`;
+  t.onclick = () => t.remove();
+  document.body.appendChild(t);
+  toastTimer = setTimeout(() => { if (t.parentNode) t.remove(); }, 9000);
+}
+
+function requestNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
 }
 
 // ══════════════════════════════════════════
@@ -376,63 +521,56 @@ function fmtC(n) {
 }
 function daysBetween(d1, d2) { return Math.max(0, Math.round((new Date(d2)-new Date(d1))/86400000)); }
 function reasonColor(r) {
-  return { 'Target Hit':'#22c55e','Stop Loss Hit':'#ef4444','Manual Exit':'#60a5fa','Trailing Stop':'#a78bfa','News Event':'#fbbf24','Other':'#9ca3af' }[r]||'#9ca3af';
+  return {'Target Hit':'#22c55e','Stop Loss Hit':'#ef4444','Manual Exit':'#60a5fa','Trailing Stop':'#a78bfa','News Event':'#fbbf24','Other':'#9ca3af'}[r]||'#9ca3af';
 }
-function col(isWin) { return isWin ? '#22c55e' : '#ef4444'; }
+function col(w) { return w ? '#22c55e' : '#ef4444'; }
 function sign(n) { return n >= 0 ? '+' : ''; }
 
 function sparklineSVG(entry, cmp, width=80, height=30) {
   const pts = [entry];
   for (let i=1;i<11;i++) pts.push(pts[i-1]+(cmp-entry)/10+(Math.random()-.5)*Math.abs(cmp-entry)*0.15);
   pts.push(cmp);
-  const min=Math.min(...pts), max=Math.max(...pts), range=max-min||1;
+  const mn=Math.min(...pts), mx=Math.max(...pts), rng=mx-mn||1;
   const c = cmp>=entry?'#22c55e':'#ef4444';
-  const points = pts.map((v,i)=>`${(i/(pts.length-1))*width},${height-((v-min)/range)*height}`).join(' ');
+  const points = pts.map((v,i)=>`${(i/(pts.length-1))*width},${height-((v-mn)/rng)*height}`).join(' ');
   return `<svg width="${width}" height="${height}" style="overflow:visible;display:block"><polyline points="${points}" fill="none" stroke="${c}" stroke-width="1.5" stroke-linejoin="round" opacity="0.85"/></svg>`;
 }
 
 // ══════════════════════════════════════════
-//  METRICS CALCULATIONS
+//  METRICS
 // ══════════════════════════════════════════
 function calcMetrics() {
-  const ps = state.positions;
-  const js = state.journal;
+  const ps=state.positions, js=state.journal;
   const invested   = ps.reduce((s,p)=>s+p.entry*p.qty,0);
   const currentVal = ps.reduce((s,p)=>s+p.cmp*p.qty,0);
-  const totalPnL   = currentVal - invested;
+  const totalPnL   = currentVal-invested;
   const totalRisk  = ps.reduce((s,p)=>s+Math.max(0,(p.entry-p.stopLoss)*p.qty),0);
   const unrealised = ps.filter(p=>p.cmp>p.entry).reduce((s,p)=>s+(p.cmp-p.entry)*p.qty,0);
   const pctInv     = state.capital>0?(invested/state.capital)*100:0;
   const openRisk   = state.capital>0?(totalRisk/state.capital)*100:0;
   const jTotal     = js.reduce((s,j)=>s+j.pnl,0);
-  return { invested, currentVal, totalPnL, totalRisk, unrealised, pctInv, openRisk, jTotal };
+  return {invested,currentVal,totalPnL,totalRisk,unrealised,pctInv,openRisk,jTotal};
 }
 
 // ══════════════════════════════════════════
 //  RENDER
 // ══════════════════════════════════════════
-function render() {
-  renderMetrics();
-  renderTabCounts();
-  if (currentTab==='positions') renderPositions();
-  else renderJournal();
-}
+function render() { renderMetrics(); renderTabCounts(); if(currentTab==='positions') renderPositions(); else renderJournal(); }
 
 function renderMetrics() {
-  const m = calcMetrics();
-  const js = state.journal;
+  const m=calcMetrics(), js=state.journal;
   const items = [
-    { label:'% Invested',   value:`${fmt(m.pctInv,1)}%`,                sub:`${fmtC(m.invested)} of ${fmtC(state.capital)}`,             color:'#60a5fa' },
-    { label:'Open P&L',     value:`${sign(m.totalPnL)}${fmtC(m.totalPnL)}`, sub:`${fmt((m.invested>0?m.totalPnL/m.invested:0)*100,2)}% return`, color:m.totalPnL>=0?'#22c55e':'#ef4444', glow:m.totalPnL>0 },
-    { label:'Open Risk',    value:`${fmt(m.openRisk,2)}%`,              sub:`${fmtC(m.totalRisk)} at risk`,                              color:m.openRisk>3?'#f97316':'#e5e7eb' },
-    { label:'Unrealised ↑', value:`${sign(m.unrealised)}${fmtC(m.unrealised)}`, sub:`${state.positions.filter(p=>p.cmp>p.entry).length} winners`, color:'#a78bfa' },
-    { label:'Realised P&L', value:`${sign(m.jTotal)}${fmtC(m.jTotal)}`, sub:`${js.length} closed trades`,                              color:m.jTotal>=0?'#22c55e':'#ef4444' },
+    {label:'% Invested',   value:`${fmt(m.pctInv,1)}%`,                sub:`${fmtC(m.invested)} of ${fmtC(state.capital)}`,             color:'#60a5fa'},
+    {label:'Open P&L',     value:`${sign(m.totalPnL)}${fmtC(m.totalPnL)}`, sub:`${fmt((m.invested>0?m.totalPnL/m.invested:0)*100,2)}% return`, color:m.totalPnL>=0?'#22c55e':'#ef4444', glow:m.totalPnL>0},
+    {label:'Open Risk',    value:`${fmt(m.openRisk,2)}%`,              sub:`${fmtC(m.totalRisk)} at risk`,                              color:m.openRisk>3?'#f97316':'#e5e7eb'},
+    {label:'Unrealised ↑', value:`${sign(m.unrealised)}${fmtC(m.unrealised)}`, sub:`${state.positions.filter(p=>p.cmp>p.entry).length} winners`, color:'#a78bfa'},
+    {label:'Realised P&L', value:`${sign(m.jTotal)}${fmtC(m.jTotal)}`, sub:`${js.length} closed trades`,                              color:m.jTotal>=0?'#22c55e':'#ef4444'},
   ];
-  document.getElementById('metricsBar').innerHTML = items.map(item=>`
-    <div class="metric${item.glow?' glow':''}">
-      <div class="metric-label">${item.label}</div>
-      <div class="metric-value" style="color:${item.color}">${item.value}</div>
-      <div class="metric-sub">${item.sub}</div>
+  document.getElementById('metricsBar').innerHTML = items.map(i=>`
+    <div class="metric${i.glow?' glow':''}">
+      <div class="metric-label">${i.label}</div>
+      <div class="metric-value" style="color:${i.color}">${i.value}</div>
+      <div class="metric-sub">${i.sub}</div>
     </div>`).join('');
 }
 
@@ -447,20 +585,29 @@ function renderPositions() {
     el.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No active positions — click ＋ to add one</div></div>`;
     return;
   }
-  el.innerHTML = `<div class="grid">${state.positions.map(p => cardHTML(p)).join('')}</div>`;
+  el.innerHTML = `<div class="grid">${state.positions.map(p=>cardHTML(p)).join('')}</div>`;
 }
 
 function cardHTML(p) {
-  const pnl    = (p.cmp - p.entry) * p.qty;
-  const pnlPct = ((p.cmp - p.entry) / p.entry) * 100;
-  const risk   = Math.max(0,(p.entry - p.stopLoss)*p.qty);
-  const rrr    = p.target && p.stopLoss ? ((p.target-p.entry)/Math.max(p.entry-p.stopLoss,1)).toFixed(1) : null;
-  const toPct  = p.target ? ((p.target-p.cmp)/p.cmp*100) : null;
-  const isW    = p.cmp >= p.entry;
+  const pnl    = (p.cmp-p.entry)*p.qty;
+  const pnlPct = ((p.cmp-p.entry)/p.entry)*100;
+  const risk   = Math.max(0,(p.entry-p.stopLoss)*p.qty);
+  const rrr    = p.target&&p.stopLoss?((p.target-p.entry)/Math.max(p.entry-p.stopLoss,1)).toFixed(1):null;
+  const toPct  = p.target?((p.target-p.cmp)/p.cmp*100):null;
+  const isW    = p.cmp>=p.entry;
   const c      = col(isW);
   const held   = daysBetween(p.entryDate, today());
+  const slHit  = p.stopLoss && p.cmp <= p.stopLoss;
+  const ps     = priceStatus[p.id];
+
+  const liveBadge = ps==='loading' ? `<span class="badge badge-loading">⟳ fetching</span>`
+    : ps==='ok'    ? `<span class="badge badge-live">● LIVE</span>`
+    : ps==='error' ? `<span class="badge badge-err" title="Fetch failed. Check symbol on Yahoo Finance (symbol.NS)">⚠ no price</span>`
+    : '';
+  const slBadge = slHit ? `<span class="badge badge-sl">⚠ SL HIT</span>` : '';
+
   return `
-  <div class="card" onclick="openEditModal(${p.id})">
+  <div class="card${slHit?' sl-hit':''}" onclick="openEditModal(${p.id})">
     <div class="card-actions">
       <button class="btn-close-trade" onclick="event.stopPropagation();openCloseModal(${p.id})">CLOSE</button>
       <button class="btn-delete" onclick="event.stopPropagation();deletePosition(${p.id})">×</button>
@@ -472,6 +619,7 @@ function cardHTML(p) {
     <div class="badges">
       <span class="badge badge-sector">${p.sector}</span>
       <span class="badge badge-days">${held}d held</span>
+      ${liveBadge}${slBadge}
     </div>
     <div class="sparkline">${sparklineSVG(p.entry, p.cmp)}</div>
     <div class="price-grid">
@@ -480,7 +628,7 @@ function cardHTML(p) {
       <div class="price-cell"><div class="price-cell-label">Qty</div><div class="price-cell-value" style="color:#e5e7eb">${p.qty}</div></div>
     </div>
     <div class="sl-tgt-grid">
-      <div class="sl-cell"><div class="mini-label">SL</div><div style="font-size:12px;font-weight:600;color:#fca5a5;font-family:'DM Mono',monospace">₹${fmt(p.stopLoss)}</div></div>
+      <div class="sl-cell"><div class="mini-label">SL</div><div style="font-size:12px;font-weight:600;color:${slHit?'#ff6b6b':'#fca5a5'};font-family:'DM Mono',monospace">₹${fmt(p.stopLoss)}</div></div>
       <div class="tgt-cell"><div class="mini-label">TGT</div><div style="font-size:12px;font-weight:600;color:#86efac;font-family:'DM Mono',monospace">${p.target?'₹'+fmt(p.target):'—'}</div></div>
       <div class="rr-cell"><div class="mini-label">R:R</div><div style="font-size:12px;font-weight:600;color:#fde68a;font-family:'DM Mono',monospace">${rrr?'1:'+rrr:'—'}</div></div>
     </div>
@@ -493,38 +641,28 @@ function cardHTML(p) {
 }
 
 function renderJournal() {
-  const js = state.journal;
-  const el = document.getElementById('content-journal');
-  // Stats
-  const wins   = js.filter(j=>j.pnl>0);
-  const losses = js.filter(j=>j.pnl<=0);
-  const jTotal = js.reduce((s,j)=>s+j.pnl,0);
-  const winRate= js.length>0?(wins.length/js.length)*100:0;
-  const avgW   = wins.length>0?wins.reduce((s,j)=>s+j.pnl,0)/wins.length:0;
-  const avgL   = losses.length>0?losses.reduce((s,j)=>s+j.pnl,0)/losses.length:0;
-  const pf     = Math.abs(avgL)>0?Math.abs(avgW/avgL):0;
-
-  const stats = [
-    { label:'Realised P&L',  value:`${sign(jTotal)}${fmtC(jTotal)}`, sub:`${js.length} trades`,           color:jTotal>=0?'#22c55e':'#ef4444', glow:jTotal>0 },
-    { label:'Win Rate',       value:`${fmt(winRate,1)}%`,             sub:`${wins.length}W / ${losses.length}L`, color:winRate>=50?'#22c55e':'#ef4444' },
-    { label:'Avg Win',        value:avgW>0?`+${fmtC(avgW)}`:'—',      sub:'per winner',                    color:'#22c55e' },
-    { label:'Avg Loss',       value:avgL<0?fmtC(avgL):'—',            sub:'per loser',                     color:'#ef4444' },
-    { label:'Profit Factor',  value:pf>0?fmt(pf,2):'—',               sub:'win÷loss avg',                  color:pf>=1.5?'#22c55e':pf>=1?'#fbbf24':'#ef4444' },
+  const js=state.journal, el=document.getElementById('content-journal');
+  const wins=js.filter(j=>j.pnl>0), losses=js.filter(j=>j.pnl<=0);
+  const jTotal=js.reduce((s,j)=>s+j.pnl,0), winRate=js.length>0?(wins.length/js.length)*100:0;
+  const avgW=wins.length>0?wins.reduce((s,j)=>s+j.pnl,0)/wins.length:0;
+  const avgL=losses.length>0?losses.reduce((s,j)=>s+j.pnl,0)/losses.length:0;
+  const pf=Math.abs(avgL)>0?Math.abs(avgW/avgL):0;
+  const stats=[
+    {label:'Realised P&L', value:`${sign(jTotal)}${fmtC(jTotal)}`, sub:`${js.length} trades`,          color:jTotal>=0?'#22c55e':'#ef4444', glow:jTotal>0},
+    {label:'Win Rate',      value:`${fmt(winRate,1)}%`,             sub:`${wins.length}W / ${losses.length}L`, color:winRate>=50?'#22c55e':'#ef4444'},
+    {label:'Avg Win',       value:avgW>0?`+${fmtC(avgW)}`:'—',      sub:'per winner',                   color:'#22c55e'},
+    {label:'Avg Loss',      value:avgL<0?fmtC(avgL):'—',            sub:'per loser',                    color:'#ef4444'},
+    {label:'Profit Factor', value:pf>0?fmt(pf,2):'—',               sub:'win÷loss avg',                 color:pf>=1.5?'#22c55e':pf>=1?'#fbbf24':'#ef4444'},
   ];
-  const statsHTML = `<div class="journal-stats">${stats.map(s=>`
+  const statsHTML=`<div class="journal-stats">${stats.map(s=>`
     <div class="metric${s.glow?' glow':''}">
       <div class="metric-label">${s.label}</div>
       <div class="metric-value" style="color:${s.color}">${s.value}</div>
       <div class="metric-sub">${s.sub}</div>
     </div>`).join('')}</div>`;
-
-  if (!js.length) {
-    el.innerHTML = statsHTML + `<div class="empty"><div class="empty-icon">📒</div><div class="empty-text">No closed trades yet — hover a position and click CLOSE</div></div>`;
-    return;
-  }
-  const rows = js.map((j,i)=>{
-    const c = j.pnl>=0?'#22c55e':'#ef4444';
-    const rc = reasonColor(j.reason);
+  if (!js.length) { el.innerHTML=statsHTML+`<div class="empty"><div class="empty-icon">📒</div><div class="empty-text">No closed trades yet — hover a position and click CLOSE</div></div>`; return; }
+  const rows=js.map(j=>{
+    const c=j.pnl>=0?'#22c55e':'#ef4444', rc=reasonColor(j.reason);
     return `<div class="j-row" onclick="openJournalDetail(${j.id})">
       <span class="j-symbol">${j.symbol}</span>
       <span class="j-name">${j.name}</span>
@@ -537,23 +675,21 @@ function renderJournal() {
       <span><span class="reason-badge" style="background:${rc}1a;border-color:${rc}44;color:${rc}">${j.reason}</span></span>
     </div>`;
   }).join('');
-  el.innerHTML = statsHTML + `<div class="j-table">
+  el.innerHTML=statsHTML+`<div class="j-table">
     <div class="j-table-head"><span>Symbol</span><span>Company</span><span>Entry ₹</span><span>Exit ₹</span><span>Qty</span><span>Days</span><span>P&L</span><span>Ret %</span><span>Reason</span></div>
-    ${rows}
-  </div>`;
+    ${rows}</div>`;
 }
 
 // ══════════════════════════════════════════
 //  TAB
 // ══════════════════════════════════════════
 function switchTab(tab) {
-  currentTab = tab;
+  currentTab=tab;
   document.getElementById('tab-positions').classList.toggle('active', tab==='positions');
   document.getElementById('tab-journal').classList.toggle('active', tab==='journal');
-  document.getElementById('content-positions').style.display = tab==='positions'?'':'none';
-  document.getElementById('content-journal').style.display   = tab==='journal'?'':'none';
-  if (tab==='positions') renderPositions();
-  else renderJournal();
+  document.getElementById('content-positions').style.display=tab==='positions'?'':'none';
+  document.getElementById('content-journal').style.display=tab==='journal'?'':'none';
+  if(tab==='positions') renderPositions(); else renderJournal();
 }
 
 // ══════════════════════════════════════════
@@ -561,78 +697,75 @@ function switchTab(tab) {
 // ══════════════════════════════════════════
 function openModal(id)  { document.getElementById(id).style.display='flex'; }
 function closeModal(id) { document.getElementById(id).style.display='none'; }
-// Close on overlay click
 document.querySelectorAll('.modal-overlay').forEach(el=>{
   el.addEventListener('click', e=>{ if(e.target===el) el.style.display='none'; });
 });
 
-// Add
 function openAddModal() {
-  editingId = null;
-  document.getElementById('modal-add-title').textContent = 'Add Position';
-  document.getElementById('btn-save-pos').textContent = 'Add Position';
+  editingId=null;
+  document.getElementById('modal-add-title').textContent='Add Position';
+  document.getElementById('btn-save-pos').textContent='Add Position';
   ['symbol','name','entry','cmp','qty','sl','tgt'].forEach(id=>document.getElementById('f-'+id).value='');
-  document.getElementById('f-date').value = today();
-  document.getElementById('f-sector').value = 'Other';
+  document.getElementById('f-date').value=today();
+  document.getElementById('f-sector').value='Other';
   openModal('modal-add');
   setTimeout(()=>document.getElementById('f-symbol').focus(),100);
 }
 
 function openEditModal(id) {
-  const p = state.positions.find(x=>x.id===id); if(!p) return;
-  editingId = id;
-  document.getElementById('modal-add-title').textContent = `Edit — ${p.symbol}`;
-  document.getElementById('btn-save-pos').textContent = 'Save Changes';
-  document.getElementById('f-symbol').value = p.symbol;
-  document.getElementById('f-name').value   = p.name;
-  document.getElementById('f-entry').value  = p.entry;
-  document.getElementById('f-cmp').value    = p.cmp;
-  document.getElementById('f-qty').value    = p.qty;
-  document.getElementById('f-date').value   = p.entryDate;
-  document.getElementById('f-sl').value     = p.stopLoss;
-  document.getElementById('f-tgt').value    = p.target;
-  document.getElementById('f-sector').value = p.sector;
+  const p=state.positions.find(x=>x.id===id); if(!p) return;
+  editingId=id;
+  document.getElementById('modal-add-title').textContent=`Edit — ${p.symbol}`;
+  document.getElementById('btn-save-pos').textContent='Save Changes';
+  document.getElementById('f-symbol').value=p.symbol;
+  document.getElementById('f-name').value=p.name;
+  document.getElementById('f-entry').value=p.entry;
+  document.getElementById('f-cmp').value=p.cmp;
+  document.getElementById('f-qty').value=p.qty;
+  document.getElementById('f-date').value=p.entryDate;
+  document.getElementById('f-sl').value=p.stopLoss;
+  document.getElementById('f-tgt').value=p.target;
+  document.getElementById('f-sector').value=p.sector;
   openModal('modal-add');
 }
 
 function savePosition() {
-  const sym   = document.getElementById('f-symbol').value.trim().toUpperCase();
-  const name  = document.getElementById('f-name').value.trim();
-  const entry = +document.getElementById('f-entry').value;
-  const cmp   = +document.getElementById('f-cmp').value || entry;
-  const qty   = +document.getElementById('f-qty').value;
-  const sl    = +document.getElementById('f-sl').value;
-  const tgt   = +document.getElementById('f-tgt').value;
-  const sec   = document.getElementById('f-sector').value;
-  const date  = document.getElementById('f-date').value;
-  if (!sym || !entry || !qty) { alert('Symbol, Entry Price and Quantity are required.'); return; }
-  if (editingId) {
-    state.positions = state.positions.map(p=>p.id===editingId?{...p,symbol:sym,name,entry,cmp,qty,stopLoss:sl,target:tgt,sector:sec,entryDate:date}:p);
+  const sym=document.getElementById('f-symbol').value.trim().toUpperCase();
+  const name=document.getElementById('f-name').value.trim();
+  const entry=+document.getElementById('f-entry').value;
+  const cmp=+document.getElementById('f-cmp').value||entry;
+  const qty=+document.getElementById('f-qty').value;
+  const sl=+document.getElementById('f-sl').value;
+  const tgt=+document.getElementById('f-tgt').value;
+  const sec=document.getElementById('f-sector').value;
+  const date=document.getElementById('f-date').value;
+  if(!sym||!entry||!qty){alert('Symbol, Entry Price and Quantity are required.');return;}
+  if(editingId){
+    state.positions=state.positions.map(p=>p.id===editingId?{...p,symbol:sym,name,entry,cmp,qty,stopLoss:sl,target:tgt,sector:sec,entryDate:date}:p);
   } else {
-    state.positions.push({ id:Date.now(), symbol:sym, name, entry, cmp, qty, stopLoss:sl, target:tgt, sector:sec, entryDate:date });
+    state.positions.push({id:Date.now(),symbol:sym,name,entry,cmp,qty,stopLoss:sl,target:tgt,sector:sec,entryDate:date});
   }
   saveState(); closeModal('modal-add'); render();
 }
 
-// Delete
 function deletePosition(id) {
-  if (!confirm('Remove this position?')) return;
-  state.positions = state.positions.filter(p=>p.id!==id);
+  if(!confirm('Remove this position?')) return;
+  state.positions=state.positions.filter(p=>p.id!==id);
+  delete priceStatus[id];
   saveState(); render();
 }
 
-// Close
 function openCloseModal(id) {
-  const p = state.positions.find(x=>x.id===id); if(!p) return;
-  closingId = id;
-  document.getElementById('modal-close-title').textContent = `Close Trade — ${p.symbol}`;
-  document.getElementById('close-summary').innerHTML = [
+  const p=state.positions.find(x=>x.id===id); if(!p) return;
+  closingId=id;
+  document.getElementById('modal-close-title').textContent=`Close Trade — ${p.symbol}`;
+  document.getElementById('close-summary').innerHTML=[
     ['Entry',`₹${fmt(p.entry)}`],['CMP',`₹${fmt(p.cmp)}`],['Qty',p.qty],['Held',`${daysBetween(p.entryDate,today())}d`]
   ].map(([l,v])=>`<div><div class="ts-label">${l}</div><div class="ts-value">${v}</div></div>`).join('');
-  document.getElementById('c-exit').value  = fmt(p.cmp, 2);
-  document.getElementById('c-date').value  = today();
-  document.getElementById('c-notes').value = '';
-  document.getElementById('c-reason').value = 'Target Hit';
+  document.getElementById('c-exit').value=fmt(p.cmp,2);
+  document.getElementById('c-date').value=today();
+  document.getElementById('c-notes').value='';
+  document.getElementById('c-reason').value='Target Hit';
   document.getElementById('pnl-preview-box').style.display='none';
   openModal('modal-close');
   updatePnlPreview();
@@ -640,51 +773,50 @@ function openCloseModal(id) {
 }
 
 function updatePnlPreview() {
-  const p  = state.positions.find(x=>x.id===closingId); if(!p) return;
-  const ep = +document.getElementById('c-exit').value;
-  if (!ep) { document.getElementById('pnl-preview-box').style.display='none'; return; }
-  const pnl    = (ep - p.entry) * p.qty;
-  const pnlPct = ((ep - p.entry) / p.entry) * 100;
-  const isW    = pnl >= 0;
-  const box    = document.getElementById('pnl-preview-box');
-  box.style.display = 'flex';
-  box.style.background = isW?'rgba(34,197,94,0.08)':'rgba(239,68,68,0.08)';
-  box.style.border     = `1px solid ${isW?'rgba(34,197,94,0.2)':'rgba(239,68,68,0.2)'}`;
-  const c = isW?'#22c55e':'#ef4444';
-  document.getElementById('pnl-preview-val').style.color = c;
-  document.getElementById('pnl-preview-pct').style.color = c;
-  document.getElementById('pnl-preview-val').textContent = `${sign(pnl)}${fmtC(pnl)}`;
-  document.getElementById('pnl-preview-pct').textContent = `${sign(pnlPct)}${fmt(pnlPct,2)}%`;
+  const p=state.positions.find(x=>x.id===closingId); if(!p) return;
+  const ep=+document.getElementById('c-exit').value;
+  if(!ep){document.getElementById('pnl-preview-box').style.display='none';return;}
+  const pnl=(ep-p.entry)*p.qty, pnlPct=((ep-p.entry)/p.entry)*100, isW=pnl>=0;
+  const box=document.getElementById('pnl-preview-box');
+  box.style.display='flex';
+  box.style.background=isW?'rgba(34,197,94,0.08)':'rgba(239,68,68,0.08)';
+  box.style.border=`1px solid ${isW?'rgba(34,197,94,0.2)':'rgba(239,68,68,0.2)'}`;
+  const c=isW?'#22c55e':'#ef4444';
+  document.getElementById('pnl-preview-val').style.color=c;
+  document.getElementById('pnl-preview-pct').style.color=c;
+  document.getElementById('pnl-preview-val').textContent=`${sign(pnl)}${fmtC(pnl)}`;
+  document.getElementById('pnl-preview-pct').textContent=`${sign(pnlPct)}${fmt(pnlPct,2)}%`;
 }
 
 function confirmClose() {
-  const p  = state.positions.find(x=>x.id===closingId); if(!p) return;
-  const ep = +document.getElementById('c-exit').value;
-  if (!ep) { alert('Please enter an exit price.'); return; }
-  const exitDate = document.getElementById('c-date').value;
-  const pnl    = (ep - p.entry) * p.qty;
-  const pnlPct = ((ep - p.entry) / p.entry) * 100;
-  const trade  = {
-    id: Date.now(), symbol:p.symbol, name:p.name, sector:p.sector,
+  const p=state.positions.find(x=>x.id===closingId); if(!p) return;
+  const ep=+document.getElementById('c-exit').value;
+  if(!ep){alert('Please enter an exit price.');return;}
+  const exitDate=document.getElementById('c-date').value;
+  const pnl=(ep-p.entry)*p.qty, pnlPct=((ep-p.entry)/p.entry)*100;
+  const trade={
+    id:Date.now(), symbol:p.symbol, name:p.name, sector:p.sector,
     entryPrice:p.entry, exitPrice:ep, qty:p.qty, pnl, pnlPct,
     entryDate:p.entryDate, exitDate, holdingDays:daysBetween(p.entryDate,exitDate),
     notes:document.getElementById('c-notes').value,
     reason:document.getElementById('c-reason').value,
     stopLoss:p.stopLoss, target:p.target
   };
-  state.journal   = [trade, ...state.journal];
-  state.positions = state.positions.filter(x=>x.id!==closingId);
+  state.journal=[trade,...state.journal];
+  state.positions=state.positions.filter(x=>x.id!==closingId);
+  delete priceStatus[closingId];
+
+  // Auto-update capital: realised P&L flows back into capital
+  state.capital=Math.round((state.capital+pnl)*100)/100;
+
   saveState(); closeModal('modal-close'); render();
 }
 
-// Journal detail
 function openJournalDetail(id) {
-  const j = state.journal.find(x=>x.id===id); if(!j) return;
-  const isW = j.pnl>=0;
-  const c   = isW?'#22c55e':'#ef4444';
-  const rc  = reasonColor(j.reason);
-  document.getElementById('detail-title').textContent = `Trade — ${j.symbol}`;
-  document.getElementById('detail-body').innerHTML = `
+  const j=state.journal.find(x=>x.id===id); if(!j) return;
+  const isW=j.pnl>=0, c=isW?'#22c55e':'#ef4444', rc=reasonColor(j.reason);
+  document.getElementById('detail-title').textContent=`Trade — ${j.symbol}`;
+  document.getElementById('detail-body').innerHTML=`
     <div class="detail-grid">
       ${[['Symbol',j.symbol],['Company',j.name],['Sector',j.sector],['Held',j.holdingDays+' days'],
          ['Entry Date',j.entryDate],['Exit Date',j.exitDate],['Entry Price','₹'+fmt(j.entryPrice)],
@@ -701,39 +833,35 @@ function openJournalDetail(id) {
       <span class="reason-badge" style="background:${rc}1a;border-color:${rc}40;color:${rc}">${j.reason}</span>
     </div>
     ${j.notes?`<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px 13px;margin-top:12px"><div style="font-size:9px;color:#6b7280;font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:6px">Notes</div><div style="font-size:13px;color:#9ca3af;line-height:1.65">${j.notes}</div></div>`:''}
-    <button class="btn btn-danger" style="width:100%;margin-top:16px;padding:10px" onclick="deleteJournalEntry(${j.id})">Delete from Journal</button>
-  `;
+    <button class="btn btn-danger" style="width:100%;margin-top:16px;padding:10px" onclick="deleteJournalEntry(${j.id})">Delete from Journal</button>`;
   openModal('modal-detail');
 }
 
 function deleteJournalEntry(id) {
-  if (!confirm('Delete this journal entry?')) return;
-  state.journal = state.journal.filter(x=>x.id!==id);
+  if(!confirm('Delete this journal entry?')) return;
+  state.journal=state.journal.filter(x=>x.id!==id);
   saveState(); closeModal('modal-detail'); renderJournal(); renderMetrics(); renderTabCounts();
 }
 
-// Capital
 function openCapitalModal() {
-  document.getElementById('cap-input').value = state.capital;
+  document.getElementById('cap-input').value=state.capital;
   openModal('modal-capital');
   setTimeout(()=>document.getElementById('cap-input').focus(),100);
 }
 function saveCapital() {
-  const v = +document.getElementById('cap-input').value;
-  if (!v) return;
-  state.capital = v;
-  saveState(); closeModal('modal-capital'); renderMetrics();
+  const v=+document.getElementById('cap-input').value; if(!v) return;
+  state.capital=v; saveState(); closeModal('modal-capital'); renderMetrics();
 }
 
-// Keyboard ESC
 document.addEventListener('keydown', e=>{
-  if (e.key==='Escape') document.querySelectorAll('.modal-overlay').forEach(el=>el.style.display='none');
+  if(e.key==='Escape') document.querySelectorAll('.modal-overlay').forEach(el=>el.style.display='none');
 });
 
 // ══════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════
 loadState();
+requestNotifPermission();
 render();
 </script>
 <script>
