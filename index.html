@@ -59,33 +59,31 @@
   .btn-backup { background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.25) !important; color: var(--blue); }
   .btn:disabled { opacity: .45; cursor: not-allowed; }
 
-  /* ── NEW: price pill + spin ── */
-  .price-pill { display: flex; align-items: center; gap: 5px; padding: 5px 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: 7px; font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; white-space: nowrap; }
-  .price-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text4); flex-shrink: 0; transition: background .3s; }
-  .price-dot.live    { background: var(--green);  box-shadow: 0 0 5px var(--green); }
-  .price-dot.loading { background: var(--yellow); }
-  .price-dot.partial { background: var(--orange); }
-  .price-dot.error   { background: var(--red); }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .btn-refresh { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25) !important; color: var(--green); }
-  .btn-refresh.fetching { opacity: .7; cursor: not-allowed; }
-  .btn-refresh .ico { display: inline-block; }
-  .btn-refresh.fetching .ico { animation: spin .7s linear infinite; }
+  /* Live price pill */
+  .price-pill { display:flex; align-items:center; gap:5px; padding:5px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:7px; font-size:10px; color:var(--text3); font-family:'DM Mono',monospace; white-space:nowrap; }
+  .pdot { width:6px; height:6px; border-radius:50%; background:var(--text4); flex-shrink:0; transition:background .3s; }
+  .pdot.live    { background:var(--green);  box-shadow:0 0 5px var(--green); }
+  .pdot.loading { background:var(--yellow); }
+  .pdot.partial { background:var(--orange); }
+  .pdot.error   { background:var(--red); }
+  .btn-live { background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25) !important; color:var(--green); }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .spin { display:inline-block; animation:spin .7s linear infinite; }
 
-  /* ── NEW: live badges on cards ── */
-  .badge-live    { background: rgba(34,197,94,0.1);  border-color: rgba(34,197,94,0.25);  color: var(--green); }
-  .badge-loading { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.25); color: var(--yellow); }
-  .badge-err     { background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.25);  color: var(--red); }
-  .badge-sl      { background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.5);   color: #ff6b6b; font-weight: 700; }
+  /* Card badges */
+  .badge-live    { background:rgba(34,197,94,0.1);  border-color:rgba(34,197,94,0.25);  color:var(--green); }
+  .badge-loading { background:rgba(251,191,36,0.1); border-color:rgba(251,191,36,0.25); color:var(--yellow); }
+  .badge-err     { background:rgba(239,68,68,0.1);  border-color:rgba(239,68,68,0.25);  color:var(--red); }
+  .badge-sl      { background:rgba(239,68,68,0.2);  border-color:rgba(239,68,68,0.5);   color:#ff6b6b; font-weight:700; }
 
-  /* ── NEW: SL breached card glow ── */
-  .card.sl-hit { border-color: rgba(239,68,68,0.45) !important; box-shadow: 0 0 16px rgba(239,68,68,0.13); }
+  /* SL breached card */
+  .card.sl-hit { border-color:rgba(239,68,68,0.45) !important; box-shadow:0 0 16px rgba(239,68,68,0.12); }
 
-  /* ── NEW: SL toast ── */
-  .sl-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1c0a0a; border: 1px solid rgba(239,68,68,0.55); border-radius: 12px; padding: 14px 20px; z-index: 9999; min-width: 270px; max-width: 90vw; box-shadow: 0 8px 32px rgba(0,0,0,0.55); cursor: pointer; animation: toastUp .28s ease; }
-  @keyframes toastUp { from { opacity:0; transform: translateX(-50%) translateY(16px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
-  .sl-toast-title { font-size: 12px; font-weight: 700; color: #ff6b6b; font-family: 'DM Mono', monospace; margin-bottom: 4px; }
-  .sl-toast-body  { font-size: 11px; color: var(--text2); font-family: 'DM Mono', monospace; line-height: 1.55; }
+  /* SL toast */
+  .sl-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1c0808; border:1px solid rgba(239,68,68,0.55); border-radius:12px; padding:14px 20px; z-index:9999; min-width:270px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.5); cursor:pointer; animation:toastUp .25s ease; }
+  @keyframes toastUp { from{opacity:0;transform:translateX(-50%) translateY(14px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+  .sl-toast-title { font-size:12px; font-weight:700; color:#ff6b6b; font-family:'DM Mono',monospace; margin-bottom:4px; }
+  .sl-toast-body  { font-size:11px; color:var(--text2); font-family:'DM Mono',monospace; line-height:1.55; }
 
   /* Metrics */
   .metrics { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -192,6 +190,11 @@
   .detail-value { font-size: 13px; color: var(--text); font-family: 'DM Mono', monospace; font-weight: 600; }
   .pnl-box { border-radius: 10px; padding: 13px 15px; margin-bottom: 13px; display: flex; justify-content: space-between; }
 
+  /* API key info box */
+  .info-box { background:rgba(96,165,250,0.06); border:1px solid rgba(96,165,250,0.2); border-radius:9px; padding:12px 14px; margin-bottom:14px; font-size:12px; color:var(--text3); font-family:'DM Mono',monospace; line-height:1.7; }
+  .info-box a { color:var(--blue); text-decoration:none; }
+  .info-box a:hover { text-decoration:underline; }
+
   /* Responsive */
   @media (max-width: 600px) {
     .app { padding: 14px 14px; }
@@ -216,12 +219,10 @@
     <div class="header-right">
       <!-- Live price status -->
       <div class="price-pill">
-        <span class="price-dot" id="priceDot"></span>
+        <span class="pdot" id="priceDot"></span>
         <span id="priceText">NSE PRICES</span>
       </div>
-      <button class="btn btn-refresh" id="btnRefresh" onclick="fetchAllPrices()">
-        <span class="ico">⟳</span> Prices
-      </button>
+      <button class="btn btn-live" id="btnRefresh" onclick="handleRefreshClick()">⟳ Prices</button>
       <!-- Original buttons unchanged -->
       <button class="btn btn-backup" onclick="backupData()">⬇ Backup</button>
       <button class="btn btn-backup" onclick="document.getElementById('restoreInput').click()">⬆ Restore</button>
@@ -270,7 +271,7 @@
         </select>
       </div>
     </div>
-    <p class="form-hint">💡 Enter symbol exactly as on NSE — e.g. SCI, HDFCBANK, BAJFINANCE. Click any card to update CMP manually anytime.</p>
+    <p class="form-hint">💡 Enter exact NSE ticker — e.g. SCI, HDFCBANK, BAJFINANCE. Click any card to update CMP manually anytime.</p>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-add')">Cancel</button>
       <button class="btn btn-primary" id="btn-save-pos" onclick="savePosition()">Add Position</button>
@@ -334,11 +335,35 @@
   </div>
 </div>
 
+<!-- ── Data Source Info Modal ── -->
+<div class="modal-overlay" id="modal-apikey" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">📡 Live Price Info</div>
+      <button class="modal-close" onclick="closeModal('modal-apikey')">×</button>
+    </div>
+    <div class="info-box">
+      Live prices are fetched from <strong style="color:var(--text)">Yahoo Finance</strong> — free, no API key required, supports all NSE stocks.<br><br>
+      Symbols are automatically suffixed with <strong style="color:var(--text)">.NS</strong> (e.g. RELIANCE → RELIANCE.NS).<br><br>
+      Just click <strong style="color:var(--text)">⟳ Prices</strong> to refresh. Works best when markets are open (Mon–Fri, 9:15 AM – 3:30 PM IST).<br><br>
+      If a symbol shows ⚠ no price, verify the exact NSE ticker (e.g. M&M → MM, BAJAJ-AUTO → BAJAJ-AUTO).
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" style="flex:1" onclick="closeModal('modal-apikey');fetchAllPrices();">⟳ Fetch Prices Now</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════
-const STORAGE_KEY = 'pm-html-v1';
+const STORAGE_KEY  = 'pm-html-v1';
+
+// ── Yahoo Finance is used for live NSE prices ──
+// No API key needed. Symbols are sent as SYMBOL.NS (e.g. RELIANCE.NS)
+// Endpoint: https://query2.finance.yahoo.com/v8/finance/chart/RELIANCE.NS
+
 let state = {
   capital: 500000,
   positions: [
@@ -348,15 +373,14 @@ let state = {
   ],
   journal: []
 };
+
 let editingId  = null;
 let closingId  = null;
 let currentTab = 'positions';
-
-// ── price fetch state ──
-let priceStatus  = {}; // id → 'idle'|'loading'|'ok'|'error'
-let lastFetchAt  = null;
-let isFetching   = false;
-let toastTimer   = null;
+let priceStatus = {};   // id → 'loading' | 'ok' | 'error'
+let lastFetchAt = null;
+let isFetching  = false;
+let toastTimer  = null;
 
 // ══════════════════════════════════════════
 //  PERSIST
@@ -365,175 +389,176 @@ function saveState() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
 }
 function loadState() {
-  try { const r = localStorage.getItem(STORAGE_KEY); if (r) state = JSON.parse(r); } catch(e) {}
+  try { const r=localStorage.getItem(STORAGE_KEY); if(r) state=JSON.parse(r); } catch(e) {}
 }
+
 
 // ══════════════════════════════════════════
 //  BACKUP / RESTORE
 // ══════════════════════════════════════════
 function backupData() {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type:'application/json' });
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href = url; a.download = `positions-backup-${today()}.json`; a.click();
+  a.href=url; a.download=`positions-backup-${today()}.json`; a.click();
   URL.revokeObjectURL(url);
 }
 function restoreData(event) {
-  const file = event.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
+  const file=event.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
     try {
-      const data = JSON.parse(e.target.result);
-      if (!data.positions || !Array.isArray(data.positions)) throw new Error();
-      if (!confirm(`Restore backup? This will replace your current ${state.positions.length} positions and ${state.journal.length} journal entries.`)) return;
-      state = data; saveState(); render(); alert('✅ Backup restored successfully!');
+      const data=JSON.parse(e.target.result);
+      if(!data.positions||!Array.isArray(data.positions)) throw new Error();
+      if(!confirm(`Restore backup? This will replace your current ${state.positions.length} positions and ${state.journal.length} journal entries.`)) return;
+      state=data; saveState(); render(); alert('✅ Backup restored successfully!');
     } catch { alert('❌ Invalid backup file. Please use a file exported from this app.'); }
-    event.target.value = '';
+    event.target.value='';
   };
   reader.readAsText(file);
 }
 
 // ══════════════════════════════════════════
-//  LIVE PRICES — Yahoo Finance via CORS proxy
+//  LIVE PRICES — YAHOO FINANCE
 //
-//  How it works:
-//  Yahoo Finance has free, public price data for NSE stocks.
-//  Symbols need a ".NS" suffix: SCI → SCI.NS, RELIANCE → RELIANCE.NS
-//  Direct fetch is blocked by CORS, so we route through allorigins.win
-//  which simply relays the request. Works fine from any hosted site.
+//  ✅ Free — no API key required
+//  ✅ Full NSE India coverage via .NS suffix
+//  ✅ CORS enabled — works directly from any browser / GitHub Pages PWA
+//  ✅ Returns regularMarketPrice (live) or previousClose (after hours)
 //
-//  You just type the plain NSE ticker (SCI, HDFCBANK, etc.) —
-//  the app adds ".NS" automatically.
+//  Symbol format: plain NSE ticker → auto-appended with .NS
+//  e.g.  RELIANCE  →  RELIANCE.NS
+//        HDFCBANK  →  HDFCBANK.NS
+//        BAJAJ-AUTO → BAJAJ-AUTO.NS
 // ══════════════════════════════════════════
 
-async function fetchPrice(symbol) {
-  // Strip any exchange prefix if user typed it, then add .NS
-  const clean  = symbol.replace(/^NSE:/i, '').trim().toUpperCase();
-  const ticker = clean.endsWith('.NS') ? clean : clean + '.NS';
-  const yahoo  = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`;
-  const proxy  = `https://api.allorigins.win/get?url=${encodeURIComponent(yahoo)}`;
-
-  const res  = await fetch(proxy, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const outer = await res.json();
-  if (!outer.contents) throw new Error('empty proxy response');
-  const data  = JSON.parse(outer.contents);
-  const meta  = data?.chart?.result?.[0]?.meta;
-  if (!meta?.regularMarketPrice) throw new Error('no price in response');
-  return meta.regularMarketPrice;
+function handleRefreshClick() {
+  fetchAllPrices();
 }
 
 async function fetchAllPrices() {
   if (isFetching || !state.positions.length) return;
-  isFetching = true;
 
+  isFetching = true;
   const btn = document.getElementById('btnRefresh');
-  btn.classList.add('fetching');
   btn.disabled = true;
+  btn.innerHTML = '<span class="spin">⟳</span> Fetching…';
 
   // Mark all as loading
   state.positions.forEach(p => { priceStatus[p.id] = 'loading'; });
-  setPricePill('loading', 'FETCHING…');
+  setPill('loading', 'FETCHING…');
   if (currentTab === 'positions') renderPositions();
 
   let ok = 0, fail = 0;
   const slHit = [];
 
-  // Fetch one by one (proxy can't batch Yahoo calls)
   for (const p of state.positions) {
     try {
-      const price = await fetchPrice(p.symbol);
+      // Strip any existing .NS suffix, then re-add it
+      const sym = p.symbol.trim().toUpperCase().replace(/\.NS$/i, '') + '.NS';
+      const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=1d`;
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+
+      // Yahoo Finance structure: data.chart.result[0].meta
+      const result = data?.chart?.result?.[0];
+      if (!result) throw new Error('No chart result');
+
+      const meta  = result.meta;
+      // regularMarketPrice = live price during market hours
+      // previousClose      = fallback when market is closed
+      const price = meta.regularMarketPrice || meta.previousClose || meta.chartPreviousClose;
+      if (!price || price === 0) throw new Error('Price is zero or missing');
+
       p.cmp = Math.round(price * 100) / 100;
       priceStatus[p.id] = 'ok';
       ok++;
-      if (p.stopLoss && p.cmp <= p.stopLoss) slHit.push(p);
+
+      if (p.stopLoss && p.cmp <= p.stopLoss) slHit.push({...p});
     } catch(e) {
       priceStatus[p.id] = 'error';
       fail++;
-      console.warn(`Price fetch failed for ${p.symbol}:`, e.message);
+      console.warn(`Yahoo Finance fetch failed for ${p.symbol}:`, e.message);
     }
-    // Re-render after each so user sees progress
+
+    // Small delay between requests to avoid rate limiting
+    await new Promise(r => setTimeout(r, 200));
     if (currentTab === 'positions') renderPositions();
   }
 
   saveState();
   lastFetchAt = new Date();
-  const t = lastFetchAt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+  const t = lastFetchAt.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
 
-  if (fail === 0)  setPricePill('live',    `● LIVE · ${t}`);
-  else if (ok > 0) setPricePill('partial', `PARTIAL ${ok}/${ok+fail} · ${t}`);
-  else             setPricePill('error',   'FAILED — see console');
+  if (ok > 0 && fail === 0) setPill('live',    `● LIVE · ${t}`);
+  else if (ok > 0)          setPill('partial',  `PARTIAL ${ok}/${ok+fail} · ${t}`);
+  else                      setPill('error',    'FAILED — check console');
 
   // SL alerts
   slHit.forEach(p => showSLToast(p));
-
-  // Browser notification (if allowed)
   if (slHit.length && 'Notification' in window && Notification.permission === 'granted') {
     slHit.forEach(p => new Notification(`⚠️ SL Hit — ${p.symbol}`, {
-      body: `CMP ₹${fmt(p.cmp)} has hit your SL of ₹${fmt(p.stopLoss)}`,
-      icon: 'icons/icon-192.png'
+      body: `CMP ₹${fmt(p.cmp)} ≤ SL ₹${fmt(p.stopLoss)}`, icon: 'icons/icon-192.png'
     }));
   }
 
-  btn.classList.remove('fetching');
   btn.disabled = false;
+  btn.innerHTML = '⟳ Prices';
   isFetching = false;
   render();
 }
 
-function setPricePill(status, text) {
-  const dot = document.getElementById('priceDot');
-  const txt = document.getElementById('priceText');
-  if (dot) dot.className = 'price-dot ' + status;
-  if (txt) txt.textContent = text;
+function setPill(status, text) {
+  const d=document.getElementById('priceDot'), t=document.getElementById('priceText');
+  if(d) d.className='pdot '+status;
+  if(t) t.textContent=text;
 }
 
 function showSLToast(p) {
-  const old = document.getElementById('slToast');
-  if (old) old.remove();
-  if (toastTimer) clearTimeout(toastTimer);
-  const t = document.createElement('div');
-  t.id = 'slToast'; t.className = 'sl-toast';
-  t.innerHTML = `<div class="sl-toast-title">⚠️ STOP LOSS HIT — ${p.symbol}</div>
+  const old=document.getElementById('slToast'); if(old) old.remove();
+  if(toastTimer) clearTimeout(toastTimer);
+  const el=document.createElement('div');
+  el.id='slToast'; el.className='sl-toast';
+  el.innerHTML=`<div class="sl-toast-title">⚠️ STOP LOSS HIT — ${p.symbol}</div>
     <div class="sl-toast-body">CMP ₹${fmt(p.cmp)} ≤ SL ₹${fmt(p.stopLoss)}<br>Consider closing this position.</div>`;
-  t.onclick = () => t.remove();
-  document.body.appendChild(t);
-  toastTimer = setTimeout(() => { if (t.parentNode) t.remove(); }, 9000);
+  el.onclick=()=>el.remove();
+  document.body.appendChild(el);
+  toastTimer=setTimeout(()=>{if(el.parentNode)el.remove();},9000);
 }
 
 function requestNotifPermission() {
-  if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+  if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
 }
 
 // ══════════════════════════════════════════
 //  HELPERS
 // ══════════════════════════════════════════
 function today() { return new Date().toISOString().slice(0,10); }
-function fmt(n, d=2) {
-  return (n||0).toLocaleString('en-IN', { minimumFractionDigits:d, maximumFractionDigits:d });
-}
+function fmt(n,d=2) { return (n||0).toLocaleString('en-IN',{minimumFractionDigits:d,maximumFractionDigits:d}); }
 function fmtC(n) {
-  const abs = Math.abs(n||0);
-  if (abs >= 10000000) return '₹' + fmt((n||0)/10000000, 2) + 'Cr';
-  if (abs >= 100000)   return '₹' + fmt((n||0)/100000,   2) + 'L';
-  if (abs >= 1000)     return '₹' + fmt((n||0)/1000,     1) + 'K';
-  return '₹' + fmt(n||0, 0);
+  const abs=Math.abs(n||0);
+  if(abs>=10000000) return '₹'+fmt((n||0)/10000000,2)+'Cr';
+  if(abs>=100000)   return '₹'+fmt((n||0)/100000,2)+'L';
+  if(abs>=1000)     return '₹'+fmt((n||0)/1000,1)+'K';
+  return '₹'+fmt(n||0,0);
 }
-function daysBetween(d1, d2) { return Math.max(0, Math.round((new Date(d2)-new Date(d1))/86400000)); }
+function daysBetween(d1,d2) { return Math.max(0,Math.round((new Date(d2)-new Date(d1))/86400000)); }
 function reasonColor(r) {
   return {'Target Hit':'#22c55e','Stop Loss Hit':'#ef4444','Manual Exit':'#60a5fa','Trailing Stop':'#a78bfa','News Event':'#fbbf24','Other':'#9ca3af'}[r]||'#9ca3af';
 }
-function col(w) { return w ? '#22c55e' : '#ef4444'; }
-function sign(n) { return n >= 0 ? '+' : ''; }
+function col(w) { return w?'#22c55e':'#ef4444'; }
+function sign(n) { return n>=0?'+':''; }
 
-function sparklineSVG(entry, cmp, width=80, height=30) {
-  const pts = [entry];
-  for (let i=1;i<11;i++) pts.push(pts[i-1]+(cmp-entry)/10+(Math.random()-.5)*Math.abs(cmp-entry)*0.15);
+function sparklineSVG(entry,cmp,w=80,h=30) {
+  const pts=[entry];
+  for(let i=1;i<11;i++) pts.push(pts[i-1]+(cmp-entry)/10+(Math.random()-.5)*Math.abs(cmp-entry)*0.15);
   pts.push(cmp);
-  const mn=Math.min(...pts), mx=Math.max(...pts), rng=mx-mn||1;
-  const c = cmp>=entry?'#22c55e':'#ef4444';
-  const points = pts.map((v,i)=>`${(i/(pts.length-1))*width},${height-((v-mn)/rng)*height}`).join(' ');
-  return `<svg width="${width}" height="${height}" style="overflow:visible;display:block"><polyline points="${points}" fill="none" stroke="${c}" stroke-width="1.5" stroke-linejoin="round" opacity="0.85"/></svg>`;
+  const mn=Math.min(...pts),mx=Math.max(...pts),rng=mx-mn||1;
+  const c=cmp>=entry?'#22c55e':'#ef4444';
+  const points=pts.map((v,i)=>`${(i/(pts.length-1))*w},${h-((v-mn)/rng)*h}`).join(' ');
+  return `<svg width="${w}" height="${h}" style="overflow:visible;display:block"><polyline points="${points}" fill="none" stroke="${c}" stroke-width="1.5" stroke-linejoin="round" opacity="0.85"/></svg>`;
 }
 
 // ══════════════════════════════════════════
@@ -541,14 +566,14 @@ function sparklineSVG(entry, cmp, width=80, height=30) {
 // ══════════════════════════════════════════
 function calcMetrics() {
   const ps=state.positions, js=state.journal;
-  const invested   = ps.reduce((s,p)=>s+p.entry*p.qty,0);
-  const currentVal = ps.reduce((s,p)=>s+p.cmp*p.qty,0);
-  const totalPnL   = currentVal-invested;
-  const totalRisk  = ps.reduce((s,p)=>s+Math.max(0,(p.entry-p.stopLoss)*p.qty),0);
-  const unrealised = ps.filter(p=>p.cmp>p.entry).reduce((s,p)=>s+(p.cmp-p.entry)*p.qty,0);
-  const pctInv     = state.capital>0?(invested/state.capital)*100:0;
-  const openRisk   = state.capital>0?(totalRisk/state.capital)*100:0;
-  const jTotal     = js.reduce((s,j)=>s+j.pnl,0);
+  const invested=ps.reduce((s,p)=>s+p.entry*p.qty,0);
+  const currentVal=ps.reduce((s,p)=>s+p.cmp*p.qty,0);
+  const totalPnL=currentVal-invested;
+  const totalRisk=ps.reduce((s,p)=>s+Math.max(0,(p.entry-p.stopLoss)*p.qty),0);
+  const unrealised=ps.filter(p=>p.cmp>p.entry).reduce((s,p)=>s+(p.cmp-p.entry)*p.qty,0);
+  const pctInv=state.capital>0?(invested/state.capital)*100:0;
+  const openRisk=state.capital>0?(totalRisk/state.capital)*100:0;
+  const jTotal=js.reduce((s,j)=>s+j.pnl,0);
   return {invested,currentVal,totalPnL,totalRisk,unrealised,pctInv,openRisk,jTotal};
 }
 
@@ -559,14 +584,14 @@ function render() { renderMetrics(); renderTabCounts(); if(currentTab==='positio
 
 function renderMetrics() {
   const m=calcMetrics(), js=state.journal;
-  const items = [
+  const items=[
     {label:'% Invested',   value:`${fmt(m.pctInv,1)}%`,                sub:`${fmtC(m.invested)} of ${fmtC(state.capital)}`,             color:'#60a5fa'},
     {label:'Open P&L',     value:`${sign(m.totalPnL)}${fmtC(m.totalPnL)}`, sub:`${fmt((m.invested>0?m.totalPnL/m.invested:0)*100,2)}% return`, color:m.totalPnL>=0?'#22c55e':'#ef4444', glow:m.totalPnL>0},
     {label:'Open Risk',    value:`${fmt(m.openRisk,2)}%`,              sub:`${fmtC(m.totalRisk)} at risk`,                              color:m.openRisk>3?'#f97316':'#e5e7eb'},
     {label:'Unrealised ↑', value:`${sign(m.unrealised)}${fmtC(m.unrealised)}`, sub:`${state.positions.filter(p=>p.cmp>p.entry).length} winners`, color:'#a78bfa'},
     {label:'Realised P&L', value:`${sign(m.jTotal)}${fmtC(m.jTotal)}`, sub:`${js.length} closed trades`,                              color:m.jTotal>=0?'#22c55e':'#ef4444'},
   ];
-  document.getElementById('metricsBar').innerHTML = items.map(i=>`
+  document.getElementById('metricsBar').innerHTML=items.map(i=>`
     <div class="metric${i.glow?' glow':''}">
       <div class="metric-label">${i.label}</div>
       <div class="metric-value" style="color:${i.color}">${i.value}</div>
@@ -575,37 +600,33 @@ function renderMetrics() {
 }
 
 function renderTabCounts() {
-  document.getElementById('tab-pos-count').textContent = state.positions.length;
-  document.getElementById('tab-jnl-count').textContent = state.journal.length;
+  document.getElementById('tab-pos-count').textContent=state.positions.length;
+  document.getElementById('tab-jnl-count').textContent=state.journal.length;
 }
 
 function renderPositions() {
-  const el = document.getElementById('content-positions');
-  if (!state.positions.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No active positions — click ＋ to add one</div></div>`;
+  const el=document.getElementById('content-positions');
+  if(!state.positions.length){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No active positions — click ＋ to add one</div></div>`;
     return;
   }
-  el.innerHTML = `<div class="grid">${state.positions.map(p=>cardHTML(p)).join('')}</div>`;
+  el.innerHTML=`<div class="grid">${state.positions.map(p=>cardHTML(p)).join('')}</div>`;
 }
 
 function cardHTML(p) {
-  const pnl    = (p.cmp-p.entry)*p.qty;
-  const pnlPct = ((p.cmp-p.entry)/p.entry)*100;
-  const risk   = Math.max(0,(p.entry-p.stopLoss)*p.qty);
-  const rrr    = p.target&&p.stopLoss?((p.target-p.entry)/Math.max(p.entry-p.stopLoss,1)).toFixed(1):null;
-  const toPct  = p.target?((p.target-p.cmp)/p.cmp*100):null;
-  const isW    = p.cmp>=p.entry;
-  const c      = col(isW);
-  const held   = daysBetween(p.entryDate, today());
-  const slHit  = p.stopLoss && p.cmp <= p.stopLoss;
-  const ps     = priceStatus[p.id];
-
-  const liveBadge = ps==='loading' ? `<span class="badge badge-loading">⟳ fetching</span>`
-    : ps==='ok'    ? `<span class="badge badge-live">● LIVE</span>`
-    : ps==='error' ? `<span class="badge badge-err" title="Fetch failed. Check symbol on Yahoo Finance (symbol.NS)">⚠ no price</span>`
-    : '';
-  const slBadge = slHit ? `<span class="badge badge-sl">⚠ SL HIT</span>` : '';
-
+  const pnl=(p.cmp-p.entry)*p.qty;
+  const pnlPct=((p.cmp-p.entry)/p.entry)*100;
+  const risk=Math.max(0,(p.entry-p.stopLoss)*p.qty);
+  const rrr=p.target&&p.stopLoss?((p.target-p.entry)/Math.max(p.entry-p.stopLoss,1)).toFixed(1):null;
+  const toPct=p.target?((p.target-p.cmp)/p.cmp*100):null;
+  const isW=p.cmp>=p.entry, c=col(isW);
+  const held=daysBetween(p.entryDate,today());
+  const slHit=p.stopLoss&&p.cmp<=p.stopLoss;
+  const ps=priceStatus[p.id];
+  const liveBadge=ps==='loading'?`<span class="badge badge-loading">⟳ fetching</span>`
+    :ps==='ok'   ?`<span class="badge badge-live">● LIVE</span>`
+    :ps==='error'?`<span class="badge badge-err" title="Symbol not found on NSE — check ticker spelling">⚠ no price</span>`:'';
+  const slBadge=slHit?`<span class="badge badge-sl">⚠ SL HIT</span>`:'';
   return `
   <div class="card${slHit?' sl-hit':''}" onclick="openEditModal(${p.id})">
     <div class="card-actions">
@@ -621,7 +642,7 @@ function cardHTML(p) {
       <span class="badge badge-days">${held}d held</span>
       ${liveBadge}${slBadge}
     </div>
-    <div class="sparkline">${sparklineSVG(p.entry, p.cmp)}</div>
+    <div class="sparkline">${sparklineSVG(p.entry,p.cmp)}</div>
     <div class="price-grid">
       <div class="price-cell"><div class="price-cell-label">Entry</div><div class="price-cell-value" style="color:#e5e7eb">₹${fmt(p.entry)}</div></div>
       <div class="price-cell"><div class="price-cell-label">CMP</div><div class="price-cell-value" style="color:${c}">₹${fmt(p.cmp)}</div></div>
@@ -660,7 +681,7 @@ function renderJournal() {
       <div class="metric-value" style="color:${s.color}">${s.value}</div>
       <div class="metric-sub">${s.sub}</div>
     </div>`).join('')}</div>`;
-  if (!js.length) { el.innerHTML=statsHTML+`<div class="empty"><div class="empty-icon">📒</div><div class="empty-text">No closed trades yet — hover a position and click CLOSE</div></div>`; return; }
+  if(!js.length){el.innerHTML=statsHTML+`<div class="empty"><div class="empty-icon">📒</div><div class="empty-text">No closed trades yet — hover a position and click CLOSE</div></div>`;return;}
   const rows=js.map(j=>{
     const c=j.pnl>=0?'#22c55e':'#ef4444', rc=reasonColor(j.reason);
     return `<div class="j-row" onclick="openJournalDetail(${j.id})">
@@ -685,8 +706,8 @@ function renderJournal() {
 // ══════════════════════════════════════════
 function switchTab(tab) {
   currentTab=tab;
-  document.getElementById('tab-positions').classList.toggle('active', tab==='positions');
-  document.getElementById('tab-journal').classList.toggle('active', tab==='journal');
+  document.getElementById('tab-positions').classList.toggle('active',tab==='positions');
+  document.getElementById('tab-journal').classList.toggle('active',tab==='journal');
   document.getElementById('content-positions').style.display=tab==='positions'?'':'none';
   document.getElementById('content-journal').style.display=tab==='journal'?'':'none';
   if(tab==='positions') renderPositions(); else renderJournal();
@@ -698,7 +719,7 @@ function switchTab(tab) {
 function openModal(id)  { document.getElementById(id).style.display='flex'; }
 function closeModal(id) { document.getElementById(id).style.display='none'; }
 document.querySelectorAll('.modal-overlay').forEach(el=>{
-  el.addEventListener('click', e=>{ if(e.target===el) el.style.display='none'; });
+  el.addEventListener('click',e=>{ if(e.target===el) el.style.display='none'; });
 });
 
 function openAddModal() {
@@ -748,6 +769,7 @@ function savePosition() {
   saveState(); closeModal('modal-add'); render();
 }
 
+// Delete
 function deletePosition(id) {
   if(!confirm('Remove this position?')) return;
   state.positions=state.positions.filter(p=>p.id!==id);
@@ -755,6 +777,7 @@ function deletePosition(id) {
   saveState(); render();
 }
 
+// Close
 function openCloseModal(id) {
   const p=state.positions.find(x=>x.id===id); if(!p) return;
   closingId=id;
@@ -806,12 +829,13 @@ function confirmClose() {
   state.positions=state.positions.filter(x=>x.id!==closingId);
   delete priceStatus[closingId];
 
-  // Auto-update capital: realised P&L flows back into capital
+  // ── Auto-update capital with realised P&L ──
   state.capital=Math.round((state.capital+pnl)*100)/100;
 
   saveState(); closeModal('modal-close'); render();
 }
 
+// Journal detail
 function openJournalDetail(id) {
   const j=state.journal.find(x=>x.id===id); if(!j) return;
   const isW=j.pnl>=0, c=isW?'#22c55e':'#ef4444', rc=reasonColor(j.reason);
@@ -843,6 +867,7 @@ function deleteJournalEntry(id) {
   saveState(); closeModal('modal-detail'); renderJournal(); renderMetrics(); renderTabCounts();
 }
 
+// Capital
 function openCapitalModal() {
   document.getElementById('cap-input').value=state.capital;
   openModal('modal-capital');
@@ -853,7 +878,8 @@ function saveCapital() {
   state.capital=v; saveState(); closeModal('modal-capital'); renderMetrics();
 }
 
-document.addEventListener('keydown', e=>{
+// Keyboard ESC
+document.addEventListener('keydown',e=>{
   if(e.key==='Escape') document.querySelectorAll('.modal-overlay').forEach(el=>el.style.display='none');
 });
 
@@ -863,6 +889,7 @@ document.addEventListener('keydown', e=>{
 loadState();
 requestNotifPermission();
 render();
+setPill('idle', 'YAHOO FIN · ⟳ to refresh');
 </script>
 <script>
 if ('serviceWorker' in navigator) {
