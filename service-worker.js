@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pm-v1';
+const CACHE_NAME = 'pm-v1.1';
 
 self.addEventListener('install', e => {
   e.waitUntil(
