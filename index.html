@@ -1,14 +1,14 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Position Manager</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0d1117">
-<style>
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Position Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=DM+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0d1117">
+  <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
@@ -276,11 +276,24 @@
   .eff-label { font-size:9px; color:var(--text3); font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:.08em; }
   .eff-val { font-size:13px; font-weight:700; font-family:'DM Mono',monospace; }
 
-  /* Mobile: always show card actions with tap-friendly sizing */
+  /* Mobile: hide the hover-only actions, show a dedicated bottom strip instead */
+  .card-mobile-actions { display: none; }
   @media (max-width: 768px) {
-    .card-actions { opacity: 1 !important; }
-    .card-actions .btn-close-trade { padding: 6px 12px; font-size: 11px; }
-    .card-actions .btn-delete { width: 30px; height: 30px; font-size: 16px; }
+    .card-actions { display: none !important; }
+    .card-mobile-actions {
+      display: flex; gap: 8px; margin-top: 12px; padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .card-mobile-actions .btn-close-trade {
+      flex: 1; background: rgba(34,197,94,0.13); border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 8px; color: var(--green); padding: 8px 12px; font-size: 12px;
+      cursor: pointer; font-family: 'DM Mono', monospace; font-weight: 700; text-align: center;
+    }
+    .card-mobile-actions .btn-delete {
+      background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 8px; color: #f87171; width: 40px; font-size: 18px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
   }
 
   /* Responsive */
@@ -293,161 +306,183 @@
     .form-grid .form-group { grid-column: 1; }
   }
 </style>
-</head>
-<body>
-<div class="app">
-
-  <!-- Header -->
-  <div class="header">
+ </head>
+ <body>
+  <div class="app">
+   <!-- Header -->
+   <div class="header">
     <div class="header-left">
-      <div class="label">NSE Portfolio</div>
-      <h1>Position Manager</h1>
+     <div class="label">NSE Portfolio</div>
+     <h1>Position Manager</h1>
     </div>
     <div class="header-right">
-      <button class="btn btn-orange" onclick="openBulkCMPModal()">✏ Update CMPs</button>
-      <button class="btn btn-backup" onclick="backupData()">⬇ Backup</button>
-      <button class="btn btn-backup" onclick="document.getElementById('restoreInput').click()">⬆ Restore</button>
-      <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(event)">
-      <button class="btn btn-secondary" onclick="openCapitalModal()">⚙ Capital</button>
-      <button class="btn btn-primary" onclick="openAddModal()">＋ Position</button>
+     <button class="btn btn-orange" onclick="openBulkCMPModal()">✏ Update CMPs</button>
+     <button class="btn btn-backup" onclick="backupData()">⬇ Backup</button>
+     <button class="btn btn-backup" onclick="document.getElementById('restoreInput').click()">⬆ Restore</button>
+     <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(event)">
+     <button class="btn btn-secondary" onclick="openCapitalModal()">⚙ Capital</button>
+     <button class="btn btn-primary" onclick="openAddModal()">＋ Position</button>
     </div>
-  </div>
-
-  <!-- Metrics -->
-  <div class="metrics" id="metricsBar"></div>
-
-  <!-- Tabs -->
-  <div class="tabs">
+   </div>
+   <!-- Metrics -->
+   <div class="metrics" id="metricsBar"></div>
+   <!-- Tabs -->
+   <div class="tabs">
     <button class="tab-btn active" id="tab-positions" onclick="switchTab('positions')">📈 Active (<span id="tab-pos-count">0</span>)</button>
     <button class="tab-btn" id="tab-journal" onclick="switchTab('journal')">📒 Journal (<span id="tab-jnl-count">0</span>)</button>
+   </div>
+   <!-- Content -->
+   <div id="content-positions"></div>
+   <div id="content-journal" style="display:none"></div>
   </div>
-
-  <!-- Content -->
-  <div id="content-positions"></div>
-  <div id="content-journal" style="display:none"></div>
-</div>
-
-<!-- ══ MODALS ══ -->
-
-<!-- Add/Edit Modal -->
-<div class="modal-overlay" id="modal-add" style="display:none">
-  <div class="modal">
+  <!-- ══ MODALS ══ -->
+  <!-- Add/Edit Modal -->
+  <div class="modal-overlay" id="modal-add" style="display:none">
+   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title" id="modal-add-title">Add Position</div>
-      <button class="modal-close" onclick="closeModal('modal-add')">×</button>
+     <div class="modal-title" id="modal-add-title">Add Position</div>
+     <button class="modal-close" onclick="closeModal('modal-add')">×</button>
     </div>
     <div class="form-grid">
-      <div class="form-group"><label class="form-label">Symbol (NSE)</label><input class="form-input" id="f-symbol" placeholder="e.g. SCI"></div>
-      <div class="form-group"><label class="form-label">Company Name</label><input class="form-input" id="f-name" placeholder="e.g. Shipping Corp"></div>
-      <div class="form-group"><label class="form-label">Entry Price (₹)</label><input class="form-input" id="f-entry" type="number" placeholder="0.00" oninput="onCalcInput()"></div>
-      <div class="form-group"><label class="form-label">Current Price / CMP (₹)</label><input class="form-input" id="f-cmp" type="number" placeholder="0.00"></div>
-      <div class="form-group"><label class="form-label">Quantity</label><input class="form-input" id="f-qty" type="number" placeholder="0"></div>
-      <div class="form-group"><label class="form-label">Entry Date</label><input class="form-input" id="f-date" type="date"></div>
-      <div class="form-group"><label class="form-label">Stop Loss (₹)</label><input class="form-input" id="f-sl" type="number" placeholder="0.00" oninput="onCalcInput()"></div>
-      <div class="form-group"><label class="form-label">Target (₹)</label><input class="form-input" id="f-tgt" type="number" placeholder="0.00"></div>
-      <div class="form-group"><label class="form-label">Trailing SL %</label><input class="form-input" id="f-trail" type="number" placeholder="e.g. 5" min="0" step="0.5"></div>
-      <div class="form-group full"><label class="form-label">Sector</label>
-        <select class="form-select" id="f-sector">
-          <option>Energy</option><option>IT</option><option>Banking</option><option>FMCG</option>
-          <option>Pharma</option><option>Auto</option><option>Metals</option><option>Realty</option><option>Other</option>
-        </select>
-      </div>
+     <div class="form-group">
+      <label class="form-label">Symbol (NSE)</label><input class="form-input" id="f-symbol" placeholder="e.g. SCI">
+     </div>
+     <div class="form-group">
+      <label class="form-label">Company Name</label><input class="form-input" id="f-name" placeholder="e.g. Shipping Corp">
+     </div>
+     <div class="form-group">
+      <label class="form-label">Entry Price (₹)</label><input class="form-input" id="f-entry" type="number" placeholder="0.00" oninput="onCalcInput()">
+     </div>
+     <div class="form-group">
+      <label class="form-label">Current Price / CMP (₹)</label><input class="form-input" id="f-cmp" type="number" placeholder="0.00">
+     </div>
+     <div class="form-group">
+      <label class="form-label">Quantity</label><input class="form-input" id="f-qty" type="number" placeholder="0">
+     </div>
+     <div class="form-group">
+      <label class="form-label">Entry Date</label><input class="form-input" id="f-date" type="date">
+     </div>
+     <div class="form-group">
+      <label class="form-label">Stop Loss (₹)</label><input class="form-input" id="f-sl" type="number" placeholder="0.00" oninput="onCalcInput()">
+     </div>
+     <div class="form-group">
+      <label class="form-label">Target (₹)</label><input class="form-input" id="f-tgt" type="number" placeholder="0.00">
+     </div>
+     <div class="form-group">
+      <label class="form-label">Trailing SL %</label><input class="form-input" id="f-trail" type="number" placeholder="e.g. 5" min="0" step="0.5">
+     </div>
+     <div class="form-group full">
+      <label class="form-label">Sector</label> <select class="form-select" id="f-sector"> <option>Energy</option><option>IT</option><option>Banking</option><option>FMCG</option> <option>Pharma</option><option>Auto</option><option>Metals</option><option>Realty</option><option>Other</option> </select>
+     </div>
     </div>
     <p class="form-hint">💡 Fill Entry + SL to unlock the position size calculator. Tap any card's CMP to edit it inline.</p>
     <!-- Position Size Calculator -->
     <div class="calc-strip" id="calc-strip" style="display:none">
-      <label>Risk %</label>
-      <input id="f-riskpct" type="number" value="1" min="0.1" max="10" step="0.1" oninput="onCalcInput()">
-      <span class="calc-result" id="calc-result">—</span>
-      <button class="calc-apply" onclick="applyCalcQty()">↑ Apply Qty</button>
+     <label>Risk %</label> <input id="f-riskpct" type="number" value="1" min="0.1" max="10" step="0.1" oninput="onCalcInput()"> <span class="calc-result" id="calc-result">—</span>
+     <button class="calc-apply" onclick="applyCalcQty()">↑ Apply Qty</button>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modal-add')">Cancel</button>
-      <button class="btn btn-primary" id="btn-save-pos" onclick="savePosition()">Add Position</button>
+     <button class="btn btn-secondary" onclick="closeModal('modal-add')">Cancel</button>
+     <button class="btn btn-primary" id="btn-save-pos" onclick="savePosition()">Add Position</button>
     </div>
+   </div>
   </div>
-</div>
-
-<!-- Close Trade Modal -->
-<div class="modal-overlay" id="modal-close" style="display:none">
-  <div class="modal">
+  <!-- Close Trade Modal -->
+  <div class="modal-overlay" id="modal-close" style="display:none">
+   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title" id="modal-close-title">Close Trade</div>
-      <button class="modal-close" onclick="closeModal('modal-close')">×</button>
+     <div class="modal-title" id="modal-close-title">Close Trade</div>
+     <button class="modal-close" onclick="closeModal('modal-close')">×</button>
     </div>
     <div class="trade-summary" id="close-summary"></div>
-    <div class="form-group"><label class="form-label">Exit Price (₹)</label><input class="form-input" id="c-exit" type="number" placeholder="0.00" oninput="updatePnlPreview()"></div>
+    <div class="form-group">
+     <label class="form-label">Exit Price (₹)</label><input class="form-input" id="c-exit" type="number" placeholder="0.00" oninput="updatePnlPreview()">
+    </div>
     <div id="pnl-preview-box" style="display:none" class="pnl-preview">
-      <div><div class="pnl-preview-label">Realised P&L</div><div class="pnl-preview-value" id="pnl-preview-val"></div></div>
-      <div style="text-align:right"><div class="pnl-preview-label">Return</div><div class="pnl-preview-value" id="pnl-preview-pct"></div></div>
+     <div>
+      <div class="pnl-preview-label">Realised P&amp;L</div>
+      <div class="pnl-preview-value" id="pnl-preview-val"></div>
+     </div>
+     <div style="text-align:right">
+      <div class="pnl-preview-label">Return</div>
+      <div class="pnl-preview-value" id="pnl-preview-pct"></div>
+     </div>
     </div>
     <div class="form-grid">
-      <div class="form-group"><label class="form-label">Exit Date</label><input class="form-input" id="c-date" type="date"></div>
-      <div class="form-group"><label class="form-label">Exit Reason</label>
-        <select class="form-select" id="c-reason">
-          <option>Target Hit</option><option>Stop Loss Hit</option><option>Manual Exit</option>
-          <option>Trailing Stop</option><option>News Event</option><option>Other</option>
-        </select>
-      </div>
-      <div class="form-group"><label class="form-label">Worst Price Hit — MAE ₹ <span style="color:var(--text4);font-size:9px">optional</span></label><input class="form-input" id="c-mae" type="number" placeholder="Lowest price the stock reached"></div>
-      <div class="form-group"><label class="form-label">Best Price Hit — MFE ₹ <span style="color:var(--text4);font-size:9px">optional</span></label><input class="form-input" id="c-mfe" type="number" placeholder="Highest price the stock reached"></div>
-      <div class="form-group full"><label class="form-label">Notes / Learnings</label><textarea class="form-textarea" id="c-notes" placeholder="What did you learn? Why did you exit?"></textarea></div>
+     <div class="form-group">
+      <label class="form-label">Exit Date</label><input class="form-input" id="c-date" type="date">
+     </div>
+     <div class="form-group">
+      <label class="form-label">Exit Reason</label> <select class="form-select" id="c-reason"> <option>Target Hit</option><option>Stop Loss Hit</option><option>Manual Exit</option> <option>Trailing Stop</option><option>News Event</option><option>Other</option> </select>
+     </div>
+     <div class="form-group">
+      <label class="form-label">Worst Price Hit — MAE ₹ <span style="color:var(--text4);font-size:9px">optional</span></label><input class="form-input" id="c-mae" type="number" placeholder="Lowest price the stock reached">
+     </div>
+     <div class="form-group">
+      <label class="form-label">Best Price Hit — MFE ₹ <span style="color:var(--text4);font-size:9px">optional</span></label><input class="form-input" id="c-mfe" type="number" placeholder="Highest price the stock reached">
+     </div>
+     <div class="form-group full">
+      <label class="form-label">Notes / Learnings</label><textarea class="form-textarea" id="c-notes" placeholder="What did you learn? Why did you exit?"></textarea>
+     </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modal-close')">Cancel</button>
-      <button class="btn btn-primary" onclick="confirmClose()">Log &amp; Close Trade</button>
+     <button class="btn btn-secondary" onclick="closeModal('modal-close')">Cancel</button>
+     <button class="btn btn-primary" onclick="confirmClose()">Log &amp; Close Trade</button>
     </div>
+   </div>
   </div>
-</div>
-
-<!-- Journal Detail Modal -->
-<div class="modal-overlay" id="modal-detail" style="display:none">
-  <div class="modal">
+  <!-- Journal Detail Modal -->
+  <div class="modal-overlay" id="modal-detail" style="display:none">
+   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title" id="detail-title">Trade Detail</div>
-      <button class="modal-close" onclick="closeModal('modal-detail')">×</button>
+     <div class="modal-title" id="detail-title">Trade Detail</div>
+     <button class="modal-close" onclick="closeModal('modal-detail')">×</button>
     </div>
     <div id="detail-body"></div>
+   </div>
   </div>
-</div>
-
-<!-- Capital Modal -->
-<div class="modal-overlay" id="modal-capital" style="display:none">
-  <div class="modal" style="max-width:320px">
+  <!-- Capital Modal -->
+  <div class="modal-overlay" id="modal-capital" style="display:none">
+   <div class="modal" style="max-width:320px">
     <div class="modal-header">
-      <div class="modal-title">Set Total Capital</div>
-      <button class="modal-close" onclick="closeModal('modal-capital')">×</button>
+     <div class="modal-title">Set Total Capital</div>
+     <button class="modal-close" onclick="closeModal('modal-capital')">×</button>
     </div>
-    <div class="form-group"><label class="form-label">Total Capital (₹)</label><input class="form-input" id="cap-input" type="number" placeholder="500000"></div>
+    <div class="form-group">
+     <label class="form-label">Total Capital (₹)</label><input class="form-input" id="cap-input" type="number" placeholder="500000">
+    </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('modal-capital')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveCapital()">Save</button>
+     <button class="btn btn-secondary" onclick="closeModal('modal-capital')">Cancel</button>
+     <button class="btn btn-primary" onclick="saveCapital()">Save</button>
     </div>
+   </div>
   </div>
-</div>
-
-<!-- Bulk CMP Update Modal -->
-<div class="modal-overlay" id="modal-bulk" style="display:none">
-  <div class="modal" style="max-width:420px">
+  <!-- Bulk CMP Update Modal -->
+  <div class="modal-overlay" id="modal-bulk" style="display:none">
+   <div class="modal" style="max-width:420px">
     <div class="modal-header">
-      <div class="modal-title">✏ Bulk CMP Update</div>
-      <button class="modal-close" onclick="closeModal('modal-bulk')">×</button>
+     <div class="modal-title">✏ Bulk CMP Update</div>
+     <button class="modal-close" onclick="closeModal('modal-bulk')">×</button>
     </div>
-    <p class="bulk-hint">
-      One line per stock. Format: <strong style="color:var(--text)">SYMBOL PRICE</strong><br>
-      Comma or tab also accepted as separator.<br><br>
-      <span style="color:var(--text4)">e.g.&nbsp;&nbsp;RELIANCE 1350<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TCS 3280.50<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;HDFCBANK 1620</span>
-    </p>
-    <textarea class="form-textarea" id="bulk-input" style="min-height:140px;font-size:13px" placeholder="RELIANCE 1350&#10;TCS 3280&#10;HDFCBANK 1620"></textarea>
+    <p class="bulk-hint">One line per stock. Format: <strong style="color:var(--text)">SYMBOL PRICE</strong>
+     <br>
+     Comma or tab also accepted as separator.
+     <br>
+     <br>
+     <span style="color:var(--text4)">e.g.&nbsp;&nbsp;RELIANCE 1350
+      <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TCS 3280.50
+      <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;HDFCBANK 1620</span></p>
+    <textarea class="form-textarea" id="bulk-input" style="min-height:140px;font-size:13px" placeholder="RELIANCE 1350
+TCS 3280
+HDFCBANK 1620"></textarea>
     <div id="bulk-result" class="bulk-result" style="display:none"></div>
     <div class="modal-footer" style="margin-top:14px">
-      <button class="btn btn-secondary" onclick="closeModal('modal-bulk')">Cancel</button>
-      <button class="btn btn-primary" onclick="applyBulkCMP()">Apply Updates</button>
+     <button class="btn btn-secondary" onclick="closeModal('modal-bulk')">Cancel</button>
+     <button class="btn btn-primary" onclick="applyBulkCMP()">Apply Updates</button>
     </div>
+   </div>
   </div>
-</div>
-
-<script>
+  <script>
 // ══════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════
@@ -732,14 +767,17 @@ function renderPositions() {
     return;
   }
 
-  // Build heatmap cells
-  const maxAbs=Math.max(...state.positions.map(p=>Math.abs((p.cmp-p.entry)/p.entry*100)),0.1);
+  // Build heatmap cells — separate intensity scales for gains and losses
+  const gains=state.positions.map(p=>(p.cmp-p.entry)/p.entry*100).filter(x=>x>0);
+  const lossArr=state.positions.map(p=>(p.cmp-p.entry)/p.entry*100).filter(x=>x<0);
+  const maxGain=gains.length?Math.max(...gains):0.1;
+  const maxLoss=lossArr.length?Math.abs(Math.min(...lossArr)):0.1;
   const hmCells=state.positions.map(p=>{
     const pct=(p.cmp-p.entry)/p.entry*100;
-    const intensity=Math.min(Math.abs(pct)/maxAbs,1);
-    const bg=pct>=0?`rgba(34,197,94,${0.08+intensity*0.32})`:`rgba(239,68,68,${0.08+intensity*0.32})`;
-    const border=pct>=0?`rgba(34,197,94,${0.2+intensity*0.4})`:`rgba(239,68,68,${0.2+intensity*0.4})`;
-    const c=pct>=0?'#4ade80':'#f87171';
+    const intensity=pct>=0?Math.min(pct/maxGain,1):Math.min(Math.abs(pct)/maxLoss,1);
+    const bg=pct>=0?`rgba(34,197,94,${0.07+intensity*0.35})`:`rgba(239,68,68,${0.07+intensity*0.38})`;
+    const border=pct>=0?`rgba(34,197,94,${0.18+intensity*0.45})`:`rgba(239,68,68,${0.18+intensity*0.48})`;
+    const c=pct>=0?`rgba(${Math.round(74+intensity*106)},${Math.round(222-intensity*60)},${Math.round(128-intensity*80)},1)`:`rgba(248,${Math.round(113-intensity*80)},${Math.round(113-intensity*80)},1)`;
     return `<div class="hm-cell" style="background:${bg};border:1px solid ${border}" onclick="openEditModal(${p.id})">
       <div class="hm-sym">${p.symbol}</div>
       <div class="hm-pct" style="color:${c}">${sign(pct)}${fmt(pct,2)}%</div>
@@ -835,6 +873,10 @@ function cardHTML(p) {
       <span>Risk: <b style="color:#f97316">${fmtC(risk)}</b></span>
       ${toPct!==null?`<span>→TGT: <b style="color:#a78bfa">${fmt(toPct,1)}%</b></span>`:''}
     </div>
+    <div class="card-mobile-actions">
+      <button class="btn-close-trade" onclick="event.stopPropagation();openCloseModal(${p.id})">⬛ CLOSE TRADE</button>
+      <button class="btn-delete" onclick="event.stopPropagation();deletePosition(${p.id})">×</button>
+    </div>
   </div>`;
 }
 
@@ -864,11 +906,13 @@ function renderJournal() {
   const streakLabel=streak>0?(streakType==='W'?`🔥 ${streak}W Streak`:`❄️ ${streak}L Streak`):'—';
   const streakColor=streakType==='W'?'#22c55e':'#ef4444';
 
-  // Best & worst trade
+  // Best & worst trade — skull only appears on genuinely losing trades
   let bestId=null, worstId=null;
   if(js.length>0){
-    bestId=js.reduce((b,j)=>j.pnl>b.pnl?j:b,js[0]).id;
-    worstId=js.reduce((b,j)=>j.pnl<b.pnl?j:b,js[0]).id;
+    const best=js.reduce((b,j)=>j.pnl>b.pnl?j:b, js[0]);
+    const worst=js.reduce((b,j)=>j.pnl<b.pnl?j:b, js[0]);
+    bestId=best.id;
+    worstId=worst.pnl<0 ? worst.id : null; // no skull if all trades are profitable
   }
 
   const stats=[
@@ -893,66 +937,152 @@ function renderJournal() {
     return;
   }
 
-  // ── Equity Curve + Drawdown ──────────────────────────────────────
-  // Sort trades oldest first for curve
+  // ── Equity Curve + Drawdown ─────────────────────────────────────
   const sorted=[...js].sort((a,b)=>new Date(a.exitDate)-new Date(b.exitDate));
-  const startingCapital=state.capital-jTotal; // reconstruct starting capital
-  const equityPoints=[{date:'Start',capital:startingCapital}];
+  const startingCapital=state.capital-jTotal;
+  const equityPoints=[{date:'Start',capital:startingCapital,symbol:null,pnl:null}];
   let running=startingCapital;
-  sorted.forEach(j=>{ running+=j.pnl; equityPoints.push({date:j.exitDate||'?',capital:running,symbol:j.symbol,pnl:j.pnl}); });
-
-  // Drawdown computation
-  let peak=equityPoints[0].capital, maxDD=0, currentDD=0;
-  const ddPoints=equityPoints.map(pt=>{
-    if(pt.capital>peak) peak=pt.capital;
-    const dd=peak>0?(peak-pt.capital)/peak*100:0;
-    if(dd>maxDD) maxDD=dd;
-    currentDD=dd;
-    return dd;
-  });
-
-  // Build SVG equity curve
-  const W=560, H=130, PAD=8;
-  const caps=equityPoints.map(p=>p.capital);
-  const minCap=Math.min(...caps), maxCap=Math.max(...caps);
-  const capRange=maxCap-minCap||1;
-  const toX=(i)=>PAD+i/(equityPoints.length-1||1)*(W-PAD*2);
-  const toY=(v)=>H-PAD-((v-minCap)/capRange)*(H-PAD*2);
-  const pts=equityPoints.map((p,i)=>`${toX(i)},${toY(p.capital)}`).join(' ');
+  sorted.forEach(j=>{ running=Math.round((running+j.pnl)*100)/100; equityPoints.push({date:j.exitDate||'?',capital:running,symbol:j.symbol,pnl:j.pnl}); });
   const lastCap=equityPoints[equityPoints.length-1].capital;
+  const caps=equityPoints.map(p=>p.capital);
   const curveColor=lastCap>=startingCapital?'#22c55e':'#ef4444';
-  const fillPts=`${PAD},${H-PAD} `+pts+` ${W-PAD},${H-PAD}`;
 
-  // Drawdown area (secondary curve)
-  const ddPts=ddPoints.map((d,i)=>`${toX(i)},${PAD+d/Math.max(maxDD,1)*(H-PAD*2)}`).join(' ');
+  // ── Correct drawdown: track running peak, compute DD% at each point ──
+  let runPeak=equityPoints[0].capital, maxDD=0;
+  let maxDDPeak=runPeak, maxDDTrough=runPeak;
+  equityPoints.forEach(pt=>{
+    if(pt.capital>runPeak) runPeak=pt.capital;
+    const dd=runPeak>0?(runPeak-pt.capital)/runPeak*100:0;
+    if(dd>maxDD){ maxDD=dd; maxDDPeak=runPeak; maxDDTrough=pt.capital; }
+  });
+  const finalRunPeak=equityPoints.reduce((pk,pt)=>pt.capital>pk?pt.capital:pk, equityPoints[0].capital);
+  const currentDD=finalRunPeak>0?(finalRunPeak-lastCap)/finalRunPeak*100:0;
+  const maxDDAbsLoss=maxDDPeak-maxDDTrough;
+  const peakCap=Math.max(...caps);
+  const totalReturnPct=startingCapital>0?(jTotal/startingCapital)*100:0;
 
-  const equitySVG=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;overflow:visible" preserveAspectRatio="none">
+  // ── SVG chart dimensions ──────────────────────────────────────────
+  const VW=580, VH=240;
+  const LPAD=70, RPAD=16, TPAD=22, BPAD=52;
+  const CW=VW-LPAD-RPAD, CH=VH-TPAD-BPAD;
+  const n=equityPoints.length;
+
+  // Y range with 10% padding
+  const rawMin=Math.min(...caps), rawMax=Math.max(...caps);
+  const rangePad=(rawMax-rawMin)*0.15 || Math.abs(rawMax)*0.08 || 5000;
+  const yMin=rawMin-rangePad, yMax=rawMax+rangePad;
+  const yRange=yMax-yMin;
+
+  const toX=i=>LPAD + (n<=1?CW/2 : i/(n-1)*CW);
+  const toY=v=>TPAD + CH - ((v-yMin)/yRange)*CH;
+
+  // Y-axis: 5 evenly spaced nice ticks
+  const yTickCount=5;
+  const yTicks=Array.from({length:yTickCount},(_,i)=>yMin+(yMax-yMin)*i/(yTickCount-1));
+
+  // X-axis: show at most 6 labels, always include first & last
+  const xIdxs=new Set([0,n-1]);
+  if(n>2){ const step=Math.ceil((n-2)/4); for(let i=step;i<n-1;i+=step) xIdxs.add(i); }
+  const xLabelIdxs=[...xIdxs].sort((a,b)=>a-b);
+
+  const fmtDate=d=>{ if(!d||d==='Start') return 'Start'; try{return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short'});}catch{return d;} };
+
+  // SVG elements
+  const gridLines=yTicks.map(v=>{
+    const y=toY(v).toFixed(1);
+    return `<line x1="${LPAD}" y1="${y}" x2="${VW-RPAD}" y2="${y}" stroke="rgba(255,255,255,0.055)" stroke-width="1"/>`;
+  }).join('');
+
+  const yLabels=yTicks.map(v=>{
+    const y=(toY(v)+3.5).toFixed(1);
+    return `<text x="${LPAD-7}" y="${y}" text-anchor="end" font-size="9.5" fill="#6b7280" font-family="DM Mono,monospace">${fmtC(v)}</text>`;
+  }).join('');
+
+  const xLabels=xLabelIdxs.map(i=>{
+    const x=toX(i).toFixed(1);
+    const y=(TPAD+CH+14).toFixed(1);
+    return `<text x="${x}" y="${y}" text-anchor="end" font-size="8.5" fill="#6b7280" font-family="DM Mono,monospace" transform="rotate(-38,${x},${y})">${fmtDate(equityPoints[i].date)}</text>`;
+  }).join('');
+
+  const axisLines=`
+    <line x1="${LPAD}" y1="${TPAD}" x2="${LPAD}" y2="${(TPAD+CH).toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    <line x1="${LPAD}" y1="${(TPAD+CH).toFixed(1)}" x2="${(VW-RPAD).toFixed(1)}" y2="${(TPAD+CH).toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>`;
+
+  // Baseline (starting capital dotted line)
+  const baseY=toY(startingCapital).toFixed(1);
+  const baseline=startingCapital>yMin&&startingCapital<yMax
+    ?`<line x1="${LPAD}" y1="${baseY}" x2="${(VW-RPAD).toFixed(1)}" y2="${baseY}" stroke="rgba(255,255,255,0.18)" stroke-width="1" stroke-dasharray="5,4"/>
+      <text x="${(LPAD+4).toFixed(1)}" y="${(+baseY-4).toFixed(1)}" font-size="8" fill="rgba(255,255,255,0.32)" font-family="DM Mono,monospace">start</text>`:'' ;
+
+  // Area fill
+  const linePts=equityPoints.map((_,i)=>`${toX(i).toFixed(1)},${toY(equityPoints[i].capital).toFixed(1)}`).join(' ');
+  const fillPts=`${toX(0).toFixed(1)},${(TPAD+CH).toFixed(1)} ${linePts} ${toX(n-1).toFixed(1)},${(TPAD+CH).toFixed(1)}`;
+
+  // Trade markers with capital labels
+  const peakIdx=caps.indexOf(peakCap);
+  const troughIdx=caps.indexOf(Math.min(...caps));
+  const alwaysLabel=new Set([0,n-1,peakIdx,troughIdx]);
+
+  const markers=equityPoints.map((pt,i)=>{
+    const x=toX(i), y=toY(pt.capital);
+    const dotColor=pt.pnl==null?'#9ca3af':pt.pnl>=0?'#22c55e':'#ef4444';
+    const tipText=pt.pnl!=null
+      ?`${pt.symbol}: ${sign(pt.pnl)}${fmtC(pt.pnl)} | Balance: ${fmtC(pt.capital)} | ${fmtDate(pt.date)}`
+      :`Starting Capital: ${fmtC(pt.capital)}`;
+
+    // Always-visible label for key points
+    let labelEl='';
+    if(alwaysLabel.has(i)){
+      const above=y > TPAD+CH*0.5; // put label above dot if dot is in lower half
+      const lx=x.toFixed(1);
+      const ly=(above ? y-11 : y+14).toFixed(1);
+      // Check horizontal edge: push inward if near edges
+      const anchor=x<LPAD+40?'start':x>VW-RPAD-40?'end':'middle';
+      labelEl=`<text x="${lx}" y="${ly}" text-anchor="${anchor}" font-size="9" fill="${dotColor}" font-family="DM Mono,monospace" font-weight="700">${fmtC(pt.capital)}</text>`;
+    }
+
+    return `<g style="cursor:pointer">
+      <title>${tipText}</title>
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" fill="${dotColor}" stroke="#0d1117" stroke-width="2"/>
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" fill="transparent"/>
+      ${labelEl}
+    </g>`;
+  }).join('');
+
+  const equitySVG=`<svg viewBox="0 0 ${VW} ${VH}" style="width:100%;display:block;overflow:visible">
     <defs>
       <linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${curveColor}" stop-opacity="0.18"/>
+        <stop offset="0%" stop-color="${curveColor}" stop-opacity="0.2"/>
         <stop offset="100%" stop-color="${curveColor}" stop-opacity="0.01"/>
       </linearGradient>
     </defs>
+    ${gridLines}${axisLines}${baseline}${yLabels}${xLabels}
     <polygon points="${fillPts}" fill="url(#eqGrad)"/>
-    <polyline points="${pts}" fill="none" stroke="${curveColor}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    ${equityPoints.map((p,i)=>p.pnl!=null?`<circle cx="${toX(i)}" cy="${toY(p.capital)}" r="3" fill="${p.pnl>=0?'#22c55e':'#ef4444'}" stroke="var(--bg2)" stroke-width="1.5"><title>${p.symbol}: ${sign(p.pnl)}${fmtC(p.pnl)} → ${fmtC(p.capital)}</title></circle>`:'').join('')}
+    <polyline points="${linePts}" fill="none" stroke="${curveColor}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${markers}
   </svg>`;
 
+  // ── Drawdown cards (corrected formulas) ─────────────────────────
   const drawdownHTML=`<div class="dd-strip">
     <div class="dd-card">
       <div class="dd-label">Max Drawdown</div>
       <div class="dd-value">-${fmt(maxDD,2)}%</div>
-      <div class="dd-sub">${fmtC(Math.max(...caps)-equityPoints[ddPoints.indexOf(maxDD)]?.capital||0)} peak drop</div>
+      <div class="dd-sub">-${fmtC(maxDDAbsLoss)} loss (${fmtC(maxDDPeak)}→${fmtC(maxDDTrough)})</div>
     </div>
     <div class="dd-card">
-      <div class="dd-label">Current DD</div>
-      <div class="dd-value" style="color:${currentDD>0?'#ef4444':'#22c55e'}">${currentDD>0?'-':''}${fmt(currentDD,2)}%</div>
-      <div class="dd-sub">${currentDD>0?'Below peak':'At or above peak'}</div>
+      <div class="dd-label">Current DD from Peak</div>
+      <div class="dd-value" style="color:${currentDD>0.01?'#ef4444':'#22c55e'}">${currentDD>0.01?'-':''}${fmt(currentDD,2)}%</div>
+      <div class="dd-sub">${currentDD>0.01?`-${fmtC(finalRunPeak-lastCap)} below ${fmtC(finalRunPeak)}`:'At or above running peak'}</div>
     </div>
     <div class="dd-card" style="background:rgba(96,165,250,0.07);border-color:rgba(96,165,250,0.15)">
       <div class="dd-label" style="color:#93c5fd">Total Return</div>
-      <div class="dd-value" style="color:#60a5fa">${sign(jTotal)}${startingCapital>0?fmt(jTotal/startingCapital*100,2):0}%</div>
-      <div class="dd-sub">${sign(jTotal)}${fmtC(jTotal)} realised</div>
+      <div class="dd-value" style="color:#60a5fa">${sign(totalReturnPct)}${fmt(totalReturnPct,2)}%</div>
+      <div class="dd-sub">${sign(jTotal)}${fmtC(jTotal)} on ${fmtC(startingCapital)} start</div>
+    </div>
+    <div class="dd-card" style="background:rgba(167,139,250,0.07);border-color:rgba(167,139,250,0.15)">
+      <div class="dd-label" style="color:#c4b5fd">Peak Balance</div>
+      <div class="dd-value" style="color:#a78bfa">${fmtC(peakCap)}</div>
+      <div class="dd-sub">highest balance reached</div>
     </div>
   </div>`;
 
@@ -963,13 +1093,12 @@ function renderJournal() {
     </div>
     <div class="equity-chart-meta">
       <span>Start: <b style="color:var(--text)">${fmtC(startingCapital)}</b></span>
-      <span>Trades: <b style="color:var(--text)">${js.length}</b></span>
-      <span style="color:${lastCap>=startingCapital?'#22c55e':'#ef4444'}">${sign(lastCap-startingCapital)}${fmtC(lastCap-startingCapital)}</span>
+      <span>${js.length} closed trades</span>
+      <span style="color:${lastCap>=startingCapital?'#22c55e':'#ef4444'};font-weight:600">${sign(lastCap-startingCapital)}${fmtC(lastCap-startingCapital)}</span>
     </div>
     ${equitySVG}
-    <div style="display:flex;justify-content:space-between;margin-top:4px">
-      <span style="font-size:9px;color:var(--text4);font-family:'DM Mono',monospace">START</span>
-      <span style="font-size:9px;color:var(--text4);font-family:'DM Mono',monospace">NOW</span>
+    <div style="display:flex;gap:16px;margin-top:6px;flex-wrap:wrap">
+      <span style="font-size:9px;color:var(--text4);font-family:'DM Mono',monospace">● Green dot = winning trade &nbsp;● Red dot = losing trade &nbsp;● Hover dots for details</span>
     </div>
   </div>
   ${drawdownHTML}`;
@@ -1113,7 +1242,8 @@ function savePosition() {
   if(editingId){
     const p=state.positions.find(x=>x.id===editingId);
     Object.assign(p,{symbol:sym,name,entry,cmp,qty,stopLoss:sl,target:tgt,trailPct:trail,sector:sec,entryDate:date});
-    checkAlerts(p);
+    // Don't call checkAlerts on edit — the SL HIT / TGT HIT badge on the card is sufficient.
+    // Showing a "SL HIT" toast when the user is just updating values is confusing.
   } else {
     const p={id:Date.now(),symbol:sym,name,entry,cmp,qty,stopLoss:sl,target:tgt,trailPct:trail,sector:sec,entryDate:date};
     state.positions.push(p);
@@ -1283,10 +1413,10 @@ render();
 
 
 </script>
-<script>
+  <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('service-worker.js');
 }
 </script>
-</body>
+ </body>
 </html>
