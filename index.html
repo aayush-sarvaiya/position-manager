@@ -5,292 +5,282 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Position Manager</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0d1117">
+<meta name="theme-color" content="#ffffff">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #0d1117;
-    --bg2: #151c27;
-    --bg3: rgba(255,255,255,0.03);
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.12);
-    --text: #e5e7eb;
-    --text2: #9ca3af;
-    --text3: #6b7280;
-    --text4: #4b5563;
-    --green: #22c55e;
-    --green-d: #16a34a;
-    --green-bg: rgba(34,197,94,0.08);
-    --green-b: rgba(34,197,94,0.2);
-    --red: #ef4444;
-    --red-bg: rgba(239,68,68,0.08);
-    --red-b: rgba(239,68,68,0.2);
-    --orange: #f97316;
-    --purple: #a78bfa;
-    --blue: #60a5fa;
-    --yellow: #fbbf24;
-    --indigo: #818cf8;
+    --bg:     #f0f2f5;
+    --bg2:    #ffffff;
+    --bg3:    rgba(0,0,0,0.025);
+    --border: rgba(0,0,0,0.08);
+    --border2:rgba(0,0,0,0.14);
+    --text:   #0f172a;
+    --text2:  #475569;
+    --text3:  #94a3b8;
+    --text4:  #cbd5e1;
+    --green:  #16a34a;
+    --green-d:#15803d;
+    --green-bg:rgba(22,163,74,0.07);
+    --green-b: rgba(22,163,74,0.2);
+    --red:    #dc2626;
+    --red-bg: rgba(220,38,38,0.07);
+    --red-b:  rgba(220,38,38,0.2);
+    --orange: #ea580c;
+    --purple: #7c3aed;
+    --blue:   #2563eb;
+    --yellow: #b45309;
+    --indigo: #4f46e5;
+    --shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    --shadow2: 0 2px 8px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
   }
 
-  html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+  html, body { background: var(--bg); color: var(--text); font-family: 'Montserrat', sans-serif; min-height: 100vh; }
 
   /* Scrollbar */
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-  .app { padding: 20px 22px; max-width: 1400px; margin: 0 auto; }
+  .app { padding: 24px 28px; max-width: 1400px; margin: 0 auto; }
 
   /* Header */
-  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
-  .header-left .label { font-size: 10px; letter-spacing: .18em; color: var(--green); text-transform: uppercase; margin-bottom: 3px; font-family: 'DM Mono', monospace; }
-  .header-left h1 { font-size: 24px; font-weight: 700; letter-spacing: -.8px; color: #f9fafb; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+  .header-left .label { font-size: 10px; letter-spacing: .2em; color: var(--green); text-transform: uppercase; margin-bottom: 3px; font-weight: 600; }
+  .header-left h1 { font-size: 24px; font-weight: 800; letter-spacing: -.6px; color: var(--text); }
   .header-right { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
   /* Buttons */
-  .btn { border: none; border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'DM Mono', monospace; transition: opacity .15s, transform .1s; white-space: nowrap; }
+  .btn { border: none; border-radius: 9px; padding: 8px 16px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: 'Montserrat', sans-serif; transition: all .15s; white-space: nowrap; letter-spacing: .04em; }
   .btn:active { transform: scale(0.97); }
-  .btn-primary { background: linear-gradient(135deg, var(--green), var(--green-d)); color: #fff; }
-  .btn-secondary { background: rgba(255,255,255,0.06); border: 1px solid var(--border2) !important; color: var(--text2); }
-  .btn-danger { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.25) !important; color: #f87171; }
-  .btn-backup { background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.25) !important; color: var(--blue); }
+  .btn-primary { background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; box-shadow: 0 2px 8px rgba(22,163,74,0.3); }
+  .btn-primary:hover { box-shadow: 0 4px 14px rgba(22,163,74,0.4); }
+  .btn-secondary { background: #fff; border: 1px solid var(--border2) !important; color: var(--text2); box-shadow: var(--shadow); }
+  .btn-secondary:hover { background: #f8fafc; }
+  .btn-danger { background: rgba(220,38,38,0.07); border: 1px solid rgba(220,38,38,0.2) !important; color: #dc2626; }
+  .btn-backup { background: rgba(37,99,235,0.07); border: 1px solid rgba(37,99,235,0.18) !important; color: var(--blue); }
   .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-orange { background:rgba(234,88,12,0.07); border:1px solid rgba(234,88,12,0.2) !important; color:var(--orange); }
 
-  /* Buttons extra */
-  .btn-orange { background:rgba(249,115,22,0.12); border:1px solid rgba(249,115,22,0.28) !important; color:var(--orange); }
-
-  /* Alert toasts — SL & Target */
-  .alert-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); border-radius:12px; padding:14px 20px; z-index:9999; min-width:270px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.5); cursor:pointer; animation:toastUp .25s ease; }
-  .toast-sl  { background:#1c0808; border:1px solid rgba(239,68,68,0.55); }
-  .toast-tgt { background:#071a0f; border:1px solid rgba(34,197,94,0.55); }
+  /* Alert toasts */
+  .alert-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); border-radius:14px; padding:14px 20px; z-index:9999; min-width:270px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.18); cursor:pointer; animation:toastUp .25s ease; }
+  .toast-sl  { background:#fff1f1; border:1px solid rgba(220,38,38,0.35); }
+  .toast-tgt { background:#f0fdf4; border:1px solid rgba(22,163,74,0.35); }
   @keyframes toastUp { from{opacity:0;transform:translateX(-50%) translateY(14px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-  .toast-title { font-size:12px; font-weight:700; font-family:'DM Mono',monospace; margin-bottom:4px; }
-  .toast-sl  .toast-title { color:#ff6b6b; }
-  .toast-tgt .toast-title { color:#4ade80; }
-  .toast-body { font-size:11px; color:var(--text2); font-family:'DM Mono',monospace; line-height:1.55; }
+  .toast-title { font-size:12px; font-weight:700; margin-bottom:4px; }
+  .toast-sl  .toast-title { color:#dc2626; }
+  .toast-tgt .toast-title { color:#16a34a; }
+  .toast-body { font-size:11px; color:var(--text2); line-height:1.55; }
 
   /* Card badges */
-  .badge-sl  { background:rgba(239,68,68,0.2);  border-color:rgba(239,68,68,0.5);  color:#ff6b6b; font-weight:700; }
-  .badge-tgt { background:rgba(34,197,94,0.2);  border-color:rgba(34,197,94,0.5);  color:#4ade80; font-weight:700; }
+  .badge-sl  { background:rgba(220,38,38,0.1); border-color:rgba(220,38,38,0.3); color:#dc2626; font-weight:700; }
+  .badge-tgt { background:rgba(22,163,74,0.1); border-color:rgba(22,163,74,0.3); color:#16a34a; font-weight:700; }
 
   /* Alert card borders */
-  .card.sl-hit  { border-color:rgba(239,68,68,0.45) !important; box-shadow:0 0 16px rgba(239,68,68,0.12); }
-  .card.tgt-hit { border-color:rgba(34,197,94,0.45) !important; box-shadow:0 0 16px rgba(34,197,94,0.12); }
+  .card.sl-hit  { border-color:rgba(220,38,38,0.4) !important; box-shadow:0 0 0 3px rgba(220,38,38,0.07); }
+  .card.tgt-hit { border-color:rgba(22,163,74,0.4)  !important; box-shadow:0 0 0 3px rgba(22,163,74,0.07); }
 
   /* Sort bar */
-  .sort-bar { display:flex; gap:6px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
-  .sort-label { font-size:10px; color:var(--text4); font-family:'DM Mono',monospace; letter-spacing:.08em; }
-  .sort-btn { background:transparent; border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-size:10px; color:var(--text3); font-family:'DM Mono',monospace; cursor:pointer; transition:all .15s; }
-  .sort-btn.active { background:rgba(255,255,255,0.07); border-color:var(--border2); color:var(--text); }
+  .sort-bar { display:flex; gap:6px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+  .sort-label { font-size:10px; color:var(--text3); letter-spacing:.08em; font-weight:600; }
+  .sort-btn { background:#fff; border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-size:10px; color:var(--text3); font-family:'Montserrat',sans-serif; font-weight:600; cursor:pointer; transition:all .15s; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+  .sort-btn.active { background:var(--text); border-color:var(--text); color:#fff; }
   .sort-btn:hover { border-color:var(--border2); color:var(--text2); }
 
   /* CMP inline edit */
   .price-cell.cmp-cell { cursor:text; border:1px solid transparent; transition:background .15s,border-color .15s; }
-  .price-cell.cmp-cell:hover { background:rgba(34,197,94,0.1); border-color:rgba(34,197,94,0.3); }
-  .price-cell.cmp-cell:hover .price-cell-label::after { content:' ✎'; opacity:.6; }
-  .cmp-inline-input { width:100%; background:transparent; border:none; outline:none; color:#f9fafb; font-family:'DM Mono',monospace; font-size:12px; font-weight:600; padding:0; }
+  .price-cell.cmp-cell:hover { background:rgba(22,163,74,0.07); border-color:rgba(22,163,74,0.25); }
+  .price-cell.cmp-cell:hover .price-cell-label::after { content:' ✎'; opacity:.5; }
+  .cmp-inline-input { width:100%; background:transparent; border:none; outline:none; color:var(--text); font-family:'Montserrat',sans-serif; font-size:12px; font-weight:700; padding:0; }
 
   /* Position size calculator */
-  .calc-strip { background:rgba(34,197,94,0.05); border:1px solid rgba(34,197,94,0.15); border-radius:9px; padding:10px 13px; margin-bottom:13px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-  .calc-strip label { font-size:10px; color:var(--text3); font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:.08em; white-space:nowrap; }
-  .calc-strip input { width:64px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:6px; padding:5px 8px; color:var(--text); font-family:'DM Mono',monospace; font-size:13px; outline:none; }
-  .calc-strip input:focus { border-color:rgba(34,197,94,0.4); }
-  .calc-result { font-size:12px; font-weight:700; color:var(--green); font-family:'DM Mono',monospace; flex:1; }
-  .calc-apply { background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); border-radius:6px; color:var(--green); padding:4px 10px; font-size:11px; cursor:pointer; font-family:'DM Mono',monospace; font-weight:700; white-space:nowrap; }
+  .calc-strip { background:rgba(22,163,74,0.05); border:1px solid rgba(22,163,74,0.15); border-radius:10px; padding:10px 13px; margin-bottom:13px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .calc-strip label { font-size:10px; color:var(--text3); font-weight:600; text-transform:uppercase; letter-spacing:.08em; white-space:nowrap; }
+  .calc-strip input { width:64px; background:#fff; border:1px solid var(--border2); border-radius:6px; padding:5px 8px; color:var(--text); font-family:'Montserrat',sans-serif; font-size:13px; outline:none; }
+  .calc-strip input:focus { border-color:rgba(22,163,74,0.4); }
+  .calc-result { font-size:12px; font-weight:700; color:var(--green); flex:1; }
+  .calc-apply { background:rgba(22,163,74,0.12); border:1px solid rgba(22,163,74,0.25); border-radius:6px; color:var(--green); padding:4px 10px; font-size:11px; cursor:pointer; font-family:'Montserrat',sans-serif; font-weight:700; white-space:nowrap; }
 
   /* Bulk CMP modal */
-  .bulk-hint { font-size:11px; color:var(--text3); font-family:'DM Mono',monospace; line-height:1.7; margin-bottom:12px; }
-  .bulk-result { font-size:12px; font-family:'DM Mono',monospace; margin-top:10px; padding:9px 12px; background:rgba(0,0,0,0.2); border-radius:8px; line-height:1.9; }
+  .bulk-hint { font-size:11px; color:var(--text3); line-height:1.7; margin-bottom:12px; }
+  .bulk-result { font-size:12px; margin-top:10px; padding:9px 12px; background:var(--bg3); border-radius:8px; line-height:1.9; }
 
   /* Heatmap */
   .heatmap-wrap { margin-bottom:20px; }
-  .heatmap-title { font-size:10px; letter-spacing:.12em; color:var(--text3); text-transform:uppercase; font-family:'DM Mono',monospace; margin-bottom:10px; }
+  .heatmap-title { font-size:10px; letter-spacing:.12em; color:var(--text3); text-transform:uppercase; font-weight:700; margin-bottom:10px; }
   .heatmap-grid { display:flex; flex-wrap:wrap; gap:6px; }
-  .hm-cell { border-radius:8px; padding:8px 12px; min-width:90px; flex:1; cursor:pointer; transition:transform .15s; }
-  .hm-cell:hover { transform:scale(1.03); }
-  .hm-sym { font-size:11px; font-weight:700; font-family:'DM Mono',monospace; color:#f9fafb; }
-  .hm-pct { font-size:14px; font-weight:700; font-family:'DM Mono',monospace; margin-top:2px; }
+  .hm-cell { border-radius:10px; padding:8px 12px; min-width:90px; flex:1; cursor:pointer; transition:transform .15s, box-shadow .15s; }
+  .hm-cell:hover { transform:scale(1.04); box-shadow: var(--shadow2); }
+  .hm-sym { font-size:11px; font-weight:800; color:#fff; }
+  .hm-pct { font-size:14px; font-weight:700; margin-top:2px; color:#fff; }
 
   /* Trailing SL on card */
-  .trail-row { display:flex; justify-content:space-between; align-items:center; background:rgba(167,139,250,0.07); border:1px solid rgba(167,139,250,0.15); border-radius:6px; padding:5px 8px; margin-bottom:8px; font-family:'DM Mono',monospace; font-size:11px; }
-  .trail-label { color:var(--purple); font-size:9px; text-transform:uppercase; letter-spacing:.1em; }
+  .trail-row { display:flex; justify-content:space-between; align-items:center; background:rgba(124,58,237,0.06); border:1px solid rgba(124,58,237,0.15); border-radius:7px; padding:5px 8px; margin-bottom:8px; font-size:11px; }
+  .trail-label { color:var(--purple); font-size:9px; text-transform:uppercase; letter-spacing:.1em; font-weight:700; }
   .trail-val { color:var(--purple); font-weight:700; }
 
   /* Monthly breakdown */
   .month-section { margin-bottom:2px; }
-  .month-header { display:grid; grid-template-columns:110px 1fr 80px 80px 70px; padding:8px 14px; cursor:pointer; background:rgba(255,255,255,0.03); border-bottom:1px solid var(--border); min-width:680px; align-items:center; user-select:none; transition:background .15s; }
-  .month-header:hover { background:rgba(255,255,255,0.06); }
-  .month-header span { font-size:11px; font-family:'DM Mono',monospace; }
-  .month-name { font-weight:700; color:var(--text2); }
-  .month-toggle { color:var(--text4); font-size:10px; text-align:right; }
-
-  /* Journal extra stat cards */
-  .j-extra-stats { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+  .month-header { display:grid; grid-template-columns:110px 1fr 80px 80px 70px; padding:10px 16px; cursor:pointer; background:#fff; border-bottom:1px solid var(--border); min-width:680px; align-items:center; user-select:none; transition:background .15s; }
+  .month-header:hover { background:#f8fafc; }
+  .month-header span { font-size:11px; font-weight:600; }
+  .month-name { font-weight:700; color:var(--text); }
+  .month-toggle { color:var(--text3); font-size:10px; text-align:right; }
 
   /* Best/worst badges in journal row */
-  .j-row.best-trade  { background:rgba(34,197,94,0.05) !important; border-left:3px solid var(--green); }
-  .j-row.worst-trade { background:rgba(239,68,68,0.05) !important; border-left:3px solid var(--red); }
+  .j-row.best-trade  { background:rgba(22,163,74,0.04) !important; border-left:3px solid var(--green); }
+  .j-row.worst-trade { background:rgba(220,38,38,0.04) !important; border-left:3px solid var(--red); }
   .star-badge { font-size:10px; margin-left:4px; }
 
   /* Metrics */
-  .metrics { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-  .metric { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; flex: 1; min-width: 110px; }
-  .metric.glow { background: rgba(34,197,94,0.06); border-color: rgba(34,197,94,0.25); }
-  .metric-label { font-size: 9px; letter-spacing: .12em; color: var(--text3); text-transform: uppercase; margin-bottom: 6px; font-family: 'DM Mono', monospace; }
-  .metric-value { font-size: 19px; font-weight: 700; font-family: 'DM Mono', monospace; letter-spacing: -.5px; line-height: 1; }
-  .metric-sub { font-size: 10px; color: var(--text3); margin-top: 4px; font-family: 'DM Mono', monospace; }
+  .metrics { display: flex; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
+  .metric { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; flex: 1; min-width: 120px; box-shadow: var(--shadow); }
+  .metric.glow { background: #f0fdf4; border-color: rgba(22,163,74,0.3); }
+  .metric-label { font-size: 9px; letter-spacing: .14em; color: var(--text3); text-transform: uppercase; margin-bottom: 7px; font-weight: 700; }
+  .metric-value { font-size: 20px; font-weight: 800; letter-spacing: -.5px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .metric-sub { font-size: 10px; color: var(--text3); margin-top: 5px; font-weight: 500; }
 
   /* Tabs */
-  .tabs { display: flex; gap: 3px; margin-bottom: 18px; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 4px; width: fit-content; }
-  .tab-btn { background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 7px 16px; color: var(--text3); font-size: 13px; font-weight: 400; cursor: pointer; transition: all .15s; font-family: 'DM Sans', sans-serif; white-space: nowrap; }
-  .tab-btn.active { background: rgba(255,255,255,0.09); border-color: var(--border2); color: #f9fafb; font-weight: 600; }
+  .tabs { display: flex; gap: 3px; margin-bottom: 20px; background: #fff; border: 1px solid var(--border); border-radius: 11px; padding: 4px; width: fit-content; box-shadow: var(--shadow); }
+  .tab-btn { background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 7px 18px; color: var(--text3); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; font-family: 'Montserrat', sans-serif; white-space: nowrap; }
+  .tab-btn.active { background: var(--text); border-color: var(--text); color: #fff; }
 
   /* Grid */
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
 
   /* Card */
-  .card { background: rgba(255,255,255,0.025); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; position: relative; cursor: pointer; transition: all .18s ease; }
-  .card:hover { border-color: var(--border2); transform: translateY(-1px); background: rgba(255,255,255,0.04); }
-  .card-actions { position: absolute; top: 11px; right: 11px; display: flex; gap: 5px; opacity: 0; transition: opacity .15s; }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; position: relative; cursor: pointer; transition: all .2s ease; box-shadow: var(--shadow); }
+  .card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--shadow2); }
+  .card-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 5px; opacity: 0; transition: opacity .15s; }
   .card:hover .card-actions { opacity: 1; }
-  .card-actions .btn-close-trade { background: rgba(34,197,94,0.13); border: 1px solid rgba(34,197,94,0.25); border-radius: 6px; color: var(--green); padding: 3px 8px; font-size: 10px; cursor: pointer; font-family: 'DM Mono', monospace; font-weight: 700; }
-  .card-actions .btn-delete { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.2); border-radius: 6px; color: #f87171; width: 24px; height: 24px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .card-actions .btn-close-trade { background: rgba(22,163,74,0.1); border: 1px solid rgba(22,163,74,0.25); border-radius: 7px; color: var(--green); padding: 4px 9px; font-size: 10px; cursor: pointer; font-family: 'Montserrat',sans-serif; font-weight: 700; }
+  .card-actions .btn-delete { background: rgba(220,38,38,0.07); border: 1px solid rgba(220,38,38,0.18); border-radius: 7px; color: #dc2626; width: 26px; height: 26px; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
-  .card-symbol { font-weight: 700; font-size: 15px; color: #f9fafb; letter-spacing: -.3px; }
-  .card-name { font-size: 11px; color: var(--text3); margin-top: 1px; }
-  .card-pnl-pct { font-size: 18px; font-weight: 700; font-family: 'DM Mono', monospace; }
-  .card-pnl-abs { font-size: 12px; font-family: 'DM Mono', monospace; text-align: right; }
+  .card-symbol { font-weight: 800; font-size: 15px; color: var(--text); letter-spacing: -.3px; }
+  .card-name { font-size: 11px; color: var(--text3); margin-top: 1px; font-weight: 500; }
+  .card-pnl-pct { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .card-pnl-abs { font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; font-weight: 600; }
   .badges { display: flex; gap: 5px; margin-bottom: 12px; flex-wrap: wrap; }
-  .badge { font-size: 10px; border-radius: 4px; padding: 1px 6px; font-family: 'DM Mono', monospace; border: 1px solid; }
-  .badge-sector { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.2); color: var(--indigo); }
-  .badge-days { background: rgba(107,114,128,0.1); border-color: rgba(107,114,128,0.2); color: var(--text2); }
+  .badge { font-size: 10px; border-radius: 5px; padding: 2px 7px; border: 1px solid; font-weight: 700; }
+  .badge-sector { background: rgba(79,70,229,0.07); border-color: rgba(79,70,229,0.18); color: var(--indigo); }
+  .badge-days { background: rgba(71,85,105,0.07); border-color: rgba(71,85,105,0.15); color: var(--text2); }
 
   /* Sparkline */
   .sparkline { margin-bottom: 12px; }
 
   /* Price grid */
   .price-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
-  .price-cell { background: rgba(0,0,0,0.22); border-radius: 7px; padding: 7px 8px; }
-  .price-cell-label { font-size: 9px; color: var(--text3); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 2px; font-family: 'DM Mono', monospace; }
-  .price-cell-value { font-size: 12px; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .price-cell { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; }
+  .price-cell-label { font-size: 9px; color: var(--text3); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 2px; font-weight: 700; }
+  .price-cell-value { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
   .sl-tgt-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
-  .sl-cell  { background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.1); border-radius: 7px; padding: 7px 8px; }
-  .tgt-cell { background: rgba(34,197,94,0.07); border: 1px solid rgba(34,197,94,0.1);  border-radius: 7px; padding: 7px 8px; }
-  .rr-cell  { background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.1); border-radius: 7px; padding: 7px 8px; }
-  .mini-label { font-size: 9px; color: var(--text2); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 2px; font-family: 'DM Mono', monospace; }
+  .sl-cell  { background: rgba(220,38,38,0.05); border: 1px solid rgba(220,38,38,0.12); border-radius: 8px; padding: 7px 9px; }
+  .tgt-cell { background: rgba(22,163,74,0.05); border: 1px solid rgba(22,163,74,0.12); border-radius: 8px; padding: 7px 9px; }
+  .rr-cell  { background: rgba(180,83,9,0.05); border: 1px solid rgba(180,83,9,0.12); border-radius: 8px; padding: 7px 9px; }
+  .mini-label { font-size: 9px; color: var(--text3); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 2px; font-weight: 700; }
 
-  .card-footer { display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; }
-  .card-footer span { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
-  .card-footer span b { color: var(--text2); font-weight: 500; }
+  /* Break-even & R row on card */
+  .be-row { display:flex; justify-content:space-between; align-items:center; background:#fafbfc; border:1px solid var(--border); border-radius:7px; padding:5px 9px; margin-bottom:8px; font-size:11px; }
+  .be-label { color:var(--text3); font-size:9px; text-transform:uppercase; letter-spacing:.1em; font-weight:700; }
+  .be-val   { font-weight:700; font-variant-numeric:tabular-nums; }
+  .r-chip   { font-size:10px; font-weight:800; padding:2px 8px; border-radius:20px; font-variant-numeric:tabular-nums; }
+
+  .card-footer { display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 9px; }
+  .card-footer span { font-size: 11px; color: var(--text3); font-weight: 500; }
+  .card-footer span b { color: var(--text2); font-weight: 700; }
 
   /* Empty state */
   .empty { text-align: center; padding: 80px 0; }
   .empty-icon { font-size: 38px; margin-bottom: 10px; }
-  .empty-text { font-size: 14px; color: var(--text3); }
+  .empty-text { font-size: 14px; color: var(--text3); font-weight: 500; }
 
   /* Modal */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.78); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
-  .modal { background: var(--bg2); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto; }
-  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
-  .modal-title { font-weight: 700; font-size: 15px; color: var(--text); }
-  .modal-close { background: none; border: none; color: var(--text3); font-size: 22px; cursor: pointer; line-height: 1; padding: 2px 6px; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.5); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 26px; width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(15,23,42,0.15); }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .modal-title { font-weight: 800; font-size: 16px; color: var(--text); }
+  .modal-close { background: #f1f5f9; border: none; color: var(--text3); font-size: 18px; cursor: pointer; line-height: 1; padding: 4px 8px; border-radius: 6px; }
+  .modal-close:hover { background: #e2e8f0; color: var(--text); }
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
-  .form-group { margin-bottom: 13px; }
+  .form-group { margin-bottom: 14px; }
   .form-group.full { grid-column: 1/-1; }
-  .form-label { display: block; font-size: 10px; color: var(--text2); margin-bottom: 5px; letter-spacing: .08em; text-transform: uppercase; font-family: 'DM Mono', monospace; }
-  .form-input, .form-select, .form-textarea { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 9px 12px; color: var(--text); font-size: 14px; outline: none; font-family: 'DM Mono', monospace; transition: border-color .15s, box-shadow .15s; }
-  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: rgba(34,197,94,0.5); box-shadow: 0 0 0 2px rgba(34,197,94,0.08); }
-  .form-select { appearance: none; }
-  .form-textarea { resize: vertical; min-height: 70px; line-height: 1.55; }
-  .form-hint { font-size: 11px; color: var(--text4); margin-bottom: 13px; font-family: 'DM Mono', monospace; }
-  .modal-footer { display: flex; gap: 10px; margin-top: 4px; }
-  .modal-footer .btn { flex: 1; padding: 10px; font-size: 13px; }
+  .form-label { display: block; font-size: 10px; color: var(--text2); margin-bottom: 5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; }
+  .form-input, .form-select, .form-textarea { width: 100%; background: #f8fafc; border: 1px solid var(--border2); border-radius: 9px; padding: 10px 13px; color: var(--text); font-size: 14px; outline: none; font-family: 'Montserrat', sans-serif; font-weight: 500; transition: border-color .15s, box-shadow .15s; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: rgba(22,163,74,0.5); box-shadow: 0 0 0 3px rgba(22,163,74,0.08); background: #fff; }
+  .form-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+  .form-textarea { resize: vertical; min-height: 70px; line-height: 1.6; }
+  .form-hint { font-size: 11px; color: var(--text3); margin-bottom: 14px; font-weight: 500; }
+  .modal-footer { display: flex; gap: 10px; margin-top: 6px; }
+  .modal-footer .btn { flex: 1; padding: 11px; font-size: 13px; }
 
   /* PnL Preview */
-  .pnl-preview { border-radius: 9px; padding: 11px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; }
-  .pnl-preview-label { font-size: 9px; color: var(--text3); font-family: 'DM Mono', monospace; text-transform: uppercase; margin-bottom: 3px; }
-  .pnl-preview-value { font-size: 20px; font-weight: 700; font-family: 'DM Mono', monospace; }
+  .pnl-preview { border-radius: 10px; padding: 12px 15px; margin-bottom: 10px; display: flex; justify-content: space-between; }
+  .pnl-preview-label { font-size: 9px; color: var(--text3); text-transform: uppercase; margin-bottom: 3px; font-weight: 700; letter-spacing:.1em; }
+  .pnl-preview-value { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
 
   /* Charges breakdown */
-  .charges-box { background: rgba(251,191,36,0.05); border: 1px solid rgba(251,191,36,0.15); border-radius: 9px; padding: 10px 13px; margin-bottom: 13px; }
-  .charges-title { font-size: 9px; color: var(--yellow); font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center; }
+  .charges-box { background: #fffbeb; border: 1px solid rgba(180,83,9,0.2); border-radius: 10px; padding: 11px 14px; margin-bottom: 13px; }
+  .charges-title { font-size: 9px; color: var(--yellow); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center; font-weight:700; }
   .charges-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px 8px; }
-  .charges-row { display:flex; justify-content:space-between; font-size:11px; font-family:'DM Mono',monospace; padding:2px 0; }
+  .charges-row { display:flex; justify-content:space-between; font-size:11px; padding:2px 0; font-weight:500; }
   .charges-label { color: var(--text3); }
-  .charges-val { color: var(--text2); }
-  .charges-total-row { display:flex; justify-content:space-between; font-size:12px; font-family:'DM Mono',monospace; padding:6px 0 0; margin-top:4px; border-top:1px solid rgba(251,191,36,0.15); }
-  .charges-total-label { color: var(--yellow); font-weight:700; }
-  .charges-total-val { color: var(--yellow); font-weight:700; }
-  .net-pnl-preview { border-radius:9px; padding:10px 14px; margin-bottom:13px; display:flex; justify-content:space-between; border:2px solid; }
-  .net-pnl-label { font-size:9px; color:var(--text3); font-family:'DM Mono',monospace; text-transform:uppercase; margin-bottom:3px; }
-  .net-pnl-value { font-size:20px; font-weight:700; font-family:'DM Mono',monospace; }
+  .charges-val { color: var(--text2); font-weight:600; font-variant-numeric:tabular-nums; }
+  .charges-total-row { display:flex; justify-content:space-between; font-size:12px; padding:6px 0 0; margin-top:4px; border-top:1px solid rgba(180,83,9,0.15); }
+  .charges-total-label { color: var(--yellow); font-weight:800; }
+  .charges-total-val { color: var(--yellow); font-weight:800; font-variant-numeric:tabular-nums; }
+  .net-pnl-preview { border-radius:10px; padding:12px 15px; margin-bottom:13px; display:flex; justify-content:space-between; border:2px solid; }
+  .net-pnl-label { font-size:9px; color:var(--text3); text-transform:uppercase; margin-bottom:3px; font-weight:700; letter-spacing:.1em; }
+  .net-pnl-value { font-size:20px; font-weight:800; font-variant-numeric:tabular-nums; }
 
   /* Summary box inside close modal */
-  .trade-summary { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .ts-label { font-size: 9px; color: var(--text3); font-family: 'DM Mono', monospace; text-transform: uppercase; margin-bottom: 3px; }
-  .ts-value { font-size: 13px; font-weight: 600; color: var(--text); font-family: 'DM Mono', monospace; }
+  .trade-summary { background: #f8fafc; border: 1px solid var(--border); border-radius: 11px; padding: 12px 15px; margin-bottom: 18px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .ts-label { font-size: 9px; color: var(--text3); text-transform: uppercase; margin-bottom: 3px; font-weight: 700; letter-spacing:.1em; }
+  .ts-value { font-size: 13px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 
   /* Journal */
-  .journal-stats { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
-  .j-table { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; overflow-x: auto; }
-  .j-table-head { display: grid; grid-template-columns: 75px minmax(0,1fr) 80px 80px 50px 50px 90px 75px 85px; padding: 9px 14px; border-bottom: 1px solid var(--border); min-width: 680px; }
-  .j-table-head span { font-size: 9px; color: var(--text4); letter-spacing: .12em; text-transform: uppercase; font-family: 'DM Mono', monospace; }
-  .j-row { display: grid; grid-template-columns: 75px minmax(0,1fr) 80px 80px 50px 50px 90px 75px 85px; padding: 10px 14px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer; transition: background .15s; min-width: 680px; }
+  .journal-stats { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .j-table { background: #fff; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; overflow-x: auto; box-shadow: var(--shadow); }
+  .j-table-head { display: grid; grid-template-columns: 75px minmax(0,1fr) 80px 80px 50px 50px 90px 75px 85px; padding: 10px 16px; border-bottom: 1px solid var(--border); min-width: 680px; background:#f8fafc; }
+  .j-table-head span { font-size: 9px; color: var(--text3); letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
+  .j-row { display: grid; grid-template-columns: 75px minmax(0,1fr) 80px 80px 50px 50px 90px 75px 85px; padding: 11px 16px; align-items: center; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .15s; min-width: 680px; }
   .j-row:last-child { border-bottom: none; }
-  .j-row:hover { background: rgba(255,255,255,0.035); }
-  .j-row span { font-size: 12px; font-family: 'DM Mono', monospace; }
-  .j-symbol { font-weight: 700; font-size: 13px !important; color: #f9fafb; }
+  .j-row:hover { background: #f8fafc; }
+  .j-row span { font-size: 12px; font-weight: 500; }
+  .j-symbol { font-weight: 800; font-size: 13px !important; color: var(--text); }
   .j-name { font-size: 11px !important; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .reason-badge { font-size: 9px; border-radius: 4px; padding: 2px 6px; font-family: 'DM Mono', monospace; border: 1px solid; white-space: nowrap; }
+  .reason-badge { font-size: 9px; border-radius: 5px; padding: 2px 7px; border: 1px solid; white-space: nowrap; font-weight: 700; }
 
   /* Journal detail */
   .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
-  .detail-cell { background: rgba(0,0,0,0.2); border-radius: 8px; padding: 8px 11px; }
-  .detail-label { font-size: 9px; color: var(--text3); font-family: 'DM Mono', monospace; text-transform: uppercase; margin-bottom: 3px; letter-spacing: .08em; }
-  .detail-value { font-size: 13px; color: var(--text); font-family: 'DM Mono', monospace; font-weight: 600; }
-  .pnl-box { border-radius: 10px; padding: 13px 15px; margin-bottom: 13px; display: flex; justify-content: space-between; }
+  .detail-cell { background: #f8fafc; border: 1px solid var(--border); border-radius: 9px; padding: 9px 12px; }
+  .detail-label { font-size: 9px; color: var(--text3); text-transform: uppercase; margin-bottom: 3px; letter-spacing: .1em; font-weight: 700; }
+  .detail-value { font-size: 13px; color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pnl-box { border-radius: 11px; padding: 14px 16px; margin-bottom: 14px; display: flex; justify-content: space-between; }
 
   /* Risk Heat */
   .risk-heat-row { display:flex; align-items:center; gap:6px; margin-bottom:8px; }
-  .risk-heat-label { font-size:9px; color:var(--text3); font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:.08em; white-space:nowrap; }
-  .risk-heat-bar-track { flex:1; height:4px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; }
+  .risk-heat-label { font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:.08em; white-space:nowrap; font-weight:700; }
+  .risk-heat-bar-track { flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
   .risk-heat-bar-fill  { height:100%; border-radius:2px; transition:width .3s; }
-  .risk-heat-val { font-size:10px; font-weight:700; font-family:'DM Mono',monospace; white-space:nowrap; min-width:36px; text-align:right; }
+  .risk-heat-val { font-size:10px; font-weight:700; white-space:nowrap; min-width:36px; text-align:right; font-variant-numeric:tabular-nums; }
 
   /* Equity Curve */
-  .equity-chart { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:14px; padding:16px 18px; margin-bottom:16px; }
-  .equity-chart-title { font-size:10px; letter-spacing:.12em; color:var(--text3); text-transform:uppercase; font-family:'DM Mono',monospace; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center; }
-  .equity-chart-meta { font-size:11px; color:var(--text2); font-family:'DM Mono',monospace; margin-bottom:12px; display:flex; gap:16px; flex-wrap:wrap; }
+  .equity-chart { background:#fff; border:1px solid var(--border); border-radius:16px; padding:18px 20px; margin-bottom:16px; box-shadow:var(--shadow); }
+  .equity-chart-title { font-size:10px; letter-spacing:.12em; color:var(--text3); text-transform:uppercase; font-weight:700; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center; }
+  .equity-chart-meta { font-size:11px; color:var(--text2); margin-bottom:12px; display:flex; gap:16px; flex-wrap:wrap; font-weight:600; }
 
   /* Drawdown */
-  .dd-strip { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
-  .dd-card { flex:1; min-width:100px; background:rgba(239,68,68,0.07); border:1px solid rgba(239,68,68,0.15); border-radius:10px; padding:10px 13px; }
-  .dd-label { font-size:9px; color:#fca5a5; font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px; }
-  .dd-value { font-size:18px; font-weight:700; color:#ef4444; font-family:'DM Mono',monospace; }
-  .dd-sub   { font-size:10px; color:var(--text3); font-family:'DM Mono',monospace; margin-top:2px; }
+  .dd-strip { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+  .dd-card { flex:1; min-width:100px; background:#fff9f9; border:1px solid rgba(220,38,38,0.15); border-radius:12px; padding:11px 14px; }
+  .dd-label { font-size:9px; color:#dc2626; text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px; font-weight:700; }
+  .dd-value { font-size:18px; font-weight:800; color:#dc2626; font-variant-numeric:tabular-nums; }
+  .dd-sub   { font-size:10px; color:var(--text3); margin-top:2px; font-weight:500; }
 
-  /* MAE/MFE */
-  .mae-mfe-section { margin-top:12px; }
-  .mae-mfe-title { font-size:9px; color:var(--text3); font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px; }
-  .mae-mfe-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
-  .mae-cell { background:rgba(239,68,68,0.07); border:1px solid rgba(239,68,68,0.15); border-radius:8px; padding:9px 12px; }
-  .mfe-cell { background:rgba(34,197,94,0.07); border:1px solid rgba(34,197,94,0.15); border-radius:8px; padding:9px 12px; }
-  .mae-mfe-label { font-size:9px; font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:.08em; margin-bottom:3px; }
-  .mae-cell .mae-mfe-label { color:#fca5a5; }
-  .mfe-cell .mae-mfe-label { color:#86efac; }
-  .mae-mfe-val { font-size:14px; font-weight:700; font-family:'DM Mono',monospace; }
-  .mae-cell .mae-mfe-val { color:#ef4444; }
-  .mfe-cell .mae-mfe-val { color:#22c55e; }
-  .mae-mfe-sub { font-size:10px; color:var(--text3); font-family:'DM Mono',monospace; margin-top:2px; }
-  .efficiency-bar { background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:8px; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; }
-  .eff-label { font-size:9px; color:var(--text3); font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:.08em; }
-  .eff-val { font-size:13px; font-weight:700; font-family:'DM Mono',monospace; }
-
-  /* Mobile: hide the hover-only actions, show a dedicated bottom strip instead */
+  /* Mobile */
   .card-mobile-actions { display: none; }
   @media (max-width: 768px) {
     .card-actions { display: none !important; }
@@ -299,22 +289,22 @@
       border-top: 1px solid var(--border);
     }
     .card-mobile-actions .btn-close-trade {
-      flex: 1; background: rgba(34,197,94,0.13); border: 1px solid rgba(34,197,94,0.3);
-      border-radius: 8px; color: var(--green); padding: 8px 12px; font-size: 12px;
-      cursor: pointer; font-family: 'DM Mono', monospace; font-weight: 700; text-align: center;
+      flex: 1; background: rgba(22,163,74,0.1); border: 1px solid rgba(22,163,74,0.25);
+      border-radius: 9px; color: var(--green); padding: 9px 12px; font-size: 12px;
+      cursor: pointer; font-family: 'Montserrat', sans-serif; font-weight: 700; text-align: center;
     }
     .card-mobile-actions .btn-delete {
-      background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.25);
-      border-radius: 8px; color: #f87171; width: 40px; font-size: 18px;
+      background: rgba(220,38,38,0.07); border: 1px solid rgba(220,38,38,0.18);
+      border-radius: 9px; color: #dc2626; width: 42px; font-size: 18px;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
   }
 
   /* Responsive */
   @media (max-width: 600px) {
-    .app { padding: 14px 14px; }
+    .app { padding: 14px 16px; }
     .header-left h1 { font-size: 20px; }
-    .metric-value { font-size: 16px; }
+    .metric-value { font-size: 17px; }
     .trade-summary { grid-template-columns: 1fr 1fr; }
     .form-grid { grid-template-columns: 1fr; }
     .form-grid .form-group { grid-column: 1; }
@@ -370,7 +360,8 @@
       <div class="form-group"><label class="form-label">Current Price / CMP (₹)</label><input class="form-input" id="f-cmp" type="number" placeholder="0.00"></div>
       <div class="form-group"><label class="form-label">Quantity</label><input class="form-input" id="f-qty" type="number" placeholder="0"></div>
       <div class="form-group"><label class="form-label">Entry Date</label><input class="form-input" id="f-date" type="date"></div>
-      <div class="form-group"><label class="form-label">Stop Loss (₹)</label><input class="form-input" id="f-sl" type="number" placeholder="0.00" oninput="onCalcInput()"></div>
+      <div class="form-group"><label class="form-label">Initial Stop Loss (₹) <span style="color:var(--text3);font-size:9px">for R calc</span></label><input class="form-input" id="f-sl" type="number" placeholder="0.00" oninput="onCalcInput()"></div>
+      <div class="form-group"><label class="form-label">Current SL (₹) <span style="color:var(--text3);font-size:9px">trailing</span></label><input class="form-input" id="f-csl" type="number" placeholder="same as initial"></div>
       <div class="form-group"><label class="form-label">Target (₹)</label><input class="form-input" id="f-tgt" type="number" placeholder="0.00"></div>
       <div class="form-group"><label class="form-label">Trailing SL %</label><input class="form-input" id="f-trail" type="number" placeholder="e.g. 5" min="0" step="0.5"></div>
       <div class="form-group full"><label class="form-label">Sector</label>
@@ -441,9 +432,6 @@
           <option>Trailing Stop</option><option>News Event</option><option>Other</option>
         </select>
       </div>
-      <div class="form-group"><label class="form-label">Worst Price Hit — MAE ₹ <span style="color:var(--text4);font-size:9px">optional</span></label><input class="form-input" id="c-mae" type="number" placeholder="Lowest price the stock reached"></div>
-      <div class="form-group"><label class="form-label">Best Price Hit — MFE ₹ <span style="color:var(--text4);font-size:9px">optional</span></label><input class="form-input" id="c-mfe" type="number" placeholder="Highest price the stock reached"></div>
-      <div class="form-group full"><label class="form-label">Notes / Learnings</label><textarea class="form-textarea" id="c-notes" placeholder="What did you learn? Why did you exit?"></textarea></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-close')">Cancel</button>
@@ -561,8 +549,9 @@ function restoreData(event) {
 //  Called whenever CMP changes (inline edit, bulk update, save position)
 // ══════════════════════════════════════════
 function checkAlerts(p) {
-  const slHit  = p.stopLoss && p.cmp <= p.stopLoss;
-  const tgtHit = p.target   && p.cmp >= p.target;
+  const activeSL = p.currentSL || p.stopLoss;
+  const slHit  = activeSL && p.cmp <= activeSL;
+  const tgtHit = p.target  && p.cmp >= p.target;
   if (slHit)  showToast('sl',  `⚠️ SL HIT — ${p.symbol}`,  `CMP ₹${fmt(p.cmp)} ≤ SL ₹${fmt(p.stopLoss)}\nConsider closing this position.`);
   if (tgtHit) showToast('tgt', `🎯 TARGET HIT — ${p.symbol}`, `CMP ₹${fmt(p.cmp)} ≥ TGT ₹${fmt(p.target)}\nConsider booking profits.`);
   // Push notification
@@ -703,8 +692,13 @@ function daysBetween(d1,d2) { return Math.max(0,Math.round((new Date(d2)-new Dat
 function reasonColor(r) {
   return {'Target Hit':'#22c55e','Stop Loss Hit':'#ef4444','Manual Exit':'#60a5fa','Trailing Stop':'#a78bfa','News Event':'#fbbf24','Other':'#9ca3af'}[r]||'#9ca3af';
 }
-function col(w) { return w?'#22c55e':'#ef4444'; }
+function col(w) { return w?'var(--green)':'var(--red)'; }
 function sign(n) { return n>=0?'+':''; }
+function calcR(entry, exitOrCmp, initialSL) {
+  if(!initialSL||initialSL>=entry) return '—';
+  const r=(exitOrCmp-entry)/(entry-initialSL);
+  return (r>=0?'+':'')+r.toFixed(2)+'R';
+}
 
 function sparklineSVG(entry,cmp,w=80,h=30) {
   const pts=[entry];
@@ -824,36 +818,50 @@ function renderPositions() {
 function cardHTML(p) {
   const pnl=(p.cmp-p.entry)*p.qty;
   const pnlPct=((p.cmp-p.entry)/p.entry)*100;
-  const risk=Math.max(0,(p.entry-p.stopLoss)*p.qty);
+  const activeSL = p.currentSL||p.stopLoss;
+  const risk=Math.max(0,(p.entry-p.stopLoss)*p.qty); // initial SL risk
   const rrr=p.target&&p.stopLoss?((p.target-p.entry)/Math.max(p.entry-p.stopLoss,0.01)).toFixed(1):null;
   const toPct=p.target?((p.target-p.cmp)/p.cmp*100):null;
   const isW=p.cmp>=p.entry, c=col(isW);
   const held=daysBetween(p.entryDate,today());
-  const slHit=p.stopLoss&&p.cmp<=p.stopLoss;
+  const slHit=activeSL&&p.cmp<=activeSL;
   const tgtHit=p.target&&p.cmp>=p.target;
   const cardClass=slHit?' sl-hit':tgtHit?' tgt-hit':'';
   const slBadge=slHit?`<span class="badge badge-sl">⚠ SL HIT</span>`:'';
   const tgtBadge=tgtHit?`<span class="badge badge-tgt">🎯 TGT HIT</span>`:'';
-  // Trailing SL
+
+  // Break-even price (accounting for Dhan delivery charges)
+  const beCharges=calcCharges(p.entry,p.cmp,p.qty,'delivery');
+  const breakEven=p.entry + beCharges.total/p.qty;
+  const beColor=p.cmp>=breakEven?'var(--green)':'var(--red)';
+  const beRow=`<div class="be-row">
+    <span><span class="be-label">Break-even</span> <span class="be-val" style="color:${beColor}">₹${fmt(breakEven)}</span></span>
+    ${p.stopLoss?`<span class="r-chip" style="background:${pnlPct>=0?'rgba(22,163,74,0.1)':'rgba(220,38,38,0.1)'};color:${pnlPct>=0?'var(--green)':'var(--red)'}">R ${calcR(p.entry,p.cmp,p.stopLoss)}</span>`:''}
+  </div>`;
+
+  // Trailing SL row — show both if they differ
   const trailRow=p.trailPct>0?`
     <div class="trail-row">
       <span class="trail-label">Trail SL ${p.trailPct}%</span>
       <span class="trail-val">₹${fmt(p.cmp*(1-p.trailPct/100))}</span>
-      <span style="font-size:9px;color:var(--text4);font-family:'DM Mono',monospace">↑ from CMP</span>
     </div>`:'';
-  // Risk Heat — capital at risk from SL as % of total capital
+
+  // Risk Heat — capital at risk from initial SL as % of total capital
   const capRisk=state.capital>0?Math.max(0,(p.entry-p.stopLoss)*p.qty)/state.capital*100:0;
-  const riskHeatColor=capRisk<0.5?'#22c55e':capRisk<1.5?'#f97316':'#ef4444';
+  const riskHeatColor=capRisk<0.5?'var(--green)':capRisk<1.5?'var(--orange)':'var(--red)';
   const riskHeatLabel=capRisk<0.5?'LOW':capRisk<1.5?'MED':'HIGH';
-  const riskBarWidth=Math.min(capRisk/3*100,100); // 3% = full bar
+  const riskBarWidth=Math.min(capRisk/3*100,100);
   const riskHeatRow=p.stopLoss?`
     <div class="risk-heat-row">
       <span class="risk-heat-label">Risk Heat</span>
-      <div class="risk-heat-bar-track">
-        <div class="risk-heat-bar-fill" style="width:${riskBarWidth}%;background:${riskHeatColor}"></div>
-      </div>
-      <span class="risk-heat-val" style="color:${riskHeatColor}">${fmt(capRisk,2)}% <span style="font-size:9px;opacity:.75">${riskHeatLabel}</span></span>
+      <div class="risk-heat-bar-track"><div class="risk-heat-bar-fill" style="width:${riskBarWidth}%;background:${riskHeatColor}"></div></div>
+      <span class="risk-heat-val" style="color:${riskHeatColor}">${fmt(capRisk,2)}% <span style="font-size:9px;opacity:.7">${riskHeatLabel}</span></span>
     </div>`:'';
+
+  // Show current SL badge if it differs from initial SL
+  const cslNote=p.currentSL&&p.currentSL!==p.stopLoss
+    ?`<span class="badge" style="background:rgba(124,58,237,0.07);border-color:rgba(124,58,237,0.2);color:var(--purple)">CSL ₹${fmt(p.currentSL)}</span>`:''
+
   return `
   <div class="card${cardClass}" onclick="openEditModal(${p.id})">
     <div class="card-actions">
@@ -867,28 +875,29 @@ function cardHTML(p) {
     <div class="badges">
       <span class="badge badge-sector">${p.sector}</span>
       <span class="badge badge-days">${held}d held</span>
-      ${slBadge}${tgtBadge}
+      ${cslNote}${slBadge}${tgtBadge}
     </div>
     <div class="sparkline">${sparklineSVG(p.entry,p.cmp)}</div>
     <div class="price-grid">
-      <div class="price-cell"><div class="price-cell-label">Entry</div><div class="price-cell-value" style="color:#e5e7eb">₹${fmt(p.entry)}</div></div>
+      <div class="price-cell"><div class="price-cell-label">Entry</div><div class="price-cell-value" style="color:var(--text)">₹${fmt(p.entry)}</div></div>
       <div class="price-cell cmp-cell" onclick="openInlineCMP(${p.id},event)" title="Tap to edit CMP">
         <div class="price-cell-label">CMP</div>
         <div class="price-cell-value" style="color:${c}">₹${fmt(p.cmp)}</div>
       </div>
-      <div class="price-cell"><div class="price-cell-label">Qty</div><div class="price-cell-value" style="color:#e5e7eb">${p.qty}</div></div>
+      <div class="price-cell"><div class="price-cell-label">Qty</div><div class="price-cell-value" style="color:var(--text)">${p.qty}</div></div>
     </div>
+    ${beRow}
     ${trailRow}
     ${riskHeatRow}
     <div class="sl-tgt-grid">
-      <div class="sl-cell"><div class="mini-label">SL</div><div style="font-size:12px;font-weight:600;color:${slHit?'#ff6b6b':'#fca5a5'};font-family:'DM Mono',monospace">₹${fmt(p.stopLoss)}</div></div>
-      <div class="tgt-cell"><div class="mini-label">TGT</div><div style="font-size:12px;font-weight:600;color:#86efac;font-family:'DM Mono',monospace">${p.target?'₹'+fmt(p.target):'—'}</div></div>
-      <div class="rr-cell"><div class="mini-label">R:R</div><div style="font-size:12px;font-weight:600;color:#fde68a;font-family:'DM Mono',monospace">${rrr?'1:'+rrr:'—'}</div></div>
+      <div class="sl-cell"><div class="mini-label">Init SL</div><div style="font-size:12px;font-weight:700;color:${slHit?'var(--red)':'#dc2626'}">${p.stopLoss?'₹'+fmt(p.stopLoss):'—'}</div></div>
+      <div class="tgt-cell"><div class="mini-label">TGT</div><div style="font-size:12px;font-weight:700;color:#15803d">${p.target?'₹'+fmt(p.target):'—'}</div></div>
+      <div class="rr-cell"><div class="mini-label">R:R</div><div style="font-size:12px;font-weight:700;color:var(--yellow)">${rrr?'1:'+rrr:'—'}</div></div>
     </div>
     <div class="card-footer">
       <span>Val: <b>${fmtC(p.cmp*p.qty)}</b></span>
-      <span>Risk: <b style="color:#f97316">${fmtC(risk)}</b></span>
-      ${toPct!==null?`<span>→TGT: <b style="color:#a78bfa">${fmt(toPct,1)}%</b></span>`:''}
+      <span>Risk: <b style="color:var(--orange)">${fmtC(risk)}</b></span>
+      ${toPct!==null?`<span>→TGT: <b style="color:var(--purple)">${fmt(toPct,1)}%</b></span>`:''}
     </div>
     <div class="card-mobile-actions">
       <button class="btn-close-trade" onclick="event.stopPropagation();openCloseModal(${p.id})">⬛ CLOSE TRADE</button>
@@ -909,8 +918,9 @@ function renderJournal() {
   // Expectancy = (winRate% * avgWin) + (lossRate% * avgLoss)
   const expectancy=js.length>0?((wins.length/js.length)*avgW)+((losses.length/js.length)*avgL):0;
 
-  // Total charges paid
-  const totalChargesPaid = js.reduce((s,j)=>s+(j.charges?.total||0),0);
+  // Avg R-multiple
+  const rTrades=js.filter(j=>j.rMultiple!=null);
+  const avgR=rTrades.length>0?rTrades.reduce((s,j)=>s+j.rMultiple,0)/rTrades.length:null;
 
   // Avg holding days: winners vs losers
   const avgHoldW=wins.length>0?wins.reduce((s,j)=>s+j.holdingDays,0)/wins.length:0;
@@ -942,8 +952,9 @@ function renderJournal() {
     {label:'Profit Factor', value:pf>0?fmt(pf,2):'—',                sub:'win÷loss avg',                      color:pf>=1.5?'#22c55e':pf>=1?'#fbbf24':'#ef4444'},
     {label:'Streak',        value:streakLabel,                         sub:'current run',                       color:streakColor},
     {label:'Avg Hold (W)',  value:avgHoldW?`${avgHoldW.toFixed(1)}d`:'—', sub:'winning trades',               color:'#22c55e'},
-    {label:'Avg Hold (L)',  value:avgHoldL?`${avgHoldL.toFixed(1)}d`:'—', sub:'losing trades',                color:'#ef4444'},
-    {label:'Total Charges', value:totalChargesPaid>0?`-${fmtC(totalChargesPaid)}`:'—', sub:'all brokerage & tax', color:'#fbbf24'},
+    {label:'Avg Hold (L)',  value:avgHoldL?`${avgHoldL.toFixed(1)}d`:'—', sub:'losing trades',                color:'var(--red)'},
+    {label:'Avg R-Multiple',value:avgR!=null?`${avgR>=0?'+':''}${avgR.toFixed(2)}R`:'—', sub:`${rTrades.length} tracked trades`, color:avgR>=0?'var(--green)':'var(--red)'},
+    {label:'Total Charges', value:js.reduce((s,j)=>s+(j.charges?.total||0),0)>0?`-${fmtC(js.reduce((s,j)=>s+(j.charges?.total||0),0))}`:'—', sub:'all brokerage & tax', color:'var(--yellow)'},
   ];
 
   const statsHTML=`<div class="journal-stats">${stats.map(s=>`
@@ -1159,17 +1170,20 @@ function renderJournal() {
       const star=isBest?'<span class="star-badge">🏆</span>':isWorst?'<span class="star-badge">💀</span>':'';
       const capImpact=j.capitalImpactPct!=null?`${sign(j.capitalImpactPct)}${fmt(Math.abs(j.capitalImpactPct),2)}%`:'—';
       const capColor=j.capitalImpactPct>=0?'#22c55e':'#ef4444';
+      const rBadge=j.rMultiple!=null
+        ?`<span style="font-size:10px;font-weight:800;padding:1px 7px;border-radius:12px;background:${j.rMultiple>=0?'rgba(22,163,74,0.1)':'rgba(220,38,38,0.1)'};color:${j.rMultiple>=0?'var(--green)':'var(--red)'}">${j.rMultiple>=0?'+':''}${j.rMultiple.toFixed(2)}R</span>`
+        :'<span style="color:var(--text4)">—</span>';
       return `<div class="j-row${rowClass}" onclick="openJournalDetail(${j.id})">
         <span class="j-symbol">${j.symbol}${star}</span>
         <span class="j-name">${j.name}</span>
-        <span style="color:#e5e7eb">₹${fmt(j.entryPrice)}</span>
-        <span style="color:#e5e7eb">₹${fmt(j.exitPrice)}</span>
-        <span style="color:#9ca3af">${j.qty}</span>
-        <span style="color:#9ca3af">${j.holdingDays}d</span>
-        <span style="color:${c};font-weight:700" title="${j.charges?`Gross: ${sign(j.grossPnl||0)}${fmtC(j.grossPnl||0)} | Charges: -₹${fmt(j.charges.total,2)}`:'No charge data'}">${sign(j.pnl)}${fmtC(j.pnl)}${j.charges?`<span style="font-size:9px;color:var(--yellow);margin-left:2px" title="Charges: -₹${fmt(j.charges.total,2)}">⚡</span>`:''}
+        <span style="color:var(--text)">₹${fmt(j.entryPrice)}</span>
+        <span style="color:var(--text)">₹${fmt(j.exitPrice)}</span>
+        <span style="color:var(--text2)">${j.qty}</span>
+        <span style="color:var(--text2)">${j.holdingDays}d</span>
+        <span style="color:${c};font-weight:700" title="${j.charges?`Gross: ${sign(j.grossPnl||0)}${fmtC(j.grossPnl||0)} | Charges: -₹${fmt(j.charges.total,2)}`:'No charge data'}">${sign(j.pnl)}${fmtC(j.pnl)}${j.charges?`<span style="font-size:9px;color:var(--yellow);margin-left:2px">⚡</span>`:''}
         </span>
         <span style="color:${c}">${sign(j.pnlPct)}${fmt(j.pnlPct,2)}%</span>
-        <span style="color:${capColor};font-weight:600">${capImpact}</span>
+        <span>${rBadge}</span>
         <span><span class="reason-badge" style="background:${rc}1a;border-color:${rc}44;color:${rc}">${j.reason}</span></span>
       </div>`;
     }).join('');
@@ -1222,7 +1236,7 @@ function openAddModal() {
   editingId=null;
   document.getElementById('modal-add-title').textContent='Add Position';
   document.getElementById('btn-save-pos').textContent='Add Position';
-  ['symbol','name','entry','cmp','qty','sl','tgt'].forEach(id=>document.getElementById('f-'+id).value='');
+  ['symbol','name','entry','cmp','qty','sl','csl','tgt'].forEach(id=>document.getElementById('f-'+id).value='');
   document.getElementById('f-date').value=today();
   document.getElementById('f-sector').value='Other';
   document.getElementById('f-riskpct').value='1';
@@ -1243,6 +1257,7 @@ function openEditModal(id) {
   document.getElementById('f-qty').value=p.qty;
   document.getElementById('f-date').value=p.entryDate;
   document.getElementById('f-sl').value=p.stopLoss;
+  document.getElementById('f-csl').value=p.currentSL||'';
   document.getElementById('f-tgt').value=p.target;
   document.getElementById('f-trail').value=p.trailPct||'';
   document.getElementById('f-sector').value=p.sector;
@@ -1258,6 +1273,7 @@ function savePosition() {
   const cmp=+document.getElementById('f-cmp').value||entry;
   const qty=+document.getElementById('f-qty').value;
   const sl=+document.getElementById('f-sl').value;
+  const csl=+document.getElementById('f-csl').value||sl; // default to initial SL
   const tgt=+document.getElementById('f-tgt').value;
   const trail=+document.getElementById('f-trail').value||0;
   const sec=document.getElementById('f-sector').value;
@@ -1265,11 +1281,10 @@ function savePosition() {
   if(!sym||!entry||!qty){alert('Symbol, Entry Price and Quantity are required.');return;}
   if(editingId){
     const p=state.positions.find(x=>x.id===editingId);
-    Object.assign(p,{symbol:sym,name,entry,cmp,qty,stopLoss:sl,target:tgt,trailPct:trail,sector:sec,entryDate:date});
+    Object.assign(p,{symbol:sym,name,entry,cmp,qty,stopLoss:sl,currentSL:csl,target:tgt,trailPct:trail,sector:sec,entryDate:date});
     // Don't call checkAlerts on edit — the SL HIT / TGT HIT badge on the card is sufficient.
-    // Showing a "SL HIT" toast when the user is just updating values is confusing.
   } else {
-    const p={id:Date.now(),symbol:sym,name,entry,cmp,qty,stopLoss:sl,target:tgt,trailPct:trail,sector:sec,entryDate:date};
+    const p={id:Date.now(),symbol:sym,name,entry,cmp,qty,stopLoss:sl,currentSL:csl,target:tgt,trailPct:trail,sector:sec,entryDate:date};
     state.positions.push(p);
     checkAlerts(p);
   }
@@ -1290,14 +1305,14 @@ function openCloseModal(id) {
   closingId=id;
   document.getElementById('modal-close-title').textContent=`Close Trade — ${p.symbol}`;
   document.getElementById('close-summary').innerHTML=[
-    ['Entry',`₹${fmt(p.entry)}`],['CMP',`₹${fmt(p.cmp)}`],['Qty',p.qty],['Held',`${daysBetween(p.entryDate,today())}d`]
+    ['Entry',`₹${fmt(p.entry)}`],['CMP',`₹${fmt(p.cmp)}`],
+    ['Qty',p.qty],['Held',`${daysBetween(p.entryDate,today())}d`],
+    ['Init SL',p.stopLoss?`₹${fmt(p.stopLoss)}`:'—'],
+    ['Curr SL',(p.currentSL&&p.currentSL!==p.stopLoss)?`₹${fmt(p.currentSL)}`:'—'],
   ].map(([l,v])=>`<div><div class="ts-label">${l}</div><div class="ts-value">${v}</div></div>`).join('');
   document.getElementById('c-exit').value=fmt(p.cmp,2);
   document.getElementById('c-date').value=today();
-  document.getElementById('c-notes').value='';
   document.getElementById('c-reason').value='Target Hit';
-  document.getElementById('c-mae').value='';
-  document.getElementById('c-mfe').value='';
   document.getElementById('c-tradetype').value='delivery';
   document.getElementById('pnl-preview-box').style.display='none';
   document.getElementById('charges-box').style.display='none';
@@ -1396,21 +1411,20 @@ function confirmClose() {
   const grossPnlPct=((ep-p.entry)/p.entry)*100;
   const pnlPct=Math.round((pnl/(p.entry*p.qty))*10000)/100;
   const capitalImpactPct = state.capital>0 ? (pnl/state.capital)*100 : 0;
+  const rMultiple = p.stopLoss&&p.stopLoss<p.entry ? (ep-p.entry)/(p.entry-p.stopLoss) : null;
   const trade={
     id:Date.now(), symbol:p.symbol, name:p.name, sector:p.sector,
     entryPrice:p.entry, exitPrice:ep, qty:p.qty,
     grossPnl: Math.round(grossPnl*100)/100,
     grossPnlPct: Math.round(grossPnlPct*100)/100,
-    charges: ch,
-    tradeType,
-    pnl, pnlPct,   // net (after charges)
+    charges: ch, tradeType,
+    pnl, pnlPct,
     capitalImpactPct,
+    rMultiple,
+    initialSL: p.stopLoss,
     entryDate:p.entryDate, exitDate, holdingDays:daysBetween(p.entryDate,exitDate),
-    notes:document.getElementById('c-notes').value,
     reason:document.getElementById('c-reason').value,
-    stopLoss:p.stopLoss, target:p.target,
-    mae:+document.getElementById('c-mae').value||null,
-    mfe:+document.getElementById('c-mfe').value||null
+    stopLoss:p.stopLoss, target:p.target
   };
   state.journal=[trade,...state.journal];
   state.positions=state.positions.filter(x=>x.id!==closingId);
