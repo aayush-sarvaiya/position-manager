@@ -217,6 +217,9 @@
   .modal-footer { display: flex; gap: 10px; margin-top: 6px; }
   .modal-footer .btn { flex: 1; padding: 11px; font-size: 13px; }
 
+  /* Partial close notice */
+  .partial-notice { background: rgba(234,88,12,0.06); border: 1px solid rgba(234,88,12,0.2); border-radius: 9px; padding: 9px 13px; margin-bottom: 13px; font-size: 11px; color: var(--orange); font-weight: 600; display: none; }
+
   /* PnL Preview */
   .pnl-preview { border-radius: 10px; padding: 12px 15px; margin-bottom: 10px; display: flex; justify-content: space-between; }
   .pnl-preview-label { font-size: 9px; color: var(--text3); text-transform: uppercase; margin-bottom: 3px; font-weight: 700; letter-spacing:.1em; }
@@ -402,7 +405,12 @@
           <option value="intraday">Intraday (MIS)</option>
         </select>
       </div>
+      <!-- CHANGE 3: Qty to close field -->
+      <div class="form-group"><label class="form-label">Qty to Close <span style="color:var(--text3);font-size:9px">partial ok</span></label><input class="form-input" id="c-qty" type="number" placeholder="All" min="1" oninput="updatePnlPreview()"></div>
+      <div class="form-group"><label class="form-label">Exit Date</label><input class="form-input" id="c-date" type="date"></div>
     </div>
+    <!-- Partial close notice -->
+    <div class="partial-notice" id="partial-notice">⚡ Partial close — remaining shares will stay in your active positions.</div>
     <!-- Gross P&L preview -->
     <div id="pnl-preview-box" style="display:none" class="pnl-preview">
       <div><div class="pnl-preview-label">Gross P&amp;L</div><div class="pnl-preview-value" id="pnl-preview-val"></div></div>
@@ -425,17 +433,16 @@
       <div style="text-align:right"><div class="net-pnl-label">Net Return</div><div class="net-pnl-value" id="net-pnl-pct"></div></div>
     </div>
     <div class="form-grid">
-      <div class="form-group"><label class="form-label">Exit Date</label><input class="form-input" id="c-date" type="date"></div>
-      <div class="form-group"><label class="form-label">Exit Reason</label>
+      <div class="form-group full"><label class="form-label">Exit Reason</label>
         <select class="form-select" id="c-reason">
           <option>Target Hit</option><option>Stop Loss Hit</option><option>Manual Exit</option>
-          <option>Trailing Stop</option><option>News Event</option><option>Other</option>
+          <option>Trailing Stop</option><option>News Event</option><option>Partial Profit</option><option>Other</option>
         </select>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-close')">Cancel</button>
-      <button class="btn btn-primary" onclick="confirmClose()">Log &amp; Close Trade</button>
+      <button class="btn btn-primary" id="btn-confirm-close" onclick="confirmClose()">Log &amp; Close Trade</button>
     </div>
   </div>
 </div>
@@ -546,7 +553,6 @@ function restoreData(event) {
 
 // ══════════════════════════════════════════
 //  ALERTS — SL & TARGET
-//  Called whenever CMP changes (inline edit, bulk update, save position)
 // ══════════════════════════════════════════
 function checkAlerts(p) {
   const activeSL = p.currentSL || p.stopLoss;
@@ -554,7 +560,6 @@ function checkAlerts(p) {
   const tgtHit = p.target  && p.cmp >= p.target;
   if (slHit)  showToast('sl',  `⚠️ SL HIT — ${p.symbol}`,  `CMP ₹${fmt(p.cmp)} ≤ SL ₹${fmt(p.stopLoss)}\nConsider closing this position.`);
   if (tgtHit) showToast('tgt', `🎯 TARGET HIT — ${p.symbol}`, `CMP ₹${fmt(p.cmp)} ≥ TGT ₹${fmt(p.target)}\nConsider booking profits.`);
-  // Push notification
   if ((slHit||tgtHit) && 'Notification' in window && Notification.permission==='granted') {
     const title = slHit ? `⚠️ SL Hit — ${p.symbol}` : `🎯 Target Hit — ${p.symbol}`;
     const body  = slHit ? `CMP ₹${fmt(p.cmp)} ≤ SL ₹${fmt(p.stopLoss)}` : `CMP ₹${fmt(p.cmp)} ≥ TGT ₹${fmt(p.target)}`;
@@ -579,13 +584,13 @@ function requestNotifPermission() {
 }
 
 // ══════════════════════════════════════════
-//  INLINE CMP EDIT  (tap CMP cell on any card)
+//  INLINE CMP EDIT
 // ══════════════════════════════════════════
 function openInlineCMP(id, e) {
   e.stopPropagation();
   const p=state.positions.find(x=>x.id===id); if(!p) return;
   const cell=e.currentTarget;
-  if(cell.querySelector('input')) return; // already open
+  if(cell.querySelector('input')) return;
   cell.innerHTML=`
     <div class="price-cell-label">CMP ✎</div>
     <input class="cmp-inline-input" id="cmp-in-${id}" type="number" value="${p.cmp}"
@@ -690,14 +695,20 @@ function fmtC(n) {
 }
 function daysBetween(d1,d2) { return Math.max(0,Math.round((new Date(d2)-new Date(d1))/86400000)); }
 function reasonColor(r) {
-  return {'Target Hit':'#22c55e','Stop Loss Hit':'#ef4444','Manual Exit':'#60a5fa','Trailing Stop':'#a78bfa','News Event':'#fbbf24','Other':'#9ca3af'}[r]||'#9ca3af';
+  return {'Target Hit':'#22c55e','Stop Loss Hit':'#ef4444','Manual Exit':'#60a5fa','Trailing Stop':'#a78bfa','News Event':'#fbbf24','Partial Profit':'#f97316','Other':'#9ca3af'}[r]||'#9ca3af';
 }
 function col(w) { return w?'var(--green)':'var(--red)'; }
 function sign(n) { return n>=0?'+':''; }
+
+// CHANGE 1: calcR now returns numeric value too (used for live R display)
 function calcR(entry, exitOrCmp, initialSL) {
   if(!initialSL||initialSL>=entry) return '—';
   const r=(exitOrCmp-entry)/(entry-initialSL);
   return (r>=0?'+':'')+r.toFixed(2)+'R';
+}
+function calcRNum(entry, price, initialSL) {
+  if(!initialSL||initialSL>=entry) return null;
+  return (price-entry)/(entry-initialSL);
 }
 
 function sparklineSVG(entry,cmp,w=80,h=30) {
@@ -737,7 +748,11 @@ function calcMetrics() {
   const invested=ps.reduce((s,p)=>s+p.entry*p.qty,0);
   const currentVal=ps.reduce((s,p)=>s+p.cmp*p.qty,0);
   const totalPnL=currentVal-invested;
-  const totalRisk=ps.reduce((s,p)=>s+Math.max(0,(p.entry-p.stopLoss)*p.qty),0);
+  // CHANGE 2: total open risk uses current SL (currentSL if set, else stopLoss)
+  const totalRisk=ps.reduce((s,p)=>{
+    const csl=p.currentSL||p.stopLoss;
+    return s+Math.max(0,(p.entry-csl)*p.qty);
+  },0);
   const pctInv=state.capital>0?(invested/state.capital)*100:0;
   const openRisk=state.capital>0?(totalRisk/state.capital)*100:0;
   const jTotal=js.reduce((s,j)=>s+j.pnl,0);
@@ -778,7 +793,6 @@ function renderPositions() {
     return;
   }
 
-  // Build heatmap cells — separate intensity scales for gains and losses
   const gains=state.positions.map(p=>(p.cmp-p.entry)/p.entry*100).filter(x=>x>0);
   const lossArr=state.positions.map(p=>(p.cmp-p.entry)/p.entry*100).filter(x=>x<0);
   const maxGain=gains.length?Math.max(...gains):0.1;
@@ -819,8 +833,21 @@ function cardHTML(p) {
   const pnl=(p.cmp-p.entry)*p.qty;
   const pnlPct=((p.cmp-p.entry)/p.entry)*100;
   const activeSL = p.currentSL||p.stopLoss;
-  const risk=Math.max(0,(p.entry-p.stopLoss)*p.qty); // initial SL risk
-  const rrr=p.target&&p.stopLoss?((p.target-p.entry)/Math.max(p.entry-p.stopLoss,0.01)).toFixed(1):null;
+
+  // ── CHANGE 2: Risk based on Current SL ──────────────────────────
+  // riskAmt can be negative if currentSL > entry (risk-free / locked profit)
+  const riskAmt = activeSL ? (p.entry - activeSL) * p.qty : 0;
+  const isRiskFree = riskAmt <= 0;          // SL is above entry → locked profit
+  const lockedProfit = -riskAmt;            // how much profit is locked in at worst case
+
+  // ── CHANGE 1: Live R — based on CMP vs Initial SL ────────────────
+  // This shows how many R multiples the position is currently at
+  const liveRNum = calcRNum(p.entry, p.cmp, p.stopLoss);
+  const liveRStr = liveRNum !== null
+    ? `${liveRNum >= 0 ? '+' : ''}${liveRNum.toFixed(2)}R`
+    : '—';
+  const liveRColor = liveRNum === null ? 'var(--yellow)' : liveRNum >= 0 ? '#15803d' : '#dc2626';
+
   const toPct=p.target?((p.target-p.cmp)/p.cmp*100):null;
   const isW=p.cmp>=p.entry, c=col(isW);
   const held=daysBetween(p.entryDate,today());
@@ -830,7 +857,7 @@ function cardHTML(p) {
   const slBadge=slHit?`<span class="badge badge-sl">⚠ SL HIT</span>`:'';
   const tgtBadge=tgtHit?`<span class="badge badge-tgt">🎯 TGT HIT</span>`:'';
 
-  // Break-even price (accounting for Dhan delivery charges)
+  // Break-even price
   const beCharges=calcCharges(p.entry,p.cmp,p.qty,'delivery');
   const breakEven=p.entry + beCharges.total/p.qty;
   const beColor=p.cmp>=breakEven?'var(--green)':'var(--red)';
@@ -839,26 +866,25 @@ function cardHTML(p) {
     ${p.stopLoss?`<span class="r-chip" style="background:${pnlPct>=0?'rgba(22,163,74,0.1)':'rgba(220,38,38,0.1)'};color:${pnlPct>=0?'var(--green)':'var(--red)'}">R ${calcR(p.entry,p.cmp,p.stopLoss)}</span>`:''}
   </div>`;
 
-  // Trailing SL row — show both if they differ
+  // Trailing SL row
   const trailRow=p.trailPct>0?`
     <div class="trail-row">
       <span class="trail-label">Trail SL ${p.trailPct}%</span>
       <span class="trail-val">₹${fmt(p.cmp*(1-p.trailPct/100))}</span>
     </div>`:'';
 
-  // Risk Heat — capital at risk from initial SL as % of total capital
-  const capRisk=state.capital>0?Math.max(0,(p.entry-p.stopLoss)*p.qty)/state.capital*100:0;
-  const riskHeatColor=capRisk<0.5?'var(--green)':capRisk<1.5?'var(--orange)':'var(--red)';
-  const riskHeatLabel=capRisk<0.5?'LOW':capRisk<1.5?'MED':'HIGH';
+  // CHANGE 2: Risk Heat uses current SL for bar
+  const capRisk=state.capital>0?Math.max(0,riskAmt)/state.capital*100:0;
+  const riskHeatColor=isRiskFree?'var(--green)':capRisk<0.5?'var(--green)':capRisk<1.5?'var(--orange)':'var(--red)';
+  const riskHeatLabel=isRiskFree?'FREE':capRisk<0.5?'LOW':capRisk<1.5?'MED':'HIGH';
   const riskBarWidth=Math.min(capRisk/3*100,100);
   const riskHeatRow=p.stopLoss?`
     <div class="risk-heat-row">
       <span class="risk-heat-label">Risk Heat</span>
-      <div class="risk-heat-bar-track"><div class="risk-heat-bar-fill" style="width:${riskBarWidth}%;background:${riskHeatColor}"></div></div>
-      <span class="risk-heat-val" style="color:${riskHeatColor}">${fmt(capRisk,2)}% <span style="font-size:9px;opacity:.7">${riskHeatLabel}</span></span>
+      <div class="risk-heat-bar-track"><div class="risk-heat-bar-fill" style="width:${isRiskFree?100:riskBarWidth}%;background:${riskHeatColor}"></div></div>
+      <span class="risk-heat-val" style="color:${riskHeatColor}">${isRiskFree?'0%':fmt(capRisk,2)+'%'} <span style="font-size:9px;opacity:.7">${riskHeatLabel}</span></span>
     </div>`:'';
 
-  // Show current SL badge if it differs from initial SL
   const cslNote=p.currentSL&&p.currentSL!==p.stopLoss
     ?`<span class="badge" style="background:rgba(124,58,237,0.07);border-color:rgba(124,58,237,0.2);color:var(--purple)">CSL ₹${fmt(p.currentSL)}</span>`:''
 
@@ -892,11 +918,15 @@ function cardHTML(p) {
     <div class="sl-tgt-grid">
       <div class="sl-cell"><div class="mini-label">Initial SL</div><div style="font-size:12px;font-weight:700;color:${slHit?'var(--red)':'#dc2626'}">${p.stopLoss?'₹'+fmt(p.stopLoss):'—'}</div></div>
       <div class="tgt-cell"><div class="mini-label">TGT</div><div style="font-size:12px;font-weight:700;color:#15803d">${p.target?'₹'+fmt(p.target):'—'}</div></div>
-      <div class="rr-cell"><div class="mini-label">R:R</div><div style="font-size:12px;font-weight:700;color:var(--yellow)">${rrr?'1:'+rrr:'—'}</div></div>
+      <!-- CHANGE 1: Live R based on CMP vs Initial SL (not static target R:R) -->
+      <div class="rr-cell"><div class="mini-label">Live R</div><div style="font-size:12px;font-weight:700;color:${liveRColor}">${liveRStr}</div></div>
     </div>
     <div class="card-footer">
       <span>Val: <b>${fmtC(p.cmp*p.qty)}</b></span>
-      <span>Risk: <b style="color:var(--orange)">${fmtC(risk)}</b></span>
+      <!-- CHANGE 2: Risk based on current SL; green if risk-free -->
+      <span>${isRiskFree?'🔒 Locked:':'Risk:'} <b style="color:${isRiskFree?'var(--green)':'var(--orange)'}">
+        ${isRiskFree?'+'+fmtC(lockedProfit):fmtC(riskAmt)}
+      </b></span>
       ${toPct!==null?`<span>→TGT: <b style="color:var(--purple)">${fmt(toPct,1)}%</b></span>`:''}
     </div>
     <div class="card-mobile-actions">
@@ -914,19 +944,12 @@ function renderJournal() {
   const avgW=wins.length>0?wins.reduce((s,j)=>s+j.pnl,0)/wins.length:0;
   const avgL=losses.length>0?losses.reduce((s,j)=>s+j.pnl,0)/losses.length:0;
   const pf=Math.abs(avgL)>0?Math.abs(avgW/avgL):0;
-
-  // Expectancy = (winRate% * avgWin) + (lossRate% * avgLoss)
   const expectancy=js.length>0?((wins.length/js.length)*avgW)+((losses.length/js.length)*avgL):0;
-
-  // Avg R-multiple
   const rTrades=js.filter(j=>j.rMultiple!=null);
   const avgR=rTrades.length>0?rTrades.reduce((s,j)=>s+j.rMultiple,0)/rTrades.length:null;
-
-  // Avg holding days: winners vs losers
   const avgHoldW=wins.length>0?wins.reduce((s,j)=>s+j.holdingDays,0)/wins.length:0;
   const avgHoldL=losses.length>0?losses.reduce((s,j)=>s+j.holdingDays,0)/losses.length:0;
 
-  // Win/loss streak (from most recent)
   let streak=0, streakType='';
   if(js.length>0){
     const first=js[0].pnl>0;
@@ -936,13 +959,12 @@ function renderJournal() {
   const streakLabel=streak>0?(streakType==='W'?`🔥 ${streak}W Streak`:`❄️ ${streak}L Streak`):'—';
   const streakColor=streakType==='W'?'#22c55e':'#ef4444';
 
-  // Best & worst trade — skull only appears on genuinely losing trades
   let bestId=null, worstId=null;
   if(js.length>0){
     const best=js.reduce((b,j)=>j.pnl>b.pnl?j:b, js[0]);
     const worst=js.reduce((b,j)=>j.pnl<b.pnl?j:b, js[0]);
     bestId=best.id;
-    worstId=worst.pnl<0 ? worst.id : null; // no skull if all trades are profitable
+    worstId=worst.pnl<0 ? worst.id : null;
   }
 
   const stats=[
@@ -969,7 +991,7 @@ function renderJournal() {
     return;
   }
 
-  // ── Equity Curve + Drawdown ─────────────────────────────────────
+  // ── Equity Curve ──────────────────────────────────────────────────
   const sorted=[...js].sort((a,b)=>new Date(a.exitDate)-new Date(b.exitDate));
   const startingCapital=state.capital-jTotal;
   const equityPoints=[{date:'Start',capital:startingCapital,symbol:null,pnl:null}];
@@ -979,7 +1001,6 @@ function renderJournal() {
   const caps=equityPoints.map(p=>p.capital);
   const curveColor=lastCap>=startingCapital?'#22c55e':'#ef4444';
 
-  // ── Correct drawdown: track running peak, compute DD% at each point ──
   let runPeak=equityPoints[0].capital, maxDD=0;
   let maxDDPeak=runPeak, maxDDTrough=runPeak;
   equityPoints.forEach(pt=>{
@@ -993,147 +1014,59 @@ function renderJournal() {
   const peakCap=Math.max(...caps);
   const totalReturnPct=startingCapital>0?(jTotal/startingCapital)*100:0;
 
-  // ── SVG chart dimensions ──────────────────────────────────────────
   const VW=580, VH=240;
   const LPAD=70, RPAD=16, TPAD=22, BPAD=52;
   const CW=VW-LPAD-RPAD, CH=VH-TPAD-BPAD;
   const n=equityPoints.length;
-
-  // Y range with 10% padding
   const rawMin=Math.min(...caps), rawMax=Math.max(...caps);
   const rangePad=(rawMax-rawMin)*0.15 || Math.abs(rawMax)*0.08 || 5000;
   const yMin=rawMin-rangePad, yMax=rawMax+rangePad;
   const yRange=yMax-yMin;
-
   const toX=i=>LPAD + (n<=1?CW/2 : i/(n-1)*CW);
   const toY=v=>TPAD + CH - ((v-yMin)/yRange)*CH;
-
-  // Y-axis: 5 evenly spaced nice ticks
   const yTickCount=5;
   const yTicks=Array.from({length:yTickCount},(_,i)=>yMin+(yMax-yMin)*i/(yTickCount-1));
-
-  // X-axis: show at most 6 labels, always include first & last
   const xIdxs=new Set([0,n-1]);
   if(n>2){ const step=Math.ceil((n-2)/4); for(let i=step;i<n-1;i+=step) xIdxs.add(i); }
   const xLabelIdxs=[...xIdxs].sort((a,b)=>a-b);
-
   const fmtDate=d=>{ if(!d||d==='Start') return 'Start'; try{return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short'});}catch{return d;} };
-
-  // SVG elements
-  const gridLines=yTicks.map(v=>{
-    const y=toY(v).toFixed(1);
-    return `<line x1="${LPAD}" y1="${y}" x2="${VW-RPAD}" y2="${y}" stroke="rgba(255,255,255,0.055)" stroke-width="1"/>`;
-  }).join('');
-
-  const yLabels=yTicks.map(v=>{
-    const y=(toY(v)+3.5).toFixed(1);
-    return `<text x="${LPAD-7}" y="${y}" text-anchor="end" font-size="9.5" fill="#6b7280" font-family="DM Mono,monospace">${fmtC(v)}</text>`;
-  }).join('');
-
+  const gridLines=yTicks.map(v=>`<line x1="${LPAD}" y1="${toY(v).toFixed(1)}" x2="${VW-RPAD}" y2="${toY(v).toFixed(1)}" stroke="rgba(255,255,255,0.055)" stroke-width="1"/>`).join('');
+  const yLabels=yTicks.map(v=>`<text x="${LPAD-7}" y="${(toY(v)+3.5).toFixed(1)}" text-anchor="end" font-size="9.5" fill="#6b7280" font-family="DM Mono,monospace">${fmtC(v)}</text>`).join('');
   const xLabels=xLabelIdxs.map(i=>{
-    const x=toX(i).toFixed(1);
-    const y=(TPAD+CH+14).toFixed(1);
+    const x=toX(i).toFixed(1), y=(TPAD+CH+14).toFixed(1);
     return `<text x="${x}" y="${y}" text-anchor="end" font-size="8.5" fill="#6b7280" font-family="DM Mono,monospace" transform="rotate(-38,${x},${y})">${fmtDate(equityPoints[i].date)}</text>`;
   }).join('');
-
-  const axisLines=`
-    <line x1="${LPAD}" y1="${TPAD}" x2="${LPAD}" y2="${(TPAD+CH).toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
-    <line x1="${LPAD}" y1="${(TPAD+CH).toFixed(1)}" x2="${(VW-RPAD).toFixed(1)}" y2="${(TPAD+CH).toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>`;
-
-  // Baseline (starting capital dotted line)
+  const axisLines=`<line x1="${LPAD}" y1="${TPAD}" x2="${LPAD}" y2="${(TPAD+CH).toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="1"/><line x1="${LPAD}" y1="${(TPAD+CH).toFixed(1)}" x2="${(VW-RPAD).toFixed(1)}" y2="${(TPAD+CH).toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>`;
   const baseY=toY(startingCapital).toFixed(1);
   const baseline=startingCapital>yMin&&startingCapital<yMax
-    ?`<line x1="${LPAD}" y1="${baseY}" x2="${(VW-RPAD).toFixed(1)}" y2="${baseY}" stroke="rgba(255,255,255,0.18)" stroke-width="1" stroke-dasharray="5,4"/>
-      <text x="${(LPAD+4).toFixed(1)}" y="${(+baseY-4).toFixed(1)}" font-size="8" fill="rgba(255,255,255,0.32)" font-family="DM Mono,monospace">start</text>`:'' ;
-
-  // Area fill
+    ?`<line x1="${LPAD}" y1="${baseY}" x2="${(VW-RPAD).toFixed(1)}" y2="${baseY}" stroke="rgba(255,255,255,0.18)" stroke-width="1" stroke-dasharray="5,4"/><text x="${(LPAD+4).toFixed(1)}" y="${(+baseY-4).toFixed(1)}" font-size="8" fill="rgba(255,255,255,0.32)" font-family="DM Mono,monospace">start</text>`:'' ;
   const linePts=equityPoints.map((_,i)=>`${toX(i).toFixed(1)},${toY(equityPoints[i].capital).toFixed(1)}`).join(' ');
   const fillPts=`${toX(0).toFixed(1)},${(TPAD+CH).toFixed(1)} ${linePts} ${toX(n-1).toFixed(1)},${(TPAD+CH).toFixed(1)}`;
-
-  // Trade markers with capital labels
   const peakIdx=caps.indexOf(peakCap);
   const troughIdx=caps.indexOf(Math.min(...caps));
   const alwaysLabel=new Set([0,n-1,peakIdx,troughIdx]);
-
   const markers=equityPoints.map((pt,i)=>{
     const x=toX(i), y=toY(pt.capital);
     const dotColor=pt.pnl==null?'#9ca3af':pt.pnl>=0?'#22c55e':'#ef4444';
-    const tipText=pt.pnl!=null
-      ?`${pt.symbol}: ${sign(pt.pnl)}${fmtC(pt.pnl)} | Balance: ${fmtC(pt.capital)} | ${fmtDate(pt.date)}`
-      :`Starting Capital: ${fmtC(pt.capital)}`;
-
-    // Always-visible label for key points
+    const tipText=pt.pnl!=null?`${pt.symbol}: ${sign(pt.pnl)}${fmtC(pt.pnl)} | Balance: ${fmtC(pt.capital)} | ${fmtDate(pt.date)}`:`Starting Capital: ${fmtC(pt.capital)}`;
     let labelEl='';
     if(alwaysLabel.has(i)){
-      const above=y > TPAD+CH*0.5; // put label above dot if dot is in lower half
-      const lx=x.toFixed(1);
-      const ly=(above ? y-11 : y+14).toFixed(1);
-      // Check horizontal edge: push inward if near edges
+      const above=y > TPAD+CH*0.5;
+      const lx=x.toFixed(1), ly=(above ? y-11 : y+14).toFixed(1);
       const anchor=x<LPAD+40?'start':x>VW-RPAD-40?'end':'middle';
       labelEl=`<text x="${lx}" y="${ly}" text-anchor="${anchor}" font-size="9" fill="${dotColor}" font-family="DM Mono,monospace" font-weight="700">${fmtC(pt.capital)}</text>`;
     }
-
-    return `<g style="cursor:pointer">
-      <title>${tipText}</title>
-      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" fill="${dotColor}" stroke="#0d1117" stroke-width="2"/>
-      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" fill="transparent"/>
-      ${labelEl}
-    </g>`;
+    return `<g style="cursor:pointer"><title>${tipText}</title><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" fill="${dotColor}" stroke="#0d1117" stroke-width="2"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" fill="transparent"/>${labelEl}</g>`;
   }).join('');
-
-  const equitySVG=`<svg viewBox="0 0 ${VW} ${VH}" style="width:100%;display:block;overflow:visible">
-    <defs>
-      <linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${curveColor}" stop-opacity="0.2"/>
-        <stop offset="100%" stop-color="${curveColor}" stop-opacity="0.01"/>
-      </linearGradient>
-    </defs>
-    ${gridLines}${axisLines}${baseline}${yLabels}${xLabels}
-    <polygon points="${fillPts}" fill="url(#eqGrad)"/>
-    <polyline points="${linePts}" fill="none" stroke="${curveColor}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-    ${markers}
-  </svg>`;
-
-  // ── Drawdown cards (corrected formulas) ─────────────────────────
+  const equitySVG=`<svg viewBox="0 0 ${VW} ${VH}" style="width:100%;display:block;overflow:visible"><defs><linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${curveColor}" stop-opacity="0.2"/><stop offset="100%" stop-color="${curveColor}" stop-opacity="0.01"/></linearGradient></defs>${gridLines}${axisLines}${baseline}${yLabels}${xLabels}<polygon points="${fillPts}" fill="url(#eqGrad)"/><polyline points="${linePts}" fill="none" stroke="${curveColor}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${markers}</svg>`;
   const drawdownHTML=`<div class="dd-strip">
-    <div class="dd-card">
-      <div class="dd-label">Max Drawdown</div>
-      <div class="dd-value">-${fmt(maxDD,2)}%</div>
-      <div class="dd-sub">-${fmtC(maxDDAbsLoss)} loss (${fmtC(maxDDPeak)}→${fmtC(maxDDTrough)})</div>
-    </div>
-    <div class="dd-card">
-      <div class="dd-label">Current DD from Peak</div>
-      <div class="dd-value" style="color:${currentDD>0.01?'#ef4444':'#22c55e'}">${currentDD>0.01?'-':''}${fmt(currentDD,2)}%</div>
-      <div class="dd-sub">${currentDD>0.01?`-${fmtC(finalRunPeak-lastCap)} below ${fmtC(finalRunPeak)}`:'At or above running peak'}</div>
-    </div>
-    <div class="dd-card" style="background:rgba(96,165,250,0.07);border-color:rgba(96,165,250,0.15)">
-      <div class="dd-label" style="color:#93c5fd">Total Return</div>
-      <div class="dd-value" style="color:#60a5fa">${sign(totalReturnPct)}${fmt(totalReturnPct,2)}%</div>
-      <div class="dd-sub">${sign(jTotal)}${fmtC(jTotal)} on ${fmtC(startingCapital)} start</div>
-    </div>
-    <div class="dd-card" style="background:rgba(167,139,250,0.07);border-color:rgba(167,139,250,0.15)">
-      <div class="dd-label" style="color:#c4b5fd">Peak Balance</div>
-      <div class="dd-value" style="color:#a78bfa">${fmtC(peakCap)}</div>
-      <div class="dd-sub">highest balance reached</div>
-    </div>
+    <div class="dd-card"><div class="dd-label">Max Drawdown</div><div class="dd-value">-${fmt(maxDD,2)}%</div><div class="dd-sub">-${fmtC(maxDDAbsLoss)} loss (${fmtC(maxDDPeak)}→${fmtC(maxDDTrough)})</div></div>
+    <div class="dd-card"><div class="dd-label">Current DD from Peak</div><div class="dd-value" style="color:${currentDD>0.01?'#ef4444':'#22c55e'}">${currentDD>0.01?'-':''}${fmt(currentDD,2)}%</div><div class="dd-sub">${currentDD>0.01?`-${fmtC(finalRunPeak-lastCap)} below ${fmtC(finalRunPeak)}`:'At or above running peak'}</div></div>
+    <div class="dd-card" style="background:rgba(96,165,250,0.07);border-color:rgba(96,165,250,0.15)"><div class="dd-label" style="color:#93c5fd">Total Return</div><div class="dd-value" style="color:#60a5fa">${sign(totalReturnPct)}${fmt(totalReturnPct,2)}%</div><div class="dd-sub">${sign(jTotal)}${fmtC(jTotal)} on ${fmtC(startingCapital)} start</div></div>
+    <div class="dd-card" style="background:rgba(167,139,250,0.07);border-color:rgba(167,139,250,0.15)"><div class="dd-label" style="color:#c4b5fd">Peak Balance</div><div class="dd-value" style="color:#a78bfa">${fmtC(peakCap)}</div><div class="dd-sub">highest balance reached</div></div>
   </div>`;
+  const equityChartHTML=`<div class="equity-chart"><div class="equity-chart-title"><span>📈 Equity Curve</span><span style="color:${lastCap>=startingCapital?'#22c55e':'#ef4444'};font-size:12px;font-weight:700">${fmtC(lastCap)}</span></div><div class="equity-chart-meta"><span>Start: <b style="color:var(--text)">${fmtC(startingCapital)}</b></span><span>${js.length} closed trades</span><span style="color:${lastCap>=startingCapital?'#22c55e':'#ef4444'};font-weight:600">${sign(lastCap-startingCapital)}${fmtC(lastCap-startingCapital)}</span></div>${equitySVG}<div style="display:flex;gap:16px;margin-top:6px;flex-wrap:wrap"><span style="font-size:9px;color:var(--text4);font-family:'DM Mono',monospace">● Green dot = winning trade &nbsp;● Red dot = losing trade &nbsp;● Hover dots for details</span></div></div>${drawdownHTML}`;
 
-  const equityChartHTML=`<div class="equity-chart">
-    <div class="equity-chart-title">
-      <span>📈 Equity Curve</span>
-      <span style="color:${lastCap>=startingCapital?'#22c55e':'#ef4444'};font-size:12px;font-weight:700">${fmtC(lastCap)}</span>
-    </div>
-    <div class="equity-chart-meta">
-      <span>Start: <b style="color:var(--text)">${fmtC(startingCapital)}</b></span>
-      <span>${js.length} closed trades</span>
-      <span style="color:${lastCap>=startingCapital?'#22c55e':'#ef4444'};font-weight:600">${sign(lastCap-startingCapital)}${fmtC(lastCap-startingCapital)}</span>
-    </div>
-    ${equitySVG}
-    <div style="display:flex;gap:16px;margin-top:6px;flex-wrap:wrap">
-      <span style="font-size:9px;color:var(--text4);font-family:'DM Mono',monospace">● Green dot = winning trade &nbsp;● Red dot = losing trade &nbsp;● Hover dots for details</span>
-    </div>
-  </div>
-  ${drawdownHTML}`;
   const byMonth={};
   js.forEach(j=>{
     const m=j.exitDate?j.exitDate.slice(0,7):'Unknown';
@@ -1145,7 +1078,6 @@ function renderJournal() {
   });
   const months=Object.keys(byMonth).sort().reverse();
 
-  // Table rows grouped by month
   const tableRows=months.map(m=>{
     const mb=byMonth[m];
     const mPnl=mb.pnl, mW=mb.wins, mT=mb.trades.length;
@@ -1162,19 +1094,18 @@ function renderJournal() {
         <span class="month-toggle" id="toggle-${m}">▼ ${mT} trades</span>
       </div>
       <div id="month-rows-${m}">`;
-
     const tradeRows=mb.trades.map(j=>{
       const c=j.pnl>=0?'#22c55e':'#ef4444', rc=reasonColor(j.reason);
       const isBest=j.id===bestId, isWorst=j.id===worstId;
       const rowClass=isBest?' best-trade':isWorst?' worst-trade':'';
       const star=isBest?'<span class="star-badge">🏆</span>':isWorst?'<span class="star-badge">💀</span>':'';
-      const capImpact=j.capitalImpactPct!=null?`${sign(j.capitalImpactPct)}${fmt(Math.abs(j.capitalImpactPct),2)}%`:'—';
-      const capColor=j.capitalImpactPct>=0?'#22c55e':'#ef4444';
       const rBadge=j.rMultiple!=null
         ?`<span style="font-size:10px;font-weight:800;padding:1px 7px;border-radius:12px;background:${j.rMultiple>=0?'rgba(22,163,74,0.1)':'rgba(220,38,38,0.1)'};color:${j.rMultiple>=0?'var(--green)':'var(--red)'}">${j.rMultiple>=0?'+':''}${j.rMultiple.toFixed(2)}R</span>`
         :'<span style="color:var(--text4)">—</span>';
+      // Show partial tag in symbol if applicable
+      const partialTag = j.isPartial ? `<span style="font-size:9px;background:rgba(234,88,12,0.1);border:1px solid rgba(234,88,12,0.2);border-radius:4px;padding:1px 5px;color:var(--orange);margin-left:3px">½</span>` : '';
       return `<div class="j-row${rowClass}" onclick="openJournalDetail(${j.id})">
-        <span class="j-symbol">${j.symbol}${star}</span>
+        <span class="j-symbol">${j.symbol}${star}${partialTag}</span>
         <span class="j-name">${j.name}</span>
         <span style="color:var(--text)">₹${fmt(j.entryPrice)}</span>
         <span style="color:var(--text)">₹${fmt(j.exitPrice)}</span>
@@ -1187,7 +1118,6 @@ function renderJournal() {
         <span><span class="reason-badge" style="background:${rc}1a;border-color:${rc}44;color:${rc}">${j.reason}</span></span>
       </div>`;
     }).join('');
-
     return monthHeader+tradeRows+`</div></div>`;
   }).join('');
 
@@ -1195,7 +1125,6 @@ function renderJournal() {
     <span>Symbol</span><span>Company</span><span>Entry ₹</span><span>Exit ₹</span><span>Qty</span><span>Days</span><span>P&L</span><span>Ret %</span><span>Cap %</span><span>Reason</span>
   </div>`;
 
-  // Override j-row columns too
   el.innerHTML=statsHTML+equityChartHTML+`<div class="j-table" style="--jcols:75px minmax(0,1fr) 80px 80px 45px 45px 85px 70px 70px 85px">
     <style>.j-row{grid-template-columns:75px minmax(0,1fr) 80px 80px 45px 45px 85px 70px 70px 85px;min-width:780px}</style>
     ${tableHead}${tableRows}
@@ -1273,7 +1202,7 @@ function savePosition() {
   const cmp=+document.getElementById('f-cmp').value||entry;
   const qty=+document.getElementById('f-qty').value;
   const sl=+document.getElementById('f-sl').value;
-  const csl=+document.getElementById('f-csl').value||sl; // default to initial SL
+  const csl=+document.getElementById('f-csl').value||sl;
   const tgt=+document.getElementById('f-tgt').value;
   const trail=+document.getElementById('f-trail').value||0;
   const sec=document.getElementById('f-sector').value;
@@ -1282,7 +1211,6 @@ function savePosition() {
   if(editingId){
     const p=state.positions.find(x=>x.id===editingId);
     Object.assign(p,{symbol:sym,name,entry,cmp,qty,stopLoss:sl,currentSL:csl,target:tgt,trailPct:trail,sector:sec,entryDate:date});
-    // Don't call checkAlerts on edit — the SL HIT / TGT HIT badge on the card is sufficient.
   } else {
     const p={id:Date.now(),symbol:sym,name,entry,cmp,qty,stopLoss:sl,currentSL:csl,target:tgt,trailPct:trail,sector:sec,entryDate:date};
     state.positions.push(p);
@@ -1298,7 +1226,7 @@ function deletePosition(id) {
 }
 
 // ══════════════════════════════════════════
-//  CLOSE TRADE
+//  CLOSE TRADE  (supports partial close)
 // ══════════════════════════════════════════
 function openCloseModal(id) {
   const p=state.positions.find(x=>x.id===id); if(!p) return;
@@ -1314,10 +1242,14 @@ function openCloseModal(id) {
   document.getElementById('c-date').value=today();
   document.getElementById('c-reason').value='Target Hit';
   document.getElementById('c-tradetype').value='delivery';
+  // CHANGE 3: default close qty = full qty
+  document.getElementById('c-qty').value=p.qty;
+  document.getElementById('c-qty').max=p.qty;
+  document.getElementById('partial-notice').style.display='none';
+  document.getElementById('btn-confirm-close').textContent='Log & Close Trade';
   document.getElementById('pnl-preview-box').style.display='none';
   document.getElementById('charges-box').style.display='none';
   document.getElementById('net-pnl-box').style.display='none';
-  // Hide charges detail if open
   const cd=document.getElementById('charges-detail'); if(cd) cd.style.display='none';
   const ctb=document.getElementById('charges-toggle-btn'); if(ctb) ctb.textContent='▼ show breakdown';
   openModal('modal-close');
@@ -1333,18 +1265,12 @@ function calcCharges(entryPrice, exitPrice, qty, tradeType) {
   const sellVal  = exitPrice  * qty;
   const turnover = buyVal + sellVal;
   const isDelivery = tradeType === 'delivery';
-  // Dhan brokerage: ₹0 delivery; ₹20/order × 2 for intraday
   const brokerage = isDelivery ? 0 : 40;
-  // STT: delivery 0.1% both sides; intraday 0.025% sell only
   const stt = isDelivery ? turnover * 0.001 : sellVal * 0.00025;
-  // NSE Exchange Transaction Charges: 0.00335% on turnover
   const exchangeCharges = turnover * 0.0000335;
-  // SEBI: ₹10/crore; IPFT: ₹10/crore
   const sebi = turnover * 0.000001;
   const ipft = turnover * 0.000001;
-  // GST 18% on brokerage + exchange + SEBI + IPFT
   const gst  = (brokerage + exchangeCharges + sebi + ipft) * 0.18;
-  // Stamp duty on buy side: delivery 0.015%; intraday 0.003%
   const stamp = isDelivery ? buyVal * 0.00015 : buyVal * 0.00003;
   const total = brokerage + stt + exchangeCharges + sebi + ipft + gst + stamp;
   return { brokerage, stt, exchangeCharges, sebi, ipft, gst, stamp, total };
@@ -1361,34 +1287,43 @@ function toggleChargesDetail() {
 function updatePnlPreview() {
   const p=state.positions.find(x=>x.id===closingId); if(!p) return;
   const ep=+document.getElementById('c-exit').value;
-  if(!ep){
+
+  // CHANGE 3: use close qty for preview
+  const closeQty = Math.min(+document.getElementById('c-qty').value || p.qty, p.qty);
+  const isPartial = closeQty > 0 && closeQty < p.qty;
+
+  // Show/hide partial notice and update button text
+  document.getElementById('partial-notice').style.display = isPartial ? 'block' : 'none';
+  document.getElementById('btn-confirm-close').textContent = isPartial
+    ? `Log Partial (${closeQty} of ${p.qty} shares)`
+    : 'Log & Close Trade';
+
+  if(!ep || closeQty <= 0){
     ['pnl-preview-box','charges-box','net-pnl-box'].forEach(id=>document.getElementById(id).style.display='none');
     return;
   }
+
   const tradeType=document.getElementById('c-tradetype').value;
-  const grossPnl=(ep-p.entry)*p.qty, grossPct=((ep-p.entry)/p.entry)*100;
-  const ch=calcCharges(p.entry, ep, p.qty, tradeType);
-  const netPnl=grossPnl - ch.total, netPct=(netPnl/(p.entry*p.qty))*100;
+  const grossPnl=(ep-p.entry)*closeQty, grossPct=((ep-p.entry)/p.entry)*100;
+  const ch=calcCharges(p.entry, ep, closeQty, tradeType);
+  const netPnl=grossPnl - ch.total, netPct=(netPnl/(p.entry*closeQty))*100;
   const cGross=grossPnl>=0?'#22c55e':'#ef4444', cNet=netPnl>=0?'#22c55e':'#ef4444';
 
-  // Gross P&L box
   const box=document.getElementById('pnl-preview-box');
   box.style.display='flex';
   box.style.background=grossPnl>=0?'rgba(34,197,94,0.06)':'rgba(239,68,68,0.06)';
-  box.style.border=`1px solid ${grossPnl>=0?'rgba(34,197,94,0.18)':'rgba(239,68,68,0.18)'}`;
+  box.style.border=`1px solid ${grossPnl>=0?'rgba(34,197,94,0.18)':'rgba(239,68,38,0.18)'}`;
   document.getElementById('pnl-preview-val').style.color=cGross;
   document.getElementById('pnl-preview-pct').style.color=cGross;
   document.getElementById('pnl-preview-val').textContent=`${sign(grossPnl)}${fmtC(grossPnl)}`;
   document.getElementById('pnl-preview-pct').textContent=`${sign(grossPct)}${fmt(grossPct,2)}%`;
 
-  // Charges breakdown
   document.getElementById('charges-box').style.display='block';
   document.getElementById('charges-total-val').textContent=`-₹${fmt(ch.total,2)}`;
   const rows=[['Brokerage',ch.brokerage],['STT',ch.stt],['Exch. Charges',ch.exchangeCharges],['SEBI',ch.sebi],['IPFT',ch.ipft],['GST (18%)',ch.gst],['Stamp Duty',ch.stamp]];
   document.getElementById('charges-grid').innerHTML=rows.map(([l,v])=>
     `<div class="charges-row"><span class="charges-label">${l}</span><span class="charges-val">₹${fmt(v,2)}</span></div>`).join('');
 
-  // Net P&L box
   const netBox=document.getElementById('net-pnl-box');
   netBox.style.display='flex';
   netBox.style.background=netPnl>=0?'rgba(34,197,94,0.08)':'rgba(239,68,68,0.08)';
@@ -1403,18 +1338,27 @@ function confirmClose() {
   const p=state.positions.find(x=>x.id===closingId); if(!p) return;
   const ep=+document.getElementById('c-exit').value;
   if(!ep){alert('Please enter an exit price.');return;}
+
+  // CHANGE 3: read close qty; validate
+  const rawQty = +document.getElementById('c-qty').value;
+  const closeQty = rawQty > 0 ? Math.min(rawQty, p.qty) : p.qty;
+  if(closeQty <= 0){alert('Invalid quantity.');return;}
+
+  const isPartial = closeQty < p.qty;
   const exitDate=document.getElementById('c-date').value;
   const tradeType=document.getElementById('c-tradetype').value;
-  const ch=calcCharges(p.entry, ep, p.qty, tradeType);
-  const grossPnl=(ep-p.entry)*p.qty;
-  const pnl=Math.round((grossPnl - ch.total)*100)/100;  // net P&L after charges
+  const ch=calcCharges(p.entry, ep, closeQty, tradeType);
+  const grossPnl=(ep-p.entry)*closeQty;
+  const pnl=Math.round((grossPnl - ch.total)*100)/100;
   const grossPnlPct=((ep-p.entry)/p.entry)*100;
-  const pnlPct=Math.round((pnl/(p.entry*p.qty))*10000)/100;
+  const pnlPct=Math.round((pnl/(p.entry*closeQty))*10000)/100;
   const capitalImpactPct = state.capital>0 ? (pnl/state.capital)*100 : 0;
+  // CHANGE 1: rMultiple based on Initial SL
   const rMultiple = p.stopLoss&&p.stopLoss<p.entry ? (ep-p.entry)/(p.entry-p.stopLoss) : null;
+
   const trade={
     id:Date.now(), symbol:p.symbol, name:p.name, sector:p.sector,
-    entryPrice:p.entry, exitPrice:ep, qty:p.qty,
+    entryPrice:p.entry, exitPrice:ep, qty:closeQty,
     grossPnl: Math.round(grossPnl*100)/100,
     grossPnlPct: Math.round(grossPnlPct*100)/100,
     charges: ch, tradeType,
@@ -1424,10 +1368,21 @@ function confirmClose() {
     initialSL: p.stopLoss,
     entryDate:p.entryDate, exitDate, holdingDays:daysBetween(p.entryDate,exitDate),
     reason:document.getElementById('c-reason').value,
-    stopLoss:p.stopLoss, target:p.target
+    stopLoss:p.stopLoss, target:p.target,
+    isPartial,                       // CHANGE 3: tag partial trades
+    remainingQty: isPartial ? p.qty - closeQty : 0
   };
+
   state.journal=[trade,...state.journal];
-  state.positions=state.positions.filter(x=>x.id!==closingId);
+
+  if(isPartial){
+    // CHANGE 3: reduce position qty, keep it active
+    p.qty = p.qty - closeQty;
+  } else {
+    // Full close: remove position
+    state.positions=state.positions.filter(x=>x.id!==closingId);
+  }
+
   state.capital=Math.round((state.capital+pnl)*100)/100;
   saveState(); closeModal('modal-close'); render();
 }
@@ -1439,60 +1394,32 @@ function openJournalDetail(id) {
   const j=state.journal.find(x=>x.id===id); if(!j) return;
   const isW=j.pnl>=0, c=isW?'#22c55e':'#ef4444', rc=reasonColor(j.reason);
 
-  // MAE/MFE analysis
   let maeMfeHTML='';
   if(j.mae||j.mfe){
     const maePct=j.mae?((j.entryPrice-j.mae)/j.entryPrice*100):null;
     const mfePct=j.mfe?((j.mfe-j.entryPrice)/j.entryPrice*100):null;
-    // Exit efficiency: how much of the MFE move did you capture?
     const exitEff=(j.mfe&&j.mfe>j.entryPrice)?((j.exitPrice-j.entryPrice)/(j.mfe-j.entryPrice)*100):null;
-    // Did MAE breach SL?
     const brokeSlLine=j.mae&&j.stopLoss&&j.mae<j.stopLoss;
-    maeMfeHTML=`<div class="mae-mfe-section">
-      <div class="mae-mfe-title">📐 MAE / MFE Analysis</div>
-      <div class="mae-mfe-grid">
-        ${j.mae?`<div class="mae-cell">
-          <div class="mae-mfe-label">Max Adverse (MAE)</div>
-          <div class="mae-mfe-val">₹${fmt(j.mae)}</div>
-          <div class="mae-mfe-sub">${maePct?`-${fmt(maePct,2)}% vs entry`:''}${brokeSlLine?' ⚠ Broke SL line':''}</div>
-        </div>`:''}
-        ${j.mfe?`<div class="mfe-cell">
-          <div class="mae-mfe-label">Max Favorable (MFE)</div>
-          <div class="mae-mfe-val">₹${fmt(j.mfe)}</div>
-          <div class="mae-mfe-sub">${mfePct?`+${fmt(mfePct,2)}% vs entry`:''}</div>
-        </div>`:''}
-      </div>
-      ${exitEff!==null?`<div class="efficiency-bar">
-        <span class="eff-label">Exit Efficiency (captured of max move)</span>
-        <span class="eff-val" style="color:${exitEff>=70?'#22c55e':exitEff>=40?'#f97316':'#ef4444'}">${fmt(exitEff,1)}%</span>
-      </div>`:''}
-    </div>`;
+    maeMfeHTML=`<div class="mae-mfe-section"><div class="mae-mfe-title">📐 MAE / MFE Analysis</div><div class="mae-mfe-grid">${j.mae?`<div class="mae-cell"><div class="mae-mfe-label">Max Adverse (MAE)</div><div class="mae-mfe-val">₹${fmt(j.mae)}</div><div class="mae-mfe-sub">${maePct?`-${fmt(maePct,2)}% vs entry`:''}${brokeSlLine?' ⚠ Broke SL line':''}</div></div>`:''} ${j.mfe?`<div class="mfe-cell"><div class="mae-mfe-label">Max Favorable (MFE)</div><div class="mae-mfe-val">₹${fmt(j.mfe)}</div><div class="mae-mfe-sub">${mfePct?`+${fmt(mfePct,2)}% vs entry`:''}</div></div>`:''}</div>${exitEff!==null?`<div class="efficiency-bar"><span class="eff-label">Exit Efficiency</span><span class="eff-val" style="color:${exitEff>=70?'#22c55e':exitEff>=40?'#f97316':'#ef4444'}">${fmt(exitEff,1)}%</span></div>`:''}</div>`;
   }
 
-  document.getElementById('detail-title').textContent=`Trade — ${j.symbol}`;
+  document.getElementById('detail-title').textContent=`Trade — ${j.symbol}${j.isPartial?' (Partial)':''}`;
 
-  // Charges section for detail view
   const tradeTypeBadge=j.tradeType?`<span style="background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2);border-radius:4px;padding:1px 7px;font-size:10px;color:#60a5fa;font-family:'DM Mono',monospace">${j.tradeType==='delivery'?'CNC / Delivery':'Intraday MIS'}</span>`:'';
+  const partialBadge=j.isPartial?`<span style="background:rgba(234,88,12,0.08);border:1px solid rgba(234,88,12,0.2);border-radius:4px;padding:1px 7px;font-size:10px;color:var(--orange);font-family:'DM Mono',monospace">Partial Exit — ${j.qty} shares</span>`:'';
   let chargesHTML='';
   if(j.charges){
     const ch=j.charges;
     const rows=[['Brokerage',ch.brokerage],['STT',ch.stt],['Exch. Charges',ch.exchangeCharges],['SEBI',ch.sebi],['IPFT',ch.ipft],['GST (18%)',ch.gst],['Stamp Duty',ch.stamp]];
-    chargesHTML=`<div class="charges-box" style="margin:12px 0">
-      <div class="charges-title"><span>🏦 Dhan / NSE Charges</span>${tradeTypeBadge}</div>
-      <div class="charges-grid">${rows.map(([l,v])=>`<div class="charges-row"><span class="charges-label">${l}</span><span class="charges-val">₹${fmt(v,2)}</span></div>`).join('')}</div>
-      <div class="charges-total-row"><span class="charges-total-label">Total Charges</span><span class="charges-total-val">-₹${fmt(ch.total,2)}</span></div>
-    </div>`;
+    chargesHTML=`<div class="charges-box" style="margin:12px 0"><div class="charges-title"><span>🏦 Dhan / NSE Charges</span><div style="display:flex;gap:6px">${partialBadge}${tradeTypeBadge}</div></div><div class="charges-grid">${rows.map(([l,v])=>`<div class="charges-row"><span class="charges-label">${l}</span><span class="charges-val">₹${fmt(v,2)}</span></div>`).join('')}</div><div class="charges-total-row"><span class="charges-total-label">Total Charges</span><span class="charges-total-val">-₹${fmt(ch.total,2)}</span></div></div>`;
   }
-  const grossSection = j.grossPnl!=null ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px">
-    <div><div style="font-size:9px;color:#6b7280;font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:2px">Gross P&L</div><div style="font-size:15px;font-weight:600;color:${j.grossPnl>=0?'#22c55e':'#ef4444'};font-family:'DM Mono',monospace">${sign(j.grossPnl)}${fmtC(j.grossPnl)}</div></div>
-    <div style="text-align:right"><div style="font-size:9px;color:#6b7280;font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:2px">Gross Return</div><div style="font-size:15px;font-weight:600;color:${j.grossPnl>=0?'#22c55e':'#ef4444'};font-family:'DM Mono',monospace">${sign(j.grossPnlPct||0)}${fmt(j.grossPnlPct||0,2)}%</div></div>
-  </div>` : '';
+  const grossSection = j.grossPnl!=null ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px"><div><div style="font-size:9px;color:#6b7280;font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:2px">Gross P&L</div><div style="font-size:15px;font-weight:600;color:${j.grossPnl>=0?'#22c55e':'#ef4444'};font-family:'DM Mono',monospace">${sign(j.grossPnl)}${fmtC(j.grossPnl)}</div></div><div style="text-align:right"><div style="font-size:9px;color:#6b7280;font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:2px">Gross Return</div><div style="font-size:15px;font-weight:600;color:${j.grossPnl>=0?'#22c55e':'#ef4444'};font-family:'DM Mono',monospace">${sign(j.grossPnlPct||0)}${fmt(j.grossPnlPct||0,2)}%</div></div></div>` : '';
 
   document.getElementById('detail-body').innerHTML=`
     <div class="detail-grid">
-      ${[['Symbol',j.symbol],['Company',j.name],['Sector',j.sector],['Held',j.holdingDays+' days'],
+      ${[['Symbol',j.symbol+(j.isPartial?' ½':'')],['Company',j.name],['Sector',j.sector],['Held',j.holdingDays+' days'],
          ['Entry Date',j.entryDate],['Exit Date',j.exitDate],['Entry Price','₹'+fmt(j.entryPrice)],
-         ['Exit Price','₹'+fmt(j.exitPrice)],['Quantity',j.qty],['Position Size',fmtC(j.entryPrice*j.qty)],
+         ['Exit Price','₹'+fmt(j.exitPrice)],['Qty Closed',j.qty+(j.isPartial?` (partial)`:'')],['Position Size',fmtC(j.entryPrice*j.qty)],
          ['Stop Loss',j.stopLoss?'₹'+fmt(j.stopLoss):'—'],['Target',j.target?'₹'+fmt(j.target):'—']]
         .map(([l,v])=>`<div class="detail-cell"><div class="detail-label">${l}</div><div class="detail-value">${v}</div></div>`).join('')}
     </div>
@@ -1542,8 +1469,6 @@ document.addEventListener('keydown',e=>{
 loadState();
 requestNotifPermission();
 render();
-
-
 </script>
 <script>
 if ('serviceWorker' in navigator) {
