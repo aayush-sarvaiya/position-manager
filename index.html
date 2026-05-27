@@ -124,7 +124,7 @@
 
   /* Monthly breakdown */
   .month-section { margin-bottom:2px; }
-  .month-header { display:grid; grid-template-columns:110px 1fr 80px 80px 70px; padding:10px 16px; cursor:pointer; background:#fff; border-bottom:1px solid var(--border); min-width:680px; align-items:center; user-select:none; transition:background .15s; }
+  .month-header { display:grid; grid-template-columns:110px 1fr 90px 70px 60px 70px; padding:10px 16px; cursor:pointer; background:#fff; border-bottom:1px solid var(--border); min-width:680px; align-items:center; user-select:none; transition:background .15s; }
   .month-header:hover { background:#f8fafc; }
   .month-header span { font-size:11px; font-weight:600; }
   .month-name { font-weight:700; color:var(--text); }
@@ -991,12 +991,15 @@ function renderJournal() {
     return;
   }
 
-  // ── Equity Curve ──────────────────────────────────────────────────
+  // ── Interactive Equity Chart ──────────────────────────────────────
   const sorted=[...js].sort((a,b)=>new Date(a.exitDate)-new Date(b.exitDate));
   const startingCapital=state.capital-jTotal;
-  const equityPoints=[{date:'Start',capital:startingCapital,symbol:null,pnl:null}];
+  const equityPoints=[{date:'Start',capital:startingCapital,symbol:null,pnl:null,pnlPct:null,reason:null}];
   let running=startingCapital;
-  sorted.forEach(j=>{ running=Math.round((running+j.pnl)*100)/100; equityPoints.push({date:j.exitDate||'?',capital:running,symbol:j.symbol,pnl:j.pnl}); });
+  sorted.forEach(j=>{
+    running=Math.round((running+j.pnl)*100)/100;
+    equityPoints.push({date:j.exitDate||'?',capital:running,symbol:j.symbol,pnl:j.pnl,pnlPct:j.pnlPct,reason:j.reason,name:j.name,qty:j.qty});
+  });
   const lastCap=equityPoints[equityPoints.length-1].capital;
   const caps=equityPoints.map(p=>p.capital);
   const curveColor=lastCap>=startingCapital?'#22c55e':'#ef4444';
@@ -1008,64 +1011,51 @@ function renderJournal() {
     const dd=runPeak>0?(runPeak-pt.capital)/runPeak*100:0;
     if(dd>maxDD){ maxDD=dd; maxDDPeak=runPeak; maxDDTrough=pt.capital; }
   });
-  const finalRunPeak=equityPoints.reduce((pk,pt)=>pt.capital>pk?pt.capital:pk, equityPoints[0].capital);
+  const finalRunPeak=equityPoints.reduce((pk,pt)=>pt.capital>pk?pt.capital:pk,equityPoints[0].capital);
   const currentDD=finalRunPeak>0?(finalRunPeak-lastCap)/finalRunPeak*100:0;
   const maxDDAbsLoss=maxDDPeak-maxDDTrough;
   const peakCap=Math.max(...caps);
   const totalReturnPct=startingCapital>0?(jTotal/startingCapital)*100:0;
 
-  const VW=580, VH=240;
-  const LPAD=70, RPAD=16, TPAD=22, BPAD=52;
-  const CW=VW-LPAD-RPAD, CH=VH-TPAD-BPAD;
-  const n=equityPoints.length;
-  const rawMin=Math.min(...caps), rawMax=Math.max(...caps);
-  const rangePad=(rawMax-rawMin)*0.15 || Math.abs(rawMax)*0.08 || 5000;
-  const yMin=rawMin-rangePad, yMax=rawMax+rangePad;
-  const yRange=yMax-yMin;
-  const toX=i=>LPAD + (n<=1?CW/2 : i/(n-1)*CW);
-  const toY=v=>TPAD + CH - ((v-yMin)/yRange)*CH;
-  const yTickCount=5;
-  const yTicks=Array.from({length:yTickCount},(_,i)=>yMin+(yMax-yMin)*i/(yTickCount-1));
-  const xIdxs=new Set([0,n-1]);
-  if(n>2){ const step=Math.ceil((n-2)/4); for(let i=step;i<n-1;i+=step) xIdxs.add(i); }
-  const xLabelIdxs=[...xIdxs].sort((a,b)=>a-b);
-  const fmtDate=d=>{ if(!d||d==='Start') return 'Start'; try{return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short'});}catch{return d;} };
-  const gridLines=yTicks.map(v=>`<line x1="${LPAD}" y1="${toY(v).toFixed(1)}" x2="${VW-RPAD}" y2="${toY(v).toFixed(1)}" stroke="rgba(255,255,255,0.055)" stroke-width="1"/>`).join('');
-  const yLabels=yTicks.map(v=>`<text x="${LPAD-7}" y="${(toY(v)+3.5).toFixed(1)}" text-anchor="end" font-size="9.5" fill="#6b7280" font-family="DM Mono,monospace">${fmtC(v)}</text>`).join('');
-  const xLabels=xLabelIdxs.map(i=>{
-    const x=toX(i).toFixed(1), y=(TPAD+CH+14).toFixed(1);
-    return `<text x="${x}" y="${y}" text-anchor="end" font-size="8.5" fill="#6b7280" font-family="DM Mono,monospace" transform="rotate(-38,${x},${y})">${fmtDate(equityPoints[i].date)}</text>`;
-  }).join('');
-  const axisLines=`<line x1="${LPAD}" y1="${TPAD}" x2="${LPAD}" y2="${(TPAD+CH).toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="1"/><line x1="${LPAD}" y1="${(TPAD+CH).toFixed(1)}" x2="${(VW-RPAD).toFixed(1)}" y2="${(TPAD+CH).toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>`;
-  const baseY=toY(startingCapital).toFixed(1);
-  const baseline=startingCapital>yMin&&startingCapital<yMax
-    ?`<line x1="${LPAD}" y1="${baseY}" x2="${(VW-RPAD).toFixed(1)}" y2="${baseY}" stroke="rgba(255,255,255,0.18)" stroke-width="1" stroke-dasharray="5,4"/><text x="${(LPAD+4).toFixed(1)}" y="${(+baseY-4).toFixed(1)}" font-size="8" fill="rgba(255,255,255,0.32)" font-family="DM Mono,monospace">start</text>`:'' ;
-  const linePts=equityPoints.map((_,i)=>`${toX(i).toFixed(1)},${toY(equityPoints[i].capital).toFixed(1)}`).join(' ');
-  const fillPts=`${toX(0).toFixed(1)},${(TPAD+CH).toFixed(1)} ${linePts} ${toX(n-1).toFixed(1)},${(TPAD+CH).toFixed(1)}`;
-  const peakIdx=caps.indexOf(peakCap);
-  const troughIdx=caps.indexOf(Math.min(...caps));
-  const alwaysLabel=new Set([0,n-1,peakIdx,troughIdx]);
-  const markers=equityPoints.map((pt,i)=>{
-    const x=toX(i), y=toY(pt.capital);
-    const dotColor=pt.pnl==null?'#9ca3af':pt.pnl>=0?'#22c55e':'#ef4444';
-    const tipText=pt.pnl!=null?`${pt.symbol}: ${sign(pt.pnl)}${fmtC(pt.pnl)} | Balance: ${fmtC(pt.capital)} | ${fmtDate(pt.date)}`:`Starting Capital: ${fmtC(pt.capital)}`;
-    let labelEl='';
-    if(alwaysLabel.has(i)){
-      const above=y > TPAD+CH*0.5;
-      const lx=x.toFixed(1), ly=(above ? y-11 : y+14).toFixed(1);
-      const anchor=x<LPAD+40?'start':x>VW-RPAD-40?'end':'middle';
-      labelEl=`<text x="${lx}" y="${ly}" text-anchor="${anchor}" font-size="9" fill="${dotColor}" font-family="DM Mono,monospace" font-weight="700">${fmtC(pt.capital)}</text>`;
-    }
-    return `<g style="cursor:pointer"><title>${tipText}</title><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" fill="${dotColor}" stroke="#0d1117" stroke-width="2"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" fill="transparent"/>${labelEl}</g>`;
-  }).join('');
-  const equitySVG=`<svg viewBox="0 0 ${VW} ${VH}" style="width:100%;display:block;overflow:visible"><defs><linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${curveColor}" stop-opacity="0.2"/><stop offset="100%" stop-color="${curveColor}" stop-opacity="0.01"/></linearGradient></defs>${gridLines}${axisLines}${baseline}${yLabels}${xLabels}<polygon points="${fillPts}" fill="url(#eqGrad)"/><polyline points="${linePts}" fill="none" stroke="${curveColor}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${markers}</svg>`;
-  const drawdownHTML=`<div class="dd-strip">
-    <div class="dd-card"><div class="dd-label">Max Drawdown</div><div class="dd-value">-${fmt(maxDD,2)}%</div><div class="dd-sub">-${fmtC(maxDDAbsLoss)} loss (${fmtC(maxDDPeak)}→${fmtC(maxDDTrough)})</div></div>
-    <div class="dd-card"><div class="dd-label">Current DD from Peak</div><div class="dd-value" style="color:${currentDD>0.01?'#ef4444':'#22c55e'}">${currentDD>0.01?'-':''}${fmt(currentDD,2)}%</div><div class="dd-sub">${currentDD>0.01?`-${fmtC(finalRunPeak-lastCap)} below ${fmtC(finalRunPeak)}`:'At or above running peak'}</div></div>
-    <div class="dd-card" style="background:rgba(96,165,250,0.07);border-color:rgba(96,165,250,0.15)"><div class="dd-label" style="color:#93c5fd">Total Return</div><div class="dd-value" style="color:#60a5fa">${sign(totalReturnPct)}${fmt(totalReturnPct,2)}%</div><div class="dd-sub">${sign(jTotal)}${fmtC(jTotal)} on ${fmtC(startingCapital)} start</div></div>
-    <div class="dd-card" style="background:rgba(167,139,250,0.07);border-color:rgba(167,139,250,0.15)"><div class="dd-label" style="color:#c4b5fd">Peak Balance</div><div class="dd-value" style="color:#a78bfa">${fmtC(peakCap)}</div><div class="dd-sub">highest balance reached</div></div>
+  // Store globally for canvas renderer
+  window._eqData={equityPoints,startingCapital,lastCap,curveColor,maxDD,maxDDAbsLoss,maxDDPeak,maxDDTrough,peakCap,currentDD,finalRunPeak,jTotal};
+
+  const equityChartHTML=`<div class="equity-chart" style="padding-bottom:18px">
+    <div class="equity-chart-title" style="margin-bottom:12px">
+      <span>📈 Equity Curve</span>
+      <span style="color:${curveColor};font-size:13px;font-weight:800">${fmtC(lastCap)}</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      <div style="flex:1;min-width:80px;background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:8px 12px">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px">Starting Capital</div>
+        <div style="font-size:15px;font-weight:800;color:var(--text)">${fmtC(startingCapital)}</div>
+      </div>
+      <div style="flex:1;min-width:80px;background:${totalReturnPct>=0?'rgba(22,163,74,0.06)':'rgba(220,38,38,0.06)'};border:1px solid ${totalReturnPct>=0?'rgba(22,163,74,0.2)':'rgba(220,38,38,0.2)'};border-radius:10px;padding:8px 12px">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px">Total Return</div>
+        <div style="font-size:15px;font-weight:800;color:${curveColor}">${sign(totalReturnPct)}${fmt(totalReturnPct,2)}%</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${sign(jTotal)}${fmtC(jTotal)}</div>
+      </div>
+      <div style="flex:1;min-width:80px;background:rgba(220,38,38,0.05);border:1px solid rgba(220,38,38,0.15);border-radius:10px;padding:8px 12px">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px">Max Drawdown</div>
+        <div style="font-size:15px;font-weight:800;color:#dc2626">-${fmt(maxDD,2)}%</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">-${fmtC(maxDDAbsLoss)}</div>
+      </div>
+      <div style="flex:1;min-width:80px;background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.2);border-radius:10px;padding:8px 12px">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px">Peak Balance</div>
+        <div style="font-size:15px;font-weight:800;color:#7c3aed">${fmtC(peakCap)}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">Curr DD: ${currentDD>0.01?'-'+fmt(currentDD,2)+'%':'At peak'}</div>
+      </div>
+    </div>
+    <div id="eq-wrap" style="position:relative;user-select:none">
+      <canvas id="eq-canvas" style="display:block;width:100%;border-radius:8px"></canvas>
+      <div id="eq-tip" style="display:none;position:absolute;background:#1e293b;border:1px solid rgba(255,255,255,0.1);color:#f1f5f9;border-radius:10px;padding:11px 14px;font-size:11px;pointer-events:none;z-index:20;min-width:180px;max-width:240px;box-shadow:0 8px 24px rgba(0,0,0,0.35)"></div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:18px;margin-top:10px;flex-wrap:wrap">
+      <span style="font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e"></span>Winning trade</span>
+      <span style="font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444"></span>Losing trade</span>
+      <span style="font-size:10px;color:var(--text3)">Hover / tap dots for details</span>
+    </div>
   </div>`;
-  const equityChartHTML=`<div class="equity-chart"><div class="equity-chart-title"><span>📈 Equity Curve</span><span style="color:${lastCap>=startingCapital?'#22c55e':'#ef4444'};font-size:12px;font-weight:700">${fmtC(lastCap)}</span></div><div class="equity-chart-meta"><span>Start: <b style="color:var(--text)">${fmtC(startingCapital)}</b></span><span>${js.length} closed trades</span><span style="color:${lastCap>=startingCapital?'#22c55e':'#ef4444'};font-weight:600">${sign(lastCap-startingCapital)}${fmtC(lastCap-startingCapital)}</span></div>${equitySVG}<div style="display:flex;gap:16px;margin-top:6px;flex-wrap:wrap"><span style="font-size:9px;color:var(--text4);font-family:'DM Mono',monospace">● Green dot = winning trade &nbsp;● Red dot = losing trade &nbsp;● Hover dots for details</span></div></div>${drawdownHTML}`;
 
   const byMonth={};
   js.forEach(j=>{
@@ -1084,12 +1074,15 @@ function renderJournal() {
     const mWr=mT>0?(mW/mT*100):0;
     const mc=mPnl>=0?'#22c55e':'#ef4444';
     const label=m==='Unknown'?'Unknown':new Date(m+'-01').toLocaleDateString('en-IN',{year:'numeric',month:'short'});
-    const mChargesStr=mb.totalCharges>0?` · <span style="color:var(--yellow);font-size:10px">-₹${fmt(mb.totalCharges,0)} chg</span>`:'';
+    // Monthly % = P&L as % of total capital (portfolio impact)
+    const mPct=state.capital>0?(mPnl/state.capital)*100:0;
+    // Month header: clean — just P&L ₹, P&L %, WR%, count. No charges.
     const monthHeader=`<div class="month-section">
       <div class="month-header" onclick="toggleMonth('${m}')">
         <span class="month-name">${label}</span>
         <span></span>
-        <span style="color:${mc};font-weight:700">${sign(mPnl)}${fmtC(mPnl)}${mChargesStr}</span>
+        <span style="color:${mc};font-weight:700">${sign(mPnl)}${fmtC(mPnl)}</span>
+        <span style="color:${mc};font-weight:700">${sign(mPct)}${fmt(Math.abs(mPct),2)}%</span>
         <span style="color:var(--text3)">${mWr.toFixed(0)}% WR</span>
         <span class="month-toggle" id="toggle-${m}">▼ ${mT} trades</span>
       </div>
@@ -1129,6 +1122,267 @@ function renderJournal() {
     <style>.j-row{grid-template-columns:75px minmax(0,1fr) 80px 80px 45px 45px 85px 70px 70px 85px;min-width:780px}</style>
     ${tableHead}${tableRows}
   </div>`;
+  setTimeout(initEquityChart, 0);
+}
+
+// ══════════════════════════════════════════
+//  INTERACTIVE EQUITY CHART (Canvas)
+// ══════════════════════════════════════════
+function initEquityChart() {
+  const d = window._eqData;
+  const canvas = document.getElementById('eq-canvas');
+  const wrap   = document.getElementById('eq-wrap');
+  const tip    = document.getElementById('eq-tip');
+  if (!d || !canvas || !wrap) return;
+
+  const pts   = d.equityPoints;
+  const n     = pts.length;
+  const DPR   = window.devicePixelRatio || 1;
+  const W     = wrap.clientWidth  || 500;
+  const BAR_H = n > 1 ? 48 : 0;   // per-trade P&L bar section height
+  const H     = 230 + BAR_H;
+
+  canvas.width  = W * DPR;
+  canvas.height = H * DPR;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+
+  // Layout
+  const PAD_L = 58, PAD_R = 16, PAD_T = 16, PAD_B = 32;
+  const LINE_H = H - BAR_H - (BAR_H > 0 ? 8 : 0);  // height for equity line section
+  const CW = W - PAD_L - PAD_R;
+  const CH = LINE_H - PAD_T - PAD_B;
+
+  const caps   = pts.map(p => p.capital);
+  const rawMin = Math.min(...caps), rawMax = Math.max(...caps);
+  const pad    = (rawMax - rawMin) * 0.18 || Math.abs(rawMax) * 0.1 || 5000;
+  const yMin   = rawMin - pad, yMax = rawMax + pad;
+  const yRange = yMax - yMin;
+
+  const toX = i => PAD_L + (n <= 1 ? CW / 2 : (i / (n - 1)) * CW);
+  const toY = v => PAD_T + CH - ((v - yMin) / yRange) * CH;
+
+  // ── Background ──
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Grid lines ──
+  const TICK_COUNT = 5;
+  ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < TICK_COUNT; i++) {
+    const v = yMin + (yMax - yMin) * i / (TICK_COUNT - 1);
+    const y = toY(v);
+    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R, y); ctx.stroke();
+  }
+
+  // ── Y-axis labels ──
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = `600 10px Montserrat, sans-serif`;
+  ctx.textAlign = 'right';
+  for (let i = 0; i < TICK_COUNT; i++) {
+    const v = yMin + (yMax - yMin) * i / (TICK_COUNT - 1);
+    ctx.fillText(fmtC(v), PAD_L - 6, toY(v) + 3.5);
+  }
+
+  // ── Starting capital baseline ──
+  const baseY = toY(d.startingCapital);
+  if (baseY > PAD_T && baseY < PAD_T + CH) {
+    ctx.save();
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD_L, baseY); ctx.lineTo(W - PAD_R, baseY); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '500 9px Montserrat, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('start', PAD_L + 4, baseY - 4);
+  }
+
+  // ── Area fill under curve ──
+  const lineColor = d.curveColor;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(toX(0), PAD_T + CH);
+  pts.forEach((_, i) => ctx.lineTo(toX(i), toY(pts[i].capital)));
+  ctx.lineTo(toX(n - 1), PAD_T + CH);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, PAD_T, 0, PAD_T + CH);
+  grad.addColorStop(0, lineColor + '33');
+  grad.addColorStop(1, lineColor + '05');
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.restore();
+
+  // ── Equity line ──
+  ctx.beginPath();
+  pts.forEach((_, i) => {
+    const x = toX(i), y = toY(pts[i].capital);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = lineColor;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.lineCap  = 'round';
+  ctx.stroke();
+
+  // ── Trade dots ──
+  pts.forEach((pt, i) => {
+    const x = toX(i), y = toY(pt.capital);
+    const dotColor = pt.pnl == null ? '#94a3b8' : pt.pnl >= 0 ? '#22c55e' : '#ef4444';
+    ctx.beginPath();
+    ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = dotColor;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  });
+
+  // ── X-axis date labels (sparse) ──
+  const showEvery = Math.max(1, Math.ceil(n / 6));
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '500 9px Montserrat, sans-serif';
+  ctx.textAlign = 'center';
+  pts.forEach((pt, i) => {
+    if (i === 0 || i === n - 1 || i % showEvery === 0) {
+      const x = toX(i);
+      const label = pt.date === 'Start' ? 'Start'
+        : (() => { try { return new Date(pt.date).toLocaleDateString('en-IN', {day:'2-digit',month:'short'}); } catch { return pt.date; }})();
+      ctx.fillText(label, x, PAD_T + CH + 20);
+    }
+  });
+
+  // ── Per-trade P&L bars ──────────────────────────────────
+  if (BAR_H > 0 && n > 1) {
+    const barY0 = LINE_H + 4;              // baseline Y for bars
+    const BAR_AREA = BAR_H - 8;
+    const maxAbsPnl = Math.max(...pts.slice(1).map(p => Math.abs(p.pnl || 0))) || 1;
+    const barW = Math.max(3, Math.min(14, (CW / (n - 1)) * 0.55));
+
+    // Divider
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD_L, barY0 - 2); ctx.lineTo(W - PAD_R, barY0 - 2); ctx.stroke();
+
+    pts.forEach((pt, i) => {
+      if (i === 0 || pt.pnl == null) return;
+      const x  = toX(i);
+      const bh = Math.max(2, (Math.abs(pt.pnl) / maxAbsPnl) * (BAR_AREA / 2));
+      const bx = x - barW / 2;
+      const by = pt.pnl >= 0 ? barY0 - bh : barY0;
+      ctx.fillStyle = pt.pnl >= 0 ? 'rgba(34,197,94,0.75)' : 'rgba(239,68,68,0.75)';
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(bx, by, barW, bh, 2) : ctx.rect(bx, by, barW, bh);
+      ctx.fill();
+    });
+
+    // Baseline for bars
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD_L, barY0); ctx.lineTo(W - PAD_R, barY0); ctx.stroke();
+  }
+
+  // ── Store dot positions for hover ──
+  const dotPos = pts.map((_, i) => ({ x: toX(i), y: toY(pts[i].capital) }));
+
+  // ── Hover logic ──────────────────────────────────────────────────
+  let activeIdx = -1;
+
+  function onMove(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = clientX - rect.left;
+    const my = clientY - rect.top;
+
+    // Find closest dot
+    let closest = -1, minDist = 40;
+    dotPos.forEach((dp, i) => {
+      const dist = Math.abs(dp.x - mx);
+      if (dist < minDist) { minDist = dist; closest = i; }
+    });
+
+    if (closest === activeIdx) return;
+    activeIdx = closest;
+
+    if (closest === -1) {
+      tip.style.display = 'none';
+      redrawDots();
+      return;
+    }
+
+    const pt = pts[closest];
+    const isStart = pt.pnl == null;
+    const pnlColor = isStart ? '#94a3b8' : pt.pnl >= 0 ? '#22c55e' : '#ef4444';
+    const dateStr  = pt.date === 'Start' ? '—'
+      : (() => { try { return new Date(pt.date).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}); } catch { return pt.date; }})();
+
+    tip.innerHTML = isStart
+      ? `<div style="font-size:10px;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;font-weight:700">Starting Balance</div>
+         <div style="font-size:16px;font-weight:800;color:#f1f5f9">${fmtC(pt.capital)}</div>`
+      : `<div style="font-size:10px;color:#64748b;margin-bottom:6px;font-weight:600">${dateStr} · Trade #${closest}</div>
+         <div style="font-size:13px;font-weight:800;color:#f1f5f9;margin-bottom:2px">${pt.symbol}</div>
+         <div style="font-size:11px;color:#94a3b8;margin-bottom:8px">${pt.name||''}</div>
+         <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:4px">
+           <span style="color:#64748b;font-size:10px">P&L</span>
+           <span style="color:${pnlColor};font-weight:700;font-size:12px">${sign(pt.pnl)}${fmtC(pt.pnl)} (${sign(pt.pnlPct||0)}${fmt(pt.pnlPct||0,2)}%)</span>
+         </div>
+         <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:4px">
+           <span style="color:#64748b;font-size:10px">Balance</span>
+           <span style="color:#f1f5f9;font-weight:700;font-size:12px">${fmtC(pt.capital)}</span>
+         </div>
+         ${pt.reason?`<div style="display:flex;justify-content:space-between;gap:12px">
+           <span style="color:#64748b;font-size:10px">Exit</span>
+           <span style="color:#94a3b8;font-size:11px">${pt.reason}</span>
+         </div>`:''}`;
+
+    // Position tooltip
+    const dp = dotPos[closest];
+    const tipW = 200;
+    let tx = dp.x + 12;
+    if (tx + tipW > W - PAD_R) tx = dp.x - tipW - 12;
+    const ty = Math.max(4, dp.y - 40);
+    tip.style.left  = tx + 'px';
+    tip.style.top   = ty + 'px';
+    tip.style.display = 'block';
+
+    redrawDots(closest);
+  }
+
+  function redrawDots(highlightIdx = -1) {
+    // Redraw only the dot layer (clear and redraw equity line + dots)
+    // For performance, just redraw dots with highlight
+    pts.forEach((pt, i) => {
+      const dp  = dotPos[i];
+      const isHL = i === highlightIdx;
+      const dotColor = pt.pnl == null ? '#94a3b8' : pt.pnl >= 0 ? '#22c55e' : '#ef4444';
+      ctx.beginPath();
+      ctx.arc(dp.x, dp.y, isHL ? 7 : 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = dotColor;
+      ctx.fill();
+      ctx.strokeStyle = isHL ? '#fff' : '#fff';
+      ctx.lineWidth   = isHL ? 2.5 : 2;
+      ctx.stroke();
+      if (isHL) {
+        ctx.beginPath();
+        ctx.arc(dp.x, dp.y, 12, 0, Math.PI * 2);
+        ctx.fillStyle = dotColor + '22';
+        ctx.fill();
+      }
+    });
+  }
+
+  canvas.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+  canvas.addEventListener('mouseleave', () => { activeIdx = -1; tip.style.display = 'none'; redrawDots(); });
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const t = e.touches[0];
+    onMove(t.clientX, t.clientY);
+  }, { passive: false });
+  canvas.style.cursor = 'crosshair';
 }
 
 function toggleMonth(m) {
