@@ -139,6 +139,7 @@
   .metrics { display: flex; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
   .metric { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; flex: 1; min-width: 120px; box-shadow: var(--shadow); }
   .metric.glow { background: #f0fdf4; border-color: rgba(22,163,74,0.3); }
+  .metric.glow-blue { background: #eff6ff; border-color: rgba(37,99,235,0.25); }
   .metric-label { font-size: 9px; letter-spacing: .14em; color: var(--text3); text-transform: uppercase; margin-bottom: 7px; font-weight: 700; }
   .metric-value { font-size: 20px; font-weight: 800; letter-spacing: -.5px; line-height: 1; font-variant-numeric: tabular-nums; }
   .metric-sub { font-size: 10px; color: var(--text3); margin-top: 5px; font-weight: 500; }
@@ -756,7 +757,9 @@ function calcMetrics() {
   const pctInv=state.capital>0?(invested/state.capital)*100:0;
   const openRisk=state.capital>0?(totalRisk/state.capital)*100:0;
   const jTotal=js.reduce((s,j)=>s+j.pnl,0);
-  return {invested,currentVal,totalPnL,totalRisk,pctInv,openRisk,jTotal};
+  const freeCapital=state.capital-invested;
+  const freePct=state.capital>0?(freeCapital/state.capital)*100:0;
+  return {invested,currentVal,totalPnL,totalRisk,pctInv,openRisk,jTotal,freeCapital,freePct};
 }
 
 // ══════════════════════════════════════════
@@ -770,10 +773,11 @@ function renderMetrics() {
     {label:'% Invested',   value:`${fmt(m.pctInv,1)}%`,                    sub:`${fmtC(m.invested)} of ${fmtC(state.capital)}`,                  color:'#60a5fa'},
     {label:'Open P&L',     value:`${sign(m.totalPnL)}${fmtC(m.totalPnL)}`, sub:`${fmt(m.invested>0?(m.totalPnL/m.invested)*100:0,2)}% return`,   color:m.totalPnL>=0?'#22c55e':'#ef4444', glow:m.totalPnL>0},
     {label:'Open Risk',    value:`${fmt(m.openRisk,2)}%`,                   sub:`${fmtC(m.totalRisk)} at risk`,                                   color:m.openRisk>3?'#f97316':'#e5e7eb'},
+    {label:'Free Capital', value:`${fmtC(m.freeCapital)}`,                  sub:`${fmt(m.freePct,1)}% undeployed`,                                color:m.freeCapital>0?'#60a5fa':'#ef4444', glow2:m.freeCapital>0},
     {label:'Realised P&L', value:`${sign(m.jTotal)}${fmtC(m.jTotal)}`,     sub:`${js.length} closed trades`,                                     color:m.jTotal>=0?'#22c55e':'#ef4444'},
   ];
   document.getElementById('metricsBar').innerHTML=items.map(i=>`
-    <div class="metric${i.glow?' glow':''}">
+    <div class="metric${i.glow?' glow':i.glow2?' glow-blue':''}">
       <div class="metric-label">${i.label}</div>
       <div class="metric-value" style="color:${i.color}">${i.value}</div>
       <div class="metric-sub">${i.sub}</div>
@@ -1017,44 +1021,40 @@ function renderJournal() {
   const peakCap=Math.max(...caps);
   const totalReturnPct=startingCapital>0?(jTotal/startingCapital)*100:0;
 
-  // Store globally for canvas renderer
-  window._eqData={equityPoints,startingCapital,lastCap,curveColor,maxDD,maxDDAbsLoss,maxDDPeak,maxDDTrough,peakCap,currentDD,finalRunPeak,jTotal};
+  // Store all sorted trades globally — the canvas renderer will filter dynamically
+  window._eqAllTrades  = sorted;
+  window._eqStartCap   = startingCapital;
+  window._eqCapital    = state.capital;
+  window._eqCurPeriod  = 'ALL';
+  window._eqCurMode    = 'trades';
+
+  const btnBase = 'border:none;border-radius:7px;padding:5px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:Montserrat,sans-serif;transition:all .15s;white-space:nowrap;';
+  const btnOff  = btnBase+'background:transparent;color:#94a3b8;';
+  const btnOn   = btnBase+'background:#0f172a;color:#fff;';
 
   const equityChartHTML=`<div class="equity-chart" style="padding-bottom:18px">
     <div class="equity-chart-title" style="margin-bottom:12px">
       <span>📈 Equity Curve</span>
-      <span style="color:${curveColor};font-size:13px;font-weight:800">${fmtC(lastCap)}</span>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-      <div style="flex:1;min-width:80px;background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:8px 12px">
-        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px">Starting Capital</div>
-        <div style="font-size:15px;font-weight:800;color:var(--text)">${fmtC(startingCapital)}</div>
+    <div id="eq-stat-cards" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+      <div style="display:flex;gap:3px;background:#f1f5f9;border-radius:9px;padding:3px;" id="eq-period-grp">
+        <button id="eq-p-1M"  style="${btnOff}" onclick="setPeriodEq('1M')">1M</button>
+        <button id="eq-p-3M"  style="${btnOff}" onclick="setPeriodEq('3M')">3M</button>
+        <button id="eq-p-6M"  style="${btnOff}" onclick="setPeriodEq('6M')">6M</button>
+        <button id="eq-p-YTD" style="${btnOff}" onclick="setPeriodEq('YTD')">YTD</button>
+        <button id="eq-p-ALL" style="${btnOn}"  onclick="setPeriodEq('ALL')">All time</button>
       </div>
-      <div style="flex:1;min-width:80px;background:${totalReturnPct>=0?'rgba(22,163,74,0.06)':'rgba(220,38,38,0.06)'};border:1px solid ${totalReturnPct>=0?'rgba(22,163,74,0.2)':'rgba(220,38,38,0.2)'};border-radius:10px;padding:8px 12px">
-        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px">Total Return</div>
-        <div style="font-size:15px;font-weight:800;color:${curveColor}">${sign(totalReturnPct)}${fmt(totalReturnPct,2)}%</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:2px">${sign(jTotal)}${fmtC(jTotal)}</div>
-      </div>
-      <div style="flex:1;min-width:80px;background:rgba(220,38,38,0.05);border:1px solid rgba(220,38,38,0.15);border-radius:10px;padding:8px 12px">
-        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px">Max Drawdown</div>
-        <div style="font-size:15px;font-weight:800;color:#dc2626">-${fmt(maxDD,2)}%</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:2px">-${fmtC(maxDDAbsLoss)}</div>
-      </div>
-      <div style="flex:1;min-width:80px;background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.2);border-radius:10px;padding:8px 12px">
-        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px">Peak Balance</div>
-        <div style="font-size:15px;font-weight:800;color:#7c3aed">${fmtC(peakCap)}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:2px">Curr DD: ${currentDD>0.01?'-'+fmt(currentDD,2)+'%':'At peak'}</div>
+      <div style="display:flex;gap:3px;background:#f1f5f9;border-radius:9px;padding:3px;" id="eq-mode-grp">
+        <button id="eq-m-trades"  style="${btnOn}"  onclick="setModeEq('trades')">Each trade</button>
+        <button id="eq-m-monthly" style="${btnOff}" onclick="setModeEq('monthly')">Monthly</button>
       </div>
     </div>
     <div id="eq-wrap" style="position:relative;user-select:none">
       <canvas id="eq-canvas" style="display:block;width:100%;border-radius:8px"></canvas>
-      <div id="eq-tip" style="display:none;position:absolute;background:#1e293b;border:1px solid rgba(255,255,255,0.1);color:#f1f5f9;border-radius:10px;padding:11px 14px;font-size:11px;pointer-events:none;z-index:20;min-width:180px;max-width:240px;box-shadow:0 8px 24px rgba(0,0,0,0.35)"></div>
+      <div id="eq-tip" style="display:none;position:absolute;background:#1e293b;border:1px solid rgba(255,255,255,0.1);color:#f1f5f9;border-radius:10px;padding:11px 14px;font-size:11px;pointer-events:none;z-index:20;min-width:180px;max-width:230px;box-shadow:0 8px 24px rgba(0,0,0,0.35)"></div>
     </div>
-    <div style="display:flex;justify-content:center;gap:18px;margin-top:10px;flex-wrap:wrap">
-      <span style="font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e"></span>Winning trade</span>
-      <span style="font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444"></span>Losing trade</span>
-      <span style="font-size:10px;color:var(--text3)">Hover / tap dots for details</span>
-    </div>
+    <div id="eq-legend" style="display:flex;justify-content:center;gap:18px;margin-top:10px;flex-wrap:wrap"></div>
   </div>`;
 
   const byMonth={};
@@ -1126,262 +1126,342 @@ function renderJournal() {
 }
 
 // ══════════════════════════════════════════
-//  INTERACTIVE EQUITY CHART (Canvas)
+//  INTERACTIVE EQUITY CHART (Canvas + Filters)
 // ══════════════════════════════════════════
-function initEquityChart() {
-  const d = window._eqData;
+function setPeriodEq(p) {
+  window._eqCurPeriod = p;
+  ['1M','3M','6M','YTD','ALL'].forEach(k => {
+    const b = document.getElementById('eq-p-'+k);
+    if (!b) return;
+    const on = k === p;
+    b.style.background = on ? '#0f172a' : 'transparent';
+    b.style.color       = on ? '#fff'    : '#94a3b8';
+  });
+  drawEquityChart();
+}
+
+function setModeEq(m) {
+  window._eqCurMode = m;
+  ['trades','monthly'].forEach(k => {
+    const b = document.getElementById('eq-m-'+k);
+    if (!b) return;
+    const on = k === m;
+    b.style.background = on ? '#0f172a' : 'transparent';
+    b.style.color       = on ? '#fff'    : '#94a3b8';
+  });
+  drawEquityChart();
+}
+
+function getEqFilteredPts() {
+  const allTrades  = window._eqAllTrades  || [];
+  const startCap   = window._eqStartCap   || 0;
+  const capital    = window._eqCapital    || startCap;
+  const period     = window._eqCurPeriod  || 'ALL';
+  const mode       = window._eqCurMode    || 'trades';
+
+  // Find period cutoff
+  const lastDate   = allTrades.length ? new Date(allTrades[allTrades.length-1].exitDate) : new Date();
+  let cutoff = new Date('2000-01-01');
+  if      (period === '1M')  cutoff = new Date(lastDate.getTime() - 30*86400000);
+  else if (period === '3M')  cutoff = new Date(lastDate.getTime() - 91*86400000);
+  else if (period === '6M')  cutoff = new Date(lastDate.getTime() - 183*86400000);
+  else if (period === 'YTD') cutoff = new Date(lastDate.getFullYear()+'-01-01');
+
+  // Accumulate balance for trades before cutoff to get the period's starting balance
+  let running = startCap;
+  allTrades.forEach(t => { if (new Date(t.exitDate||'') < cutoff) running = Math.round((running+t.pnl)*100)/100; });
+  const periodStartCap = running;
+
+  const filtered = allTrades.filter(t => new Date(t.exitDate||'') >= cutoff);
+
+  if (mode === 'trades') {
+    const pts = [{date:'Start', capital:periodStartCap, pnl:null, symbol:null, name:null, reason:null, pnlPct:null}];
+    filtered.forEach(t => {
+      running = Math.round((running+t.pnl)*100)/100;
+      pts.push({date:t.exitDate||'?', capital:running, pnl:t.pnl, symbol:t.symbol, name:t.name, reason:t.reason, pnlPct:t.pnlPct});
+    });
+    return {pts, periodStartCap, capital};
+  } else {
+    // Monthly aggregation
+    running = periodStartCap;
+    const byM = {};
+    filtered.forEach(t => {
+      const m = (t.exitDate||'').slice(0,7);
+      if (!m) return;
+      if (!byM[m]) byM[m] = {pnl:0, wins:0, total:0, lastDate:t.exitDate};
+      byM[m].pnl   += t.pnl;
+      byM[m].total++;
+      if (t.pnl > 0) byM[m].wins++;
+      if ((t.exitDate||'') > byM[m].lastDate) byM[m].lastDate = t.exitDate;
+    });
+    const pts = [{date:'Start', capital:periodStartCap, pnl:null, monthly:true}];
+    Object.keys(byM).sort().forEach(m => {
+      running = Math.round((running + byM[m].pnl)*100)/100;
+      const wr = Math.round(byM[m].wins/byM[m].total*100);
+      const mPct = periodStartCap > 0 ? Math.round(byM[m].pnl/periodStartCap*10000)/100 : 0;
+      pts.push({date:byM[m].lastDate, ym:m, capital:running, pnl:byM[m].pnl, pnlPct:mPct, trades:byM[m].total, wr, monthly:true});
+    });
+    return {pts, periodStartCap, capital};
+  }
+}
+
+function initEquityChart() { drawEquityChart(); }
+
+function drawEquityChart() {
   const canvas = document.getElementById('eq-canvas');
   const wrap   = document.getElementById('eq-wrap');
   const tip    = document.getElementById('eq-tip');
-  if (!d || !canvas || !wrap) return;
+  const statEl = document.getElementById('eq-stat-cards');
+  const legEl  = document.getElementById('eq-legend');
+  if (!canvas || !wrap) return;
 
-  const pts   = d.equityPoints;
-  const n     = pts.length;
-  const DPR   = window.devicePixelRatio || 1;
-  const W     = wrap.clientWidth  || 500;
-  const BAR_H = n > 1 ? 48 : 0;   // per-trade P&L bar section height
-  const H     = 230 + BAR_H;
+  const {pts, periodStartCap, capital} = getEqFilteredPts();
+  const mode     = window._eqCurMode || 'trades';
+  const caps     = pts.map(p => p.capital);
+  const n        = pts.length;
+  const lastCap  = caps[n-1];
+  const jTotalPeriod = lastCap - periodStartCap;
+  const curveColor   = lastCap >= periodStartCap ? '#22c55e' : '#ef4444';
 
+  // Stats for period
+  let runPk = caps[0], maxDD = 0, maxDDL = 0;
+  caps.forEach(c => {
+    if (c > runPk) runPk = c;
+    const dd = runPk > 0 ? (runPk-c)/runPk*100 : 0;
+    if (dd > maxDD) { maxDD = dd; maxDDL = runPk-c; }
+  });
+  const peakCap  = Math.max(...caps);
+  const retPct   = periodStartCap > 0 ? (jTotalPeriod/periodStartCap)*100 : 0;
+  const wins     = pts.filter(p => p.pnl != null && p.pnl > 0).length;
+  const total    = pts.filter(p => p.pnl != null).length;
+  const wr       = total > 0 ? Math.round(wins/total*100) : 0;
+
+  // Update stat cards
+  if (statEl) {
+    const sc = [
+      {l:'Balance',      v:fmtC(lastCap),                 s:sign(jTotalPeriod)+fmtC(jTotalPeriod),      c:curveColor},
+      {l:'Period Return', v:sign(retPct)+fmt(retPct,2)+'%', s:total+' '+(mode==='monthly'?'months':'trades'), c:curveColor},
+      {l:'Max Drawdown', v:'-'+fmt(maxDD,2)+'%',          s:'-'+fmtC(maxDDL),                           c:'#dc2626'},
+      {l:'Win Rate',     v:total?wr+'%':'—',              s:'Peak '+fmtC(peakCap),                      c:'#7c3aed'},
+    ];
+    statEl.innerHTML = sc.map(s=>`
+      <div style="flex:1;min-width:80px;background:#f8fafc;border:1px solid rgba(0,0,0,0.07);border-radius:10px;padding:8px 12px">
+        <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px">${s.l}</div>
+        <div style="font-size:15px;font-weight:800;color:${s.c}">${s.v}</div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:2px">${s.s}</div>
+      </div>`).join('');
+  }
+
+  // Canvas setup
+  const DPR    = window.devicePixelRatio || 1;
+  const W      = wrap.clientWidth || 500;
+  const BAR_H  = (mode === 'trades' && n > 1) ? 48 : 0;
+  const H      = 230 + BAR_H;
   canvas.width  = W * DPR;
   canvas.height = H * DPR;
   canvas.style.width  = W + 'px';
   canvas.style.height = H + 'px';
-
   const ctx = canvas.getContext('2d');
   ctx.scale(DPR, DPR);
 
-  // Layout
-  const PAD_L = 58, PAD_R = 16, PAD_T = 16, PAD_B = 32;
-  const LINE_H = H - BAR_H - (BAR_H > 0 ? 8 : 0);  // height for equity line section
-  const CW = W - PAD_L - PAD_R;
-  const CH = LINE_H - PAD_T - PAD_B;
+  const PL=58, PR=14, PT=18, PB=28;
+  const LH  = H - BAR_H - (BAR_H > 0 ? 6 : 0);
+  const CW  = W - PL - PR;
+  const CH  = LH - PT - PB;
 
-  const caps   = pts.map(p => p.capital);
   const rawMin = Math.min(...caps), rawMax = Math.max(...caps);
-  const pad    = (rawMax - rawMin) * 0.18 || Math.abs(rawMax) * 0.1 || 5000;
-  const yMin   = rawMin - pad, yMax = rawMax + pad;
-  const yRange = yMax - yMin;
+  const pad    = Math.max((rawMax-rawMin)*0.15, Math.abs(rawMax)*0.04, 4000);
+  const yMin   = rawMin - pad, yMax = rawMax + pad, yR = yMax - yMin;
+  const toX    = i => PL + (n <= 1 ? CW/2 : (i/(n-1))*CW);
+  const toY    = v => PT + CH - ((v-yMin)/yR)*CH;
 
-  const toX = i => PAD_L + (n <= 1 ? CW / 2 : (i / (n - 1)) * CW);
-  const toY = v => PAD_T + CH - ((v - yMin) / yRange) * CH;
+  const DOT_R  = mode === 'monthly' ? 5.5 : 3.5;
 
-  // ── Background ──
+  // Draw background
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, W, H);
 
-  // ── Grid lines ──
-  const TICK_COUNT = 5;
+  // Grid lines
+  const TICKS = 5;
   ctx.strokeStyle = 'rgba(0,0,0,0.05)';
   ctx.lineWidth = 1;
-  for (let i = 0; i < TICK_COUNT; i++) {
-    const v = yMin + (yMax - yMin) * i / (TICK_COUNT - 1);
-    const y = toY(v);
-    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R, y); ctx.stroke();
+  for (let i = 0; i < TICKS; i++) {
+    const v = yMin + (yMax-yMin)*i/(TICKS-1);
+    const y = Math.round(toY(v)) + 0.5;
+    ctx.beginPath(); ctx.moveTo(PL, y); ctx.lineTo(W-PR, y); ctx.stroke();
   }
 
-  // ── Y-axis labels ──
+  // Y labels
   ctx.fillStyle = '#94a3b8';
-  ctx.font = `600 10px Montserrat, sans-serif`;
+  ctx.font = '600 10px Montserrat, sans-serif';
   ctx.textAlign = 'right';
-  for (let i = 0; i < TICK_COUNT; i++) {
-    const v = yMin + (yMax - yMin) * i / (TICK_COUNT - 1);
-    ctx.fillText(fmtC(v), PAD_L - 6, toY(v) + 3.5);
+  for (let i = 0; i < TICKS; i++) {
+    const v = yMin + (yMax-yMin)*i/(TICKS-1);
+    ctx.fillText(fmtC(v), PL-6, toY(v)+3.5);
   }
 
-  // ── Starting capital baseline ──
-  const baseY = toY(d.startingCapital);
-  if (baseY > PAD_T && baseY < PAD_T + CH) {
+  // Starting capital baseline
+  const baseY = toY(periodStartCap);
+  if (baseY > PT && baseY < PT+CH) {
     ctx.save();
-    ctx.setLineDash([5, 4]);
+    ctx.setLineDash([5,4]);
     ctx.strokeStyle = 'rgba(0,0,0,0.15)';
     ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(PAD_L, baseY); ctx.lineTo(W - PAD_R, baseY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(PL, baseY); ctx.lineTo(W-PR, baseY); ctx.stroke();
     ctx.restore();
     ctx.fillStyle = '#94a3b8';
     ctx.font = '500 9px Montserrat, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('start', PAD_L + 4, baseY - 4);
+    ctx.fillText('start', PL+4, baseY-4);
   }
 
-  // ── Area fill under curve ──
-  const lineColor = d.curveColor;
+  // Area fill
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(toX(0), PAD_T + CH);
-  pts.forEach((_, i) => ctx.lineTo(toX(i), toY(pts[i].capital)));
-  ctx.lineTo(toX(n - 1), PAD_T + CH);
+  ctx.moveTo(toX(0), PT+CH);
+  pts.forEach((_,i) => ctx.lineTo(toX(i), toY(pts[i].capital)));
+  ctx.lineTo(toX(n-1), PT+CH);
   ctx.closePath();
-  const grad = ctx.createLinearGradient(0, PAD_T, 0, PAD_T + CH);
-  grad.addColorStop(0, lineColor + '33');
-  grad.addColorStop(1, lineColor + '05');
+  const grad = ctx.createLinearGradient(0, PT, 0, PT+CH);
+  grad.addColorStop(0, curveColor+'44');
+  grad.addColorStop(1, curveColor+'06');
   ctx.fillStyle = grad;
   ctx.fill();
   ctx.restore();
 
-  // ── Equity line ──
+  // Equity line
   ctx.beginPath();
-  pts.forEach((_, i) => {
-    const x = toX(i), y = toY(pts[i].capital);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  });
-  ctx.strokeStyle = lineColor;
-  ctx.lineWidth = 2.5;
-  ctx.lineJoin = 'round';
-  ctx.lineCap  = 'round';
+  pts.forEach((_,i) => { const x=toX(i), y=toY(pts[i].capital); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.strokeStyle = curveColor;
+  ctx.lineWidth   = 2.2;
+  ctx.lineJoin    = 'round';
+  ctx.lineCap     = 'round';
   ctx.stroke();
 
-  // ── Trade dots ──
-  pts.forEach((pt, i) => {
-    const x = toX(i), y = toY(pt.capital);
-    const dotColor = pt.pnl == null ? '#94a3b8' : pt.pnl >= 0 ? '#22c55e' : '#ef4444';
-    ctx.beginPath();
-    ctx.arc(x, y, 4.5, 0, Math.PI * 2);
-    ctx.fillStyle = dotColor;
-    ctx.fill();
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+  // Dots
+  pts.forEach((pt,i) => {
+    const x=toX(i), y=toY(pt.capital);
+    const dc = pt.pnl==null ? '#94a3b8' : pt.pnl>=0 ? '#22c55e' : '#ef4444';
+    ctx.beginPath(); ctx.arc(x, y, DOT_R, 0, Math.PI*2);
+    ctx.fillStyle = dc; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.8; ctx.stroke();
   });
 
-  // ── X-axis date labels (sparse) ──
-  const showEvery = Math.max(1, Math.ceil(n / 6));
+  // X-axis date labels
+  const showEvery = Math.max(1, Math.ceil(n/7));
   ctx.fillStyle = '#94a3b8';
   ctx.font = '500 9px Montserrat, sans-serif';
   ctx.textAlign = 'center';
-  pts.forEach((pt, i) => {
-    if (i === 0 || i === n - 1 || i % showEvery === 0) {
-      const x = toX(i);
-      const label = pt.date === 'Start' ? 'Start'
-        : (() => { try { return new Date(pt.date).toLocaleDateString('en-IN', {day:'2-digit',month:'short'}); } catch { return pt.date; }})();
-      ctx.fillText(label, x, PAD_T + CH + 20);
+  pts.forEach((pt,i) => {
+    if (i===0 || i===n-1 || i%showEvery===0) {
+      const lbl = pt.date==='Start' ? 'Start'
+        : mode==='monthly' && pt.ym
+          ? (() => { try { return new Date(pt.ym+'-01').toLocaleDateString('en-IN',{month:'short'}); } catch { return pt.ym; }})()
+          : (() => { try { return new Date(pt.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}); } catch { return pt.date; }})();
+      ctx.fillText(lbl, toX(i), PT+CH+18);
     }
   });
 
-  // ── Per-trade P&L bars ──────────────────────────────────
+  // Per-trade P&L bars (trades mode only)
   if (BAR_H > 0 && n > 1) {
-    const barY0 = LINE_H + 4;              // baseline Y for bars
-    const BAR_AREA = BAR_H - 8;
-    const maxAbsPnl = Math.max(...pts.slice(1).map(p => Math.abs(p.pnl || 0))) || 1;
-    const barW = Math.max(3, Math.min(14, (CW / (n - 1)) * 0.55));
-
-    // Divider
-    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(PAD_L, barY0 - 2); ctx.lineTo(W - PAD_R, barY0 - 2); ctx.stroke();
-
-    pts.forEach((pt, i) => {
-      if (i === 0 || pt.pnl == null) return;
+    const bY0    = LH + 4;
+    const maxAbs = Math.max(...pts.filter(p=>p.pnl!=null).map(p=>Math.abs(p.pnl)), 1);
+    const bW     = Math.max(3, Math.min(12, (CW/(n-1))*0.5));
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PL, bY0-1); ctx.lineTo(W-PR, bY0-1); ctx.stroke();
+    pts.forEach((pt,i) => {
+      if (i===0||pt.pnl==null) return;
       const x  = toX(i);
-      const bh = Math.max(2, (Math.abs(pt.pnl) / maxAbsPnl) * (BAR_AREA / 2));
-      const bx = x - barW / 2;
-      const by = pt.pnl >= 0 ? barY0 - bh : barY0;
-      ctx.fillStyle = pt.pnl >= 0 ? 'rgba(34,197,94,0.75)' : 'rgba(239,68,68,0.75)';
+      const bh = Math.max(2, Math.abs(pt.pnl)/maxAbs*(BAR_H-10)/2);
+      const bx = x - bW/2, by = pt.pnl>=0 ? bY0-bh : bY0;
+      ctx.fillStyle = pt.pnl>=0 ? 'rgba(34,197,94,0.75)' : 'rgba(239,68,68,0.75)';
       ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(bx, by, barW, bh, 2) : ctx.rect(bx, by, barW, bh);
+      ctx.roundRect ? ctx.roundRect(bx, by, bW, bh, 1.5) : ctx.rect(bx, by, bW, bh);
       ctx.fill();
     });
-
-    // Baseline for bars
-    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(PAD_L, barY0); ctx.lineTo(W - PAD_R, barY0); ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,0,0,0.07)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PL, bY0); ctx.lineTo(W-PR, bY0); ctx.stroke();
   }
 
-  // ── Store dot positions for hover ──
-  const dotPos = pts.map((_, i) => ({ x: toX(i), y: toY(pts[i].capital) }));
+  // Legend
+  if (legEl) {
+    legEl.innerHTML = mode === 'monthly'
+      ? `<span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e"></span>Profitable month</span>
+         <span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444"></span>Loss month</span>
+         <span style="font-size:10px;color:#94a3b8">Hover dots for monthly breakdown</span>`
+      : `<span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e"></span>Winning trade</span>
+         <span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444"></span>Losing trade</span>
+         <span style="font-size:10px;color:#94a3b8">Hover / tap dots for details</span>`;
+  }
 
-  // ── Hover logic ──────────────────────────────────────────────────
-  let activeIdx = -1;
+  // ── Hover / touch ──────────────────────────────────────────────────
+  const dotPos = pts.map((_,i) => ({x:toX(i), y:toY(pts[i].capital)}));
+  let lastHL = -1;
 
-  function onMove(clientX, clientY) {
-    const rect = canvas.getBoundingClientRect();
-    const mx = clientX - rect.left;
-    const my = clientY - rect.top;
-
-    // Find closest dot
-    let closest = -1, minDist = 40;
-    dotPos.forEach((dp, i) => {
-      const dist = Math.abs(dp.x - mx);
-      if (dist < minDist) { minDist = dist; closest = i; }
+  function redrawDots(hl) {
+    if (hl === lastHL) return;
+    lastHL = hl;
+    pts.forEach((pt,i) => {
+      const dp = dotPos[i], isHL = i===hl;
+      const dc = pt.pnl==null ? '#94a3b8' : pt.pnl>=0 ? '#22c55e' : '#ef4444';
+      ctx.clearRect(dp.x-18, dp.y-18, 36, 36);
+      if (isHL) {
+        ctx.beginPath(); ctx.arc(dp.x, dp.y, DOT_R+9, 0, Math.PI*2);
+        ctx.fillStyle = dc+'28'; ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(dp.x, dp.y, isHL ? DOT_R+3 : DOT_R, 0, Math.PI*2);
+      ctx.fillStyle = dc; ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = isHL ? 2.5 : 1.8; ctx.stroke();
     });
+  }
 
-    if (closest === activeIdx) return;
-    activeIdx = closest;
+  function onMove(cx, cy) {
+    const rect = canvas.getBoundingClientRect();
+    const mx   = cx - rect.left;
+    let cl = -1, md = mode==='monthly' ? 50 : 32;
+    dotPos.forEach((dp,i) => { const d=Math.abs(dp.x-mx); if(d<md){md=d;cl=i;} });
+    redrawDots(cl);
+    if (cl === -1) { tip.style.display='none'; return; }
 
-    if (closest === -1) {
-      tip.style.display = 'none';
-      redrawDots();
-      return;
+    const pt = pts[cl];
+    const pc = pt.pnl==null ? '#94a3b8' : pt.pnl>=0 ? '#22c55e' : '#ef4444';
+    const fmtD = d => { try { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; }};
+
+    if (pt.pnl == null) {
+      tip.innerHTML = `<div style="font-size:10px;color:#64748b;margin-bottom:5px;font-weight:600">Period start</div>
+        <div style="font-size:15px;font-weight:800;color:#f1f5f9">${fmtC(pt.capital)}</div>`;
+    } else if (mode === 'monthly') {
+      const mLabel = (() => { try { return new Date(pt.ym+'-01').toLocaleDateString('en-IN',{month:'long',year:'numeric'}); } catch { return pt.ym||''; }})();
+      tip.innerHTML = `<div style="font-size:11px;font-weight:700;color:#f1f5f9;margin-bottom:7px">${mLabel}</div>
+        <div style="display:flex;justify-content:space-between;gap:14px;margin-bottom:4px;font-size:11px"><span style="color:#64748b">P&L</span><span style="color:${pc};font-weight:700">${sign(pt.pnl)}${fmtC(pt.pnl)}</span></div>
+        <div style="display:flex;justify-content:space-between;gap:14px;margin-bottom:4px;font-size:11px"><span style="color:#64748b">Return</span><span style="color:${pc};font-weight:700">${sign(pt.pnlPct||0)}${fmt(pt.pnlPct||0,2)}%</span></div>
+        <div style="display:flex;justify-content:space-between;gap:14px;margin-bottom:4px;font-size:11px"><span style="color:#64748b">Balance</span><span style="color:#f1f5f9;font-weight:700">${fmtC(pt.capital)}</span></div>
+        <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px"><span style="color:#64748b">Trades</span><span style="color:#94a3b8">${pt.trades} &nbsp;·&nbsp; ${pt.wr}% WR</span></div>`;
+    } else {
+      tip.innerHTML = `<div style="font-size:10px;color:#64748b;margin-bottom:5px;font-weight:600">${fmtD(pt.date)} · Trade #${cl}</div>
+        <div style="font-size:13px;font-weight:800;color:#f1f5f9;margin-bottom:1px">${pt.symbol||''}</div>
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:7px">${pt.name||''}</div>
+        <div style="display:flex;justify-content:space-between;gap:14px;margin-bottom:4px;font-size:11px"><span style="color:#64748b">P&L</span><span style="color:${pc};font-weight:700">${sign(pt.pnl)}${fmtC(pt.pnl)} (${sign(pt.pnlPct||0)}${fmt(pt.pnlPct||0,2)}%)</span></div>
+        <div style="display:flex;justify-content:space-between;gap:14px;margin-bottom:4px;font-size:11px"><span style="color:#64748b">Balance</span><span style="color:#f1f5f9;font-weight:700">${fmtC(pt.capital)}</span></div>
+        ${pt.reason?`<div style="display:flex;justify-content:space-between;gap:14px;font-size:11px"><span style="color:#64748b">Exit</span><span style="color:#94a3b8">${pt.reason}</span></div>`:''}`;
     }
 
-    const pt = pts[closest];
-    const isStart = pt.pnl == null;
-    const pnlColor = isStart ? '#94a3b8' : pt.pnl >= 0 ? '#22c55e' : '#ef4444';
-    const dateStr  = pt.date === 'Start' ? '—'
-      : (() => { try { return new Date(pt.date).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}); } catch { return pt.date; }})();
-
-    tip.innerHTML = isStart
-      ? `<div style="font-size:10px;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;font-weight:700">Starting Balance</div>
-         <div style="font-size:16px;font-weight:800;color:#f1f5f9">${fmtC(pt.capital)}</div>`
-      : `<div style="font-size:10px;color:#64748b;margin-bottom:6px;font-weight:600">${dateStr} · Trade #${closest}</div>
-         <div style="font-size:13px;font-weight:800;color:#f1f5f9;margin-bottom:2px">${pt.symbol}</div>
-         <div style="font-size:11px;color:#94a3b8;margin-bottom:8px">${pt.name||''}</div>
-         <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:4px">
-           <span style="color:#64748b;font-size:10px">P&L</span>
-           <span style="color:${pnlColor};font-weight:700;font-size:12px">${sign(pt.pnl)}${fmtC(pt.pnl)} (${sign(pt.pnlPct||0)}${fmt(pt.pnlPct||0,2)}%)</span>
-         </div>
-         <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:4px">
-           <span style="color:#64748b;font-size:10px">Balance</span>
-           <span style="color:#f1f5f9;font-weight:700;font-size:12px">${fmtC(pt.capital)}</span>
-         </div>
-         ${pt.reason?`<div style="display:flex;justify-content:space-between;gap:12px">
-           <span style="color:#64748b;font-size:10px">Exit</span>
-           <span style="color:#94a3b8;font-size:11px">${pt.reason}</span>
-         </div>`:''}`;
-
-    // Position tooltip
-    const dp = dotPos[closest];
-    const tipW = 200;
-    let tx = dp.x + 12;
-    if (tx + tipW > W - PAD_R) tx = dp.x - tipW - 12;
-    const ty = Math.max(4, dp.y - 40);
-    tip.style.left  = tx + 'px';
-    tip.style.top   = ty + 'px';
+    const dp  = dotPos[cl];
+    const tw  = 220;
+    let tx = dp.x + 14;
+    if (tx + tw > W - PR) tx = dp.x - tw - 14;
+    tip.style.left    = tx + 'px';
+    tip.style.top     = Math.max(4, dp.y - 52) + 'px';
     tip.style.display = 'block';
-
-    redrawDots(closest);
   }
 
-  function redrawDots(highlightIdx = -1) {
-    // Redraw only the dot layer (clear and redraw equity line + dots)
-    // For performance, just redraw dots with highlight
-    pts.forEach((pt, i) => {
-      const dp  = dotPos[i];
-      const isHL = i === highlightIdx;
-      const dotColor = pt.pnl == null ? '#94a3b8' : pt.pnl >= 0 ? '#22c55e' : '#ef4444';
-      ctx.beginPath();
-      ctx.arc(dp.x, dp.y, isHL ? 7 : 4.5, 0, Math.PI * 2);
-      ctx.fillStyle = dotColor;
-      ctx.fill();
-      ctx.strokeStyle = isHL ? '#fff' : '#fff';
-      ctx.lineWidth   = isHL ? 2.5 : 2;
-      ctx.stroke();
-      if (isHL) {
-        ctx.beginPath();
-        ctx.arc(dp.x, dp.y, 12, 0, Math.PI * 2);
-        ctx.fillStyle = dotColor + '22';
-        ctx.fill();
-      }
-    });
-  }
-
-  canvas.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
-  canvas.addEventListener('mouseleave', () => { activeIdx = -1; tip.style.display = 'none'; redrawDots(); });
-  canvas.addEventListener('touchstart', e => {
-    e.preventDefault();
-    const t = e.touches[0];
-    onMove(t.clientX, t.clientY);
-  }, { passive: false });
+  // ── Attach events (AbortController clears previous listeners on re-draw) ──
+  if (canvas._eqAbort) canvas._eqAbort.abort();
+  canvas._eqAbort = new AbortController();
+  const sig = canvas._eqAbort.signal;
+  canvas.addEventListener('mousemove',  e => onMove(e.clientX, e.clientY), {signal:sig});
+  canvas.addEventListener('mouseleave', () => { redrawDots(-1); tip.style.display='none'; }, {signal:sig});
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); onMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false, signal:sig});
   canvas.style.cursor = 'crosshair';
 }
 
