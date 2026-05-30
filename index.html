@@ -400,6 +400,8 @@
       <button class="modal-close" onclick="closeModal('modal-close')">×</button>
     </div>
     <div class="trade-summary" id="close-summary"></div>
+    <!-- Price Journey (populated by openCloseModal) -->
+    <div id="price-journey-wrap"></div>
     <div class="form-grid">
       <div class="form-group"><label class="form-label">Exit Price (₹)</label><input class="form-input" id="c-exit" type="number" placeholder="0.00" oninput="updatePnlPreview()"></div>
       <div class="form-group"><label class="form-label">Trade Type</label>
@@ -617,7 +619,7 @@ function commitInlineCMP(id, val, cancelled) {
   const price=parseFloat(val);
   if(!isNaN(price) && price>0) {
     const p=state.positions.find(x=>x.id===id);
-    if(p) { p.cmp=Math.round(price*100)/100; checkAlerts(p); saveState(); }
+    if(p) { p.cmp=Math.round(price*100)/100; recordCMPSnapshot(p); checkAlerts(p); saveState(); }
   }
   render();
 }
@@ -645,6 +647,7 @@ function applyBulkCMP() {
     const p=state.positions.find(x=>x.symbol.toUpperCase()===sym);
     if(!p){notFound.push(sym);return;}
     p.cmp=Math.round(price*100)/100;
+    recordCMPSnapshot(p);
     checkAlerts(p);
     updated.push(`${sym} → ₹${fmt(price)}`);
   });
@@ -714,6 +717,23 @@ function calcR(entry, exitOrCmp, initialSL) {
 function calcRNum(entry, price, initialSL) {
   if(!initialSL||initialSL>=entry) return null;
   return (price-entry)/(entry-initialSL);
+}
+
+// ── CMP History snapshot recorder ─────────────────────────────────
+// Called every time CMP changes. Stores a lightweight snapshot so we
+// can show a "Price Journey" when the trade is closed / in the journal.
+function recordCMPSnapshot(p) {
+  if(!p || !p.entry || !p.cmp) return;
+  if(!p.cmpHistory) p.cmpHistory=[];
+  const d=today();
+  const pnlAbs=Math.round((p.cmp-p.entry)*p.qty*100)/100;
+  const pnlPct=Math.round((p.cmp-p.entry)/p.entry*10000)/100;
+  // Skip if same price already recorded today
+  const last=p.cmpHistory[p.cmpHistory.length-1];
+  if(last && last.price===p.cmp && last.date===d) return;
+  p.cmpHistory.push({date:d, price:p.cmp, pnlAbs, pnlPct});
+  // Cap at 120 entries (~4 months of daily updates)
+  if(p.cmpHistory.length>120) p.cmpHistory=p.cmpHistory.slice(-120);
 }
 
 function sparklineSVG(entry,cmp,w=80,h=30) {
@@ -1556,8 +1576,10 @@ function savePosition() {
   if(editingId){
     const p=state.positions.find(x=>x.id===editingId);
     Object.assign(p,{symbol:sym,name,entry,cmp,qty,stopLoss:sl,currentSL:csl,target:tgt,trailPct:trail,sector:sec,entryDate:date});
+    recordCMPSnapshot(p);
   } else {
-    const p={id:Date.now(),symbol:sym,name,entry,cmp,qty,stopLoss:sl,currentSL:csl,target:tgt,trailPct:trail,sector:sec,entryDate:date};
+    const p={id:Date.now(),symbol:sym,name,entry,cmp,qty,stopLoss:sl,currentSL:csl,target:tgt,trailPct:trail,sector:sec,entryDate:date,cmpHistory:[]};
+    recordCMPSnapshot(p);
     state.positions.push(p);
     checkAlerts(p);
   }
@@ -1568,6 +1590,78 @@ function deletePosition(id) {
   if(!confirm('Remove this position?')) return;
   state.positions=state.positions.filter(p=>p.id!==id);
   saveState(); render();
+}
+
+// ══════════════════════════════════════════
+//  PRICE JOURNEY (CMP history visualiser)
+// ══════════════════════════════════════════
+function buildPriceJourneyHTML(p) {
+  const hist = p.cmpHistory||[];
+  if(hist.length < 2) return ''; // not enough data to show
+
+  const allPrices = hist.map(h=>h.price);
+  const peakSnap  = hist.reduce((b,h)=>h.pnlAbs>b.pnlAbs?h:b, hist[0]);
+  const troughSnap= hist.reduce((b,h)=>h.pnlAbs<b.pnlAbs?h:b, hist[0]);
+  const lastSnap  = hist[hist.length-1];
+  const exitEff   = peakSnap.pnlAbs!==0
+    ? Math.round((lastSnap.pnlAbs/peakSnap.pnlAbs)*100)
+    : 100;
+  const effColor  = exitEff>=80?'#16a34a':exitEff>=50?'#ea580c':'#dc2626';
+
+  // Show at most 8 entries on mobile — always include entry, peak, current
+  const keyIdxs = new Set([0, hist.indexOf(peakSnap), hist.indexOf(troughSnap), hist.length-1]);
+  let visible = hist;
+  if(hist.length > 8) {
+    // Sample: always include key points, fill remaining evenly
+    const step = Math.ceil(hist.length / 6);
+    for(let i=0;i<hist.length;i+=step) keyIdxs.add(i);
+    visible = hist.filter((_,i)=>keyIdxs.has(i));
+  }
+
+  const fmtD = d => { try { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}); } catch { return d; }};
+
+  const rows = visible.map((h,i) => {
+    const isPeak    = h===peakSnap && peakSnap.pnlAbs>0;
+    const isTrough  = h===troughSnap && troughSnap.pnlAbs<0 && h!==peakSnap;
+    const isLast    = h===lastSnap;
+    const isFirst   = h===hist[0];
+    const c         = h.pnlAbs>=0?'#16a34a':'#dc2626';
+    let badge='';
+    if(isPeak)   badge=`<span style="font-size:9px;background:rgba(22,163,74,0.1);color:#16a34a;border-radius:4px;padding:1px 5px;font-weight:700;margin-left:4px">PEAK</span>`;
+    if(isTrough) badge=`<span style="font-size:9px;background:rgba(220,38,38,0.1);color:#dc2626;border-radius:4px;padding:1px 5px;font-weight:700;margin-left:4px">LOW</span>`;
+    if(isLast&&!isPeak)   badge+=`<span style="font-size:9px;background:rgba(37,99,235,0.1);color:#2563eb;border-radius:4px;padding:1px 5px;font-weight:700;margin-left:4px">NOW</span>`;
+    if(isFirst)  badge+=`<span style="font-size:9px;background:rgba(71,85,105,0.1);color:#475569;border-radius:4px;padding:1px 5px;font-weight:700;margin-left:4px">ENTRY DAY</span>`;
+    return `<div style="display:grid;grid-template-columns:60px 1fr 1fr;gap:4px;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(0,0,0,0.05);${isPeak?'background:rgba(22,163,74,0.04)':''}${isTrough?'background:rgba(220,38,38,0.03)':''}">
+      <span style="font-size:10px;color:#94a3b8;font-weight:500">${fmtD(h.date)}</span>
+      <span style="font-size:12px;font-weight:700;color:#0f172a">₹${fmt(h.price)}${badge}</span>
+      <span style="font-size:12px;font-weight:700;color:${c};text-align:right">${sign(h.pnlAbs)}${fmtC(h.pnlAbs)}<span style="font-size:9px;opacity:.7;margin-left:3px">${sign(h.pnlPct)}${fmt(Math.abs(h.pnlPct),1)}%</span></span>
+    </div>`;
+  }).join('');
+
+  return `<div style="border:1px solid rgba(0,0,0,0.08);border-radius:12px;overflow:hidden;margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8fafc;border-bottom:1px solid rgba(0,0,0,0.06)">
+      <span style="font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.08em">📈 Price Journey · ${hist.length} updates</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:10px;color:#94a3b8">Exit efficiency</span>
+        <span style="font-size:11px;font-weight:800;color:${effColor}">${exitEff}%</span>
+      </div>
+    </div>
+    <div style="max-height:200px;overflow-y:auto;-webkit-overflow-scrolling:touch">
+      ${rows}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(0,0,0,0.06)">
+      <div style="background:#fff;padding:8px 12px">
+        <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Best price seen</div>
+        <div style="font-size:13px;font-weight:800;color:#16a34a">₹${fmt(peakSnap.price)}</div>
+        <div style="font-size:10px;color:#16a34a">${sign(peakSnap.pnlAbs)}${fmtC(peakSnap.pnlAbs)} on ${fmtD(peakSnap.date)}</div>
+      </div>
+      <div style="background:#fff;padding:8px 12px">
+        <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Left on table</div>
+        <div style="font-size:13px;font-weight:800;color:${effColor}">₹${fmtC(Math.abs(peakSnap.pnlAbs-lastSnap.pnlAbs)).replace('₹','')}</div>
+        <div style="font-size:10px;color:#94a3b8">vs peak of ${sign(peakSnap.pnlAbs)}${fmtC(peakSnap.pnlAbs)}</div>
+      </div>
+    </div>
+  </div>`;
 }
 
 // ══════════════════════════════════════════
