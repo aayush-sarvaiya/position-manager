@@ -304,6 +304,8 @@
     }
   }
 
+  .btn-ai { display:none; } /* removed */
+
   /* Responsive */
   @media (max-width: 600px) {
     .app { padding: 14px 16px; }
@@ -494,6 +496,8 @@
     </div>
   </div>
 </div>
+
+<!-- (AI Advisor removed) -->
 
 <script>
 // ══════════════════════════════════════════
@@ -1052,7 +1056,7 @@ function renderJournal() {
     </div>
     <div id="eq-wrap" style="position:relative;user-select:none">
       <canvas id="eq-canvas" style="display:block;width:100%;border-radius:8px"></canvas>
-      <div id="eq-tip" style="display:none;position:absolute;background:#1e293b;border:1px solid rgba(255,255,255,0.1);color:#f1f5f9;border-radius:10px;padding:11px 14px;font-size:11px;pointer-events:none;z-index:20;min-width:180px;max-width:230px;box-shadow:0 8px 24px rgba(0,0,0,0.35)"></div>
+      <div id="eq-tip" style="display:none;position:fixed;background:#1e293b;border:1px solid rgba(255,255,255,0.1);color:#f1f5f9;border-radius:10px;padding:11px 14px;font-size:11px;pointer-events:none;z-index:50;min-width:180px;max-width:230px;box-shadow:0 8px 24px rgba(0,0,0,0.35)"></div>
     </div>
     <div id="eq-legend" style="display:flex;justify-content:center;gap:18px;margin-top:10px;flex-wrap:wrap"></div>
   </div>`;
@@ -1448,10 +1452,14 @@ function drawEquityChart() {
 
     const dp  = dotPos[cl];
     const tw  = 220;
-    let tx = dp.x + 14;
-    if (tx + tw > W - PR) tx = dp.x - tw - 14;
+    // dp.x is canvas-relative; convert to viewport for position:fixed
+    const canvasRect = canvas.getBoundingClientRect();
+    const vpX = canvasRect.left + dp.x;
+    const vpY = canvasRect.top  + dp.y;
+    let tx = vpX + 14;
+    if (tx + tw > window.innerWidth - 14) tx = vpX - tw - 14;
     tip.style.left    = tx + 'px';
-    tip.style.top     = Math.max(4, dp.y - 52) + 'px';
+    tip.style.top     = Math.max(4, vpY - 52) + 'px';
     tip.style.display = 'block';
   }
 
@@ -1489,7 +1497,10 @@ function switchTab(tab) {
 // ══════════════════════════════════════════
 //  MODALS
 // ══════════════════════════════════════════
-function openModal(id)  { document.getElementById(id).style.display='flex'; }
+function openModal(id)  {
+  document.getElementById(id).style.display='flex';
+  const tip=document.getElementById('eq-tip'); if(tip) tip.style.display='none';
+}
 function closeModal(id) { document.getElementById(id).style.display='none'; }
 document.querySelectorAll('.modal-overlay').forEach(el=>{
   el.addEventListener('click',e=>{ if(e.target===el) el.style.display='none'; });
