@@ -39,7 +39,6 @@
 
   html, body { background: var(--bg); color: var(--text); font-family: 'Montserrat', sans-serif; min-height: 100vh; }
 
-  /* Scrollbar */
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -47,13 +46,11 @@
 
   .app { padding: 24px 28px; max-width: 1400px; margin: 0 auto; }
 
-  /* Header */
   .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
   .header-left .label { font-size: 10px; letter-spacing: .2em; color: var(--green); text-transform: uppercase; margin-bottom: 3px; font-weight: 600; }
   .header-left h1 { font-size: 24px; font-weight: 800; letter-spacing: -.6px; color: var(--text); }
   .header-right { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
-  /* Buttons */
   .btn { border: none; border-radius: 9px; padding: 8px 16px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: 'Montserrat', sans-serif; transition: all .15s; white-space: nowrap; letter-spacing: .04em; }
   .btn:active { transform: scale(0.97); }
   .btn-primary { background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; box-shadow: 0 2px 8px rgba(22,163,74,0.3); }
@@ -65,7 +62,6 @@
   .btn:disabled { opacity: .45; cursor: not-allowed; }
   .btn-orange { background:rgba(234,88,12,0.07); border:1px solid rgba(234,88,12,0.2) !important; color:var(--orange); }
 
-  /* Alert toasts */
   .alert-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); border-radius:14px; padding:14px 20px; z-index:9999; min-width:270px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.18); cursor:pointer; animation:toastUp .25s ease; }
   .toast-sl  { background:#fff1f1; border:1px solid rgba(220,38,38,0.35); }
   .toast-tgt { background:#f0fdf4; border:1px solid rgba(22,163,74,0.35); }
@@ -75,28 +71,22 @@
   .toast-tgt .toast-title { color:#16a34a; }
   .toast-body { font-size:11px; color:var(--text2); line-height:1.55; }
 
-  /* Card badges */
   .badge-sl  { background:rgba(220,38,38,0.1); border-color:rgba(220,38,38,0.3); color:#dc2626; font-weight:700; }
   .badge-tgt { background:rgba(22,163,74,0.1); border-color:rgba(22,163,74,0.3); color:#16a34a; font-weight:700; }
-
-  /* Alert card borders */
   .card.sl-hit  { border-color:rgba(220,38,38,0.4) !important; box-shadow:0 0 0 3px rgba(220,38,38,0.07); }
   .card.tgt-hit { border-color:rgba(22,163,74,0.4)  !important; box-shadow:0 0 0 3px rgba(22,163,74,0.07); }
 
-  /* Sort bar */
   .sort-bar { display:flex; gap:6px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
   .sort-label { font-size:10px; color:var(--text3); letter-spacing:.08em; font-weight:600; }
   .sort-btn { background:#fff; border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-size:10px; color:var(--text3); font-family:'Montserrat',sans-serif; font-weight:600; cursor:pointer; transition:all .15s; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
   .sort-btn.active { background:var(--text); border-color:var(--text); color:#fff; }
   .sort-btn:hover { border-color:var(--border2); color:var(--text2); }
 
-  /* CMP inline edit */
   .price-cell.cmp-cell { cursor:text; border:1px solid transparent; transition:background .15s,border-color .15s; }
   .price-cell.cmp-cell:hover { background:rgba(22,163,74,0.07); border-color:rgba(22,163,74,0.25); }
   .price-cell.cmp-cell:hover .price-cell-label::after { content:' ✎'; opacity:.5; }
   .cmp-inline-input { width:100%; background:transparent; border:none; outline:none; color:var(--text); font-family:'Montserrat',sans-serif; font-size:12px; font-weight:700; padding:0; }
 
-  /* Position size calculator */
   .calc-strip { background:rgba(22,163,74,0.05); border:1px solid rgba(22,163,74,0.15); border-radius:10px; padding:10px 13px; margin-bottom:13px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .calc-strip label { font-size:10px; color:var(--text3); font-weight:600; text-transform:uppercase; letter-spacing:.08em; white-space:nowrap; }
   .calc-strip input { width:64px; background:#fff; border:1px solid var(--border2); border-radius:6px; padding:5px 8px; color:var(--text); font-family:'Montserrat',sans-serif; font-size:13px; outline:none; }
@@ -104,11 +94,9 @@
   .calc-result { font-size:12px; font-weight:700; color:var(--green); flex:1; }
   .calc-apply { background:rgba(22,163,74,0.12); border:1px solid rgba(22,163,74,0.25); border-radius:6px; color:var(--green); padding:4px 10px; font-size:11px; cursor:pointer; font-family:'Montserrat',sans-serif; font-weight:700; white-space:nowrap; }
 
-  /* Bulk CMP modal */
   .bulk-hint { font-size:11px; color:var(--text3); line-height:1.7; margin-bottom:12px; }
   .bulk-result { font-size:12px; margin-top:10px; padding:9px 12px; background:var(--bg3); border-radius:8px; line-height:1.9; }
 
-  /* Heatmap */
   .heatmap-wrap { margin-bottom:20px; }
   .heatmap-title { font-size:10px; letter-spacing:.12em; color:var(--text3); text-transform:uppercase; font-weight:700; margin-bottom:10px; }
   .heatmap-grid { display:flex; flex-wrap:wrap; gap:6px; }
@@ -117,12 +105,10 @@
   .hm-sym { font-size:11px; font-weight:800; color:#fff; }
   .hm-pct { font-size:14px; font-weight:700; margin-top:2px; color:#fff; }
 
-  /* Trailing SL on card */
   .trail-row { display:flex; justify-content:space-between; align-items:center; background:rgba(124,58,237,0.06); border:1px solid rgba(124,58,237,0.15); border-radius:7px; padding:5px 8px; margin-bottom:8px; font-size:11px; }
   .trail-label { color:var(--purple); font-size:9px; text-transform:uppercase; letter-spacing:.1em; font-weight:700; }
   .trail-val { color:var(--purple); font-weight:700; }
 
-  /* Monthly breakdown */
   .month-section { margin-bottom:2px; }
   .month-header { display:grid; grid-template-columns:110px 1fr 90px 70px 60px 70px; padding:10px 16px; cursor:pointer; background:#fff; border-bottom:1px solid var(--border); min-width:680px; align-items:center; user-select:none; transition:background .15s; }
   .month-header:hover { background:#f8fafc; }
@@ -130,12 +116,10 @@
   .month-name { font-weight:700; color:var(--text); }
   .month-toggle { color:var(--text3); font-size:10px; text-align:right; }
 
-  /* Best/worst badges in journal row */
   .j-row.best-trade  { background:rgba(22,163,74,0.04) !important; border-left:3px solid var(--green); }
   .j-row.worst-trade { background:rgba(220,38,38,0.04) !important; border-left:3px solid var(--red); }
   .star-badge { font-size:10px; margin-left:4px; }
 
-  /* Metrics */
   .metrics { display: flex; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
   .metric { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; flex: 1; min-width: 120px; box-shadow: var(--shadow); }
   .metric.glow { background: #f0fdf4; border-color: rgba(22,163,74,0.3); }
@@ -144,15 +128,12 @@
   .metric-value { font-size: 20px; font-weight: 800; letter-spacing: -.5px; line-height: 1; font-variant-numeric: tabular-nums; }
   .metric-sub { font-size: 10px; color: var(--text3); margin-top: 5px; font-weight: 500; }
 
-  /* Tabs */
   .tabs { display: flex; gap: 3px; margin-bottom: 20px; background: #fff; border: 1px solid var(--border); border-radius: 11px; padding: 4px; width: fit-content; box-shadow: var(--shadow); }
   .tab-btn { background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 7px 18px; color: var(--text3); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; font-family: 'Montserrat', sans-serif; white-space: nowrap; }
   .tab-btn.active { background: var(--text); border-color: var(--text); color: #fff; }
 
-  /* Grid */
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
 
-  /* Card */
   .card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; position: relative; cursor: pointer; transition: all .2s ease; box-shadow: var(--shadow); }
   .card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--shadow2); }
   .card-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 5px; opacity: 0; transition: opacity .15s; }
@@ -169,10 +150,8 @@
   .badge-sector { background: rgba(79,70,229,0.07); border-color: rgba(79,70,229,0.18); color: var(--indigo); }
   .badge-days { background: rgba(71,85,105,0.07); border-color: rgba(71,85,105,0.15); color: var(--text2); }
 
-  /* Sparkline */
   .sparkline { margin-bottom: 12px; }
 
-  /* Price grid */
   .price-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
   .price-cell { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; }
   .price-cell-label { font-size: 9px; color: var(--text3); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 2px; font-weight: 700; }
@@ -184,7 +163,6 @@
   .rr-cell  { background: rgba(180,83,9,0.05); border: 1px solid rgba(180,83,9,0.12); border-radius: 8px; padding: 7px 9px; }
   .mini-label { font-size: 9px; color: var(--text3); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 2px; font-weight: 700; }
 
-  /* Break-even & R row on card */
   .be-row { display:flex; justify-content:space-between; align-items:center; background:#fafbfc; border:1px solid var(--border); border-radius:7px; padding:5px 9px; margin-bottom:8px; font-size:11px; }
   .be-label { color:var(--text3); font-size:9px; text-transform:uppercase; letter-spacing:.1em; font-weight:700; }
   .be-val   { font-weight:700; font-variant-numeric:tabular-nums; }
@@ -194,12 +172,10 @@
   .card-footer span { font-size: 11px; color: var(--text3); font-weight: 500; }
   .card-footer span b { color: var(--text2); font-weight: 700; }
 
-  /* Empty state */
   .empty { text-align: center; padding: 80px 0; }
   .empty-icon { font-size: 38px; margin-bottom: 10px; }
   .empty-text { font-size: 14px; color: var(--text3); font-weight: 500; }
 
-  /* Modal */
   .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.5); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
   .modal { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 26px; width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(15,23,42,0.15); }
   .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -218,15 +194,12 @@
   .modal-footer { display: flex; gap: 10px; margin-top: 6px; }
   .modal-footer .btn { flex: 1; padding: 11px; font-size: 13px; }
 
-  /* Partial close notice */
   .partial-notice { background: rgba(234,88,12,0.06); border: 1px solid rgba(234,88,12,0.2); border-radius: 9px; padding: 9px 13px; margin-bottom: 13px; font-size: 11px; color: var(--orange); font-weight: 600; display: none; }
 
-  /* PnL Preview */
   .pnl-preview { border-radius: 10px; padding: 12px 15px; margin-bottom: 10px; display: flex; justify-content: space-between; }
   .pnl-preview-label { font-size: 9px; color: var(--text3); text-transform: uppercase; margin-bottom: 3px; font-weight: 700; letter-spacing:.1em; }
   .pnl-preview-value { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
 
-  /* Charges breakdown */
   .charges-box { background: #fffbeb; border: 1px solid rgba(180,83,9,0.2); border-radius: 10px; padding: 11px 14px; margin-bottom: 13px; }
   .charges-title { font-size: 9px; color: var(--yellow); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center; font-weight:700; }
   .charges-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px 8px; }
@@ -240,12 +213,10 @@
   .net-pnl-label { font-size:9px; color:var(--text3); text-transform:uppercase; margin-bottom:3px; font-weight:700; letter-spacing:.1em; }
   .net-pnl-value { font-size:20px; font-weight:800; font-variant-numeric:tabular-nums; }
 
-  /* Summary box inside close modal */
   .trade-summary { background: #f8fafc; border: 1px solid var(--border); border-radius: 11px; padding: 12px 15px; margin-bottom: 18px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
   .ts-label { font-size: 9px; color: var(--text3); text-transform: uppercase; margin-bottom: 3px; font-weight: 700; letter-spacing:.1em; }
   .ts-value { font-size: 13px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 
-  /* Journal */
   .journal-stats { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
   .j-table { background: #fff; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; overflow-x: auto; box-shadow: var(--shadow); }
   .j-table-head { display: grid; grid-template-columns: 75px minmax(0,1fr) 80px 80px 50px 50px 90px 75px 85px; padding: 10px 16px; border-bottom: 1px solid var(--border); min-width: 680px; background:#f8fafc; }
@@ -258,36 +229,36 @@
   .j-name { font-size: 11px !important; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .reason-badge { font-size: 9px; border-radius: 5px; padding: 2px 7px; border: 1px solid; white-space: nowrap; font-weight: 700; }
 
-  /* Journal detail */
   .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
   .detail-cell { background: #f8fafc; border: 1px solid var(--border); border-radius: 9px; padding: 9px 12px; }
   .detail-label { font-size: 9px; color: var(--text3); text-transform: uppercase; margin-bottom: 3px; letter-spacing: .1em; font-weight: 700; }
   .detail-value { font-size: 13px; color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
   .pnl-box { border-radius: 11px; padding: 14px 16px; margin-bottom: 14px; display: flex; justify-content: space-between; }
 
-  /* Risk Heat */
   .risk-heat-row { display:flex; align-items:center; gap:6px; margin-bottom:8px; }
   .risk-heat-label { font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:.08em; white-space:nowrap; font-weight:700; }
   .risk-heat-bar-track { flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
   .risk-heat-bar-fill  { height:100%; border-radius:2px; transition:width .3s; }
   .risk-heat-val { font-size:10px; font-weight:700; white-space:nowrap; min-width:36px; text-align:right; font-variant-numeric:tabular-nums; }
 
-  /* Equity Curve */
+  /* Equity Chart */
   .equity-chart { background:#fff; border:1px solid var(--border); border-radius:16px; padding:18px 20px; margin-bottom:16px; box-shadow:var(--shadow); }
   .equity-chart-title { font-size:10px; letter-spacing:.12em; color:var(--text3); text-transform:uppercase; font-weight:700; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center; }
   .equity-chart-meta { font-size:11px; color:var(--text2); margin-bottom:12px; display:flex; gap:16px; flex-wrap:wrap; font-weight:600; }
 
-  /* Drawdown */
+  /* Custom date range inputs */
+  .eq-date-input { background:#f8fafc; border:1px solid var(--border2); border-radius:7px; padding:5px 9px; font-size:11px; font-family:'Montserrat',sans-serif; color:var(--text); outline:none; cursor:pointer; }
+  .eq-date-input:focus { border-color:rgba(22,163,74,0.4); }
+  .eq-date-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+
   .dd-strip { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
   .dd-card { flex:1; min-width:100px; background:#fff9f9; border:1px solid rgba(220,38,38,0.15); border-radius:12px; padding:11px 14px; }
   .dd-label { font-size:9px; color:#dc2626; text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px; font-weight:700; }
   .dd-value { font-size:18px; font-weight:800; color:#dc2626; font-variant-numeric:tabular-nums; }
   .dd-sub   { font-size:10px; color:var(--text3); margin-top:2px; font-weight:500; }
 
-  /* Price Journey */
   .pj-tag { font-size:9px; border-radius:4px; padding:1px 5px; font-weight:700; margin-left:4px; display:inline-block; }
 
-  /* Mobile */
   .card-mobile-actions { display: none; }
   @media (max-width: 768px) {
     .card-actions { display: none !important; }
@@ -307,9 +278,8 @@
     }
   }
 
-  .btn-ai { display:none; } /* removed */
+  .btn-ai { display:none; }
 
-  /* Responsive */
   @media (max-width: 600px) {
     .app { padding: 14px 16px; }
     .header-left h1 { font-size: 20px; }
@@ -323,7 +293,6 @@
 <body>
 <div class="app">
 
-  <!-- Header -->
   <div class="header">
     <div class="header-left">
       <div class="label">NSE Portfolio</div>
@@ -339,21 +308,16 @@
     </div>
   </div>
 
-  <!-- Metrics -->
   <div class="metrics" id="metricsBar"></div>
 
-  <!-- Tabs -->
   <div class="tabs">
     <button class="tab-btn active" id="tab-positions" onclick="switchTab('positions')">📈 Active (<span id="tab-pos-count">0</span>)</button>
     <button class="tab-btn" id="tab-journal" onclick="switchTab('journal')">📒 Journal (<span id="tab-jnl-count">0</span>)</button>
   </div>
 
-  <!-- Content -->
   <div id="content-positions"></div>
   <div id="content-journal" style="display:none"></div>
 </div>
-
-<!-- ══ MODALS ══ -->
 
 <!-- Add/Edit Modal -->
 <div class="modal-overlay" id="modal-add" style="display:none">
@@ -381,7 +345,6 @@
       </div>
     </div>
     <p class="form-hint">💡 Fill Entry + SL to unlock the position size calculator. Tap any card's CMP to edit it inline.</p>
-    <!-- Position Size Calculator -->
     <div class="calc-strip" id="calc-strip" style="display:none">
       <label>Risk %</label>
       <input id="f-riskpct" type="number" value="1" min="0.1" max="10" step="0.1" oninput="onCalcInput()">
@@ -404,7 +367,6 @@
     </div>
     <div class="trade-summary" id="close-summary"></div>
     <div id="close-journey"></div>
-    <!-- Price Journey (populated by openCloseModal) -->
     <div id="price-journey-wrap"></div>
     <div class="form-grid">
       <div class="form-group"><label class="form-label">Exit Price (₹)</label><input class="form-input" id="c-exit" type="number" placeholder="0.00" oninput="updatePnlPreview()"></div>
@@ -414,18 +376,14 @@
           <option value="intraday">Intraday (MIS)</option>
         </select>
       </div>
-      <!-- CHANGE 3: Qty to close field -->
       <div class="form-group"><label class="form-label">Qty to Close <span style="color:var(--text3);font-size:9px">partial ok</span></label><input class="form-input" id="c-qty" type="number" placeholder="All" min="1" oninput="updatePnlPreview()"></div>
       <div class="form-group"><label class="form-label">Exit Date</label><input class="form-input" id="c-date" type="date"></div>
     </div>
-    <!-- Partial close notice -->
     <div class="partial-notice" id="partial-notice">⚡ Partial close — remaining shares will stay in your active positions.</div>
-    <!-- Gross P&L preview -->
     <div id="pnl-preview-box" style="display:none" class="pnl-preview">
       <div><div class="pnl-preview-label">Gross P&amp;L</div><div class="pnl-preview-value" id="pnl-preview-val"></div></div>
       <div style="text-align:right"><div class="pnl-preview-label">Return</div><div class="pnl-preview-value" id="pnl-preview-pct"></div></div>
     </div>
-    <!-- Charges breakdown -->
     <div id="charges-box" style="display:none" class="charges-box">
       <div class="charges-title"><span>🏦 Dhan / NSE Charges</span><span id="charges-toggle-btn" style="cursor:pointer;color:var(--text3);font-size:10px" onclick="toggleChargesDetail()">▼ show breakdown</span></div>
       <div id="charges-detail" style="display:none">
@@ -436,7 +394,6 @@
         <span class="charges-total-val" id="charges-total-val">—</span>
       </div>
     </div>
-    <!-- Net P&L -->
     <div id="net-pnl-box" style="display:none" class="net-pnl-preview">
       <div><div class="net-pnl-label">Net P&amp;L (after charges)</div><div class="net-pnl-value" id="net-pnl-val"></div></div>
       <div style="text-align:right"><div class="net-pnl-label">Net Return</div><div class="net-pnl-value" id="net-pnl-pct"></div></div>
@@ -482,7 +439,7 @@
   </div>
 </div>
 
-<!-- Bulk CMP Update Modal -->
+<!-- Bulk CMP Modal -->
 <div class="modal-overlay" id="modal-bulk" style="display:none">
   <div class="modal" style="max-width:420px">
     <div class="modal-header">
@@ -502,8 +459,6 @@
     </div>
   </div>
 </div>
-
-<!-- (AI Advisor removed) -->
 
 <script>
 // ══════════════════════════════════════════
@@ -563,7 +518,7 @@ function restoreData(event) {
 }
 
 // ══════════════════════════════════════════
-//  ALERTS — SL & TARGET
+//  ALERTS
 // ══════════════════════════════════════════
 function checkAlerts(p) {
   const activeSL = p.currentSL || p.stopLoss;
@@ -629,7 +584,7 @@ function commitInlineCMP(id, val, cancelled) {
 }
 
 // ══════════════════════════════════════════
-//  BULK CMP UPDATE
+//  BULK CMP
 // ══════════════════════════════════════════
 function openBulkCMPModal() {
   document.getElementById('bulk-input').value='';
@@ -712,7 +667,6 @@ function reasonColor(r) {
 function col(w) { return w?'var(--green)':'var(--red)'; }
 function sign(n) { return n>=0?'+':''; }
 
-// CHANGE 1: calcR now returns numeric value too (used for live R display)
 function calcR(entry, exitOrCmp, initialSL) {
   if(!initialSL||initialSL>=entry) return '—';
   const r=(exitOrCmp-entry)/(entry-initialSL);
@@ -723,7 +677,6 @@ function calcRNum(entry, price, initialSL) {
   return (price-entry)/(entry-initialSL);
 }
 
-// ── CMP History snapshot recorder ─────────────────────────────────
 function recordCMPSnapshot(p) {
   if(!p || !p.entry || !p.cmp) return;
   if(!p.cmpHistory) p.cmpHistory=[];
@@ -747,7 +700,7 @@ function sparklineSVG(entry,cmp,w=80,h=30) {
 }
 
 // ══════════════════════════════════════════
-//  PRICE JOURNEY (CMP history visualiser)
+//  PRICE JOURNEY (single definition — SVG sparkline version)
 // ══════════════════════════════════════════
 function buildPriceJourneyHTML(p) {
   const hist = p.cmpHistory||[];
@@ -755,31 +708,25 @@ function buildPriceJourneyHTML(p) {
 
   const peakSnap   = hist.reduce((b,h)=>h.pnlAbs>b.pnlAbs?h:b, hist[0]);
   const troughSnap = hist.reduce((b,h)=>h.pnlAbs<b.pnlAbs?h:b, hist[0]);
-  const firstSnap  = hist[0];
   const lastSnap   = hist[hist.length-1];
 
-  // Exit efficiency: how close to peak did you exit?
   const exitEff = peakSnap.pnlAbs > 0
     ? Math.max(0, Math.min(100, Math.round((lastSnap.pnlAbs / peakSnap.pnlAbs) * 100)))
     : 100;
   const effColor = exitEff >= 80 ? '#16a34a' : exitEff >= 50 ? '#ea580c' : '#dc2626';
   const leftOnTable = Math.max(0, peakSnap.pnlAbs - lastSnap.pnlAbs);
-
   const fmtD = d => { try { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}); } catch { return d; }};
 
-  // ── Sparkline SVG ──────────────────────────────────────────────
   const prices = hist.map(h=>h.price);
   const pMin = Math.min(...prices), pMax = Math.max(...prices);
   const pRange = pMax - pMin || 1;
-  const SW = 280, SH = 52;
-  const PAD = 4;
+  const SW = 280, SH = 52, PAD = 4;
   const toSX = i => PAD + (i/(prices.length-1||1))*(SW-PAD*2);
   const toSY = v => SH-PAD - ((v-pMin)/pRange)*(SH-PAD*2);
   const polyPts = prices.map((v,i)=>`${toSX(i).toFixed(1)},${toSY(v).toFixed(1)}`).join(' ');
   const fillPts = `${toSX(0).toFixed(1)},${SH} ${polyPts} ${toSX(prices.length-1).toFixed(1)},${SH}`;
   const lineColor = lastSnap.pnlAbs >= 0 ? '#22c55e' : '#ef4444';
 
-  // Mark entry, peak, exit dots
   const dotIdxs = new Set([0, hist.indexOf(peakSnap), hist.length-1]);
   const dots = [...dotIdxs].map(i => {
     const v = prices[i];
@@ -803,8 +750,6 @@ function buildPriceJourneyHTML(p) {
     ${dots}
   </svg>`;
 
-  // ── Journey rows — smart sampling for mobile ──────────────────
-  // Always show: first, peak, trough (if loss), last. Fill up to 6 total.
   const mustShow = new Set([0, hist.indexOf(peakSnap), hist.length-1]);
   if(troughSnap.pnlAbs < 0 && troughSnap !== peakSnap) mustShow.add(hist.indexOf(troughSnap));
   if(hist.length > 6) {
@@ -863,16 +808,6 @@ function buildPriceJourneyHTML(p) {
   </div>`;
 }
 
-function sparklineSVG(entry,cmp,w=80,h=30) {
-  const pts=[entry];
-  for(let i=1;i<11;i++) pts.push(pts[i-1]+(cmp-entry)/10+(Math.random()-.5)*Math.abs(cmp-entry)*0.15);
-  pts.push(cmp);
-  const mn=Math.min(...pts),mx=Math.max(...pts),rng=mx-mn||1;
-  const c=cmp>=entry?'#22c55e':'#ef4444';
-  const points=pts.map((v,i)=>`${(i/(pts.length-1))*w},${h-((v-mn)/rng)*h}`).join(' ');
-  return `<svg width="${w}" height="${h}" style="overflow:visible;display:block"><polyline points="${points}" fill="none" stroke="${c}" stroke-width="1.5" stroke-linejoin="round" opacity="0.85"/></svg>`;
-}
-
 // ══════════════════════════════════════════
 //  SORT
 // ══════════════════════════════════════════
@@ -900,7 +835,6 @@ function calcMetrics() {
   const invested=ps.reduce((s,p)=>s+p.entry*p.qty,0);
   const currentVal=ps.reduce((s,p)=>s+p.cmp*p.qty,0);
   const totalPnL=currentVal-invested;
-  // CHANGE 2: total open risk uses current SL (currentSL if set, else stopLoss)
   const totalRisk=ps.reduce((s,p)=>{
     const csl=p.currentSL||p.stopLoss;
     return s+Math.max(0,(p.entry-csl)*p.qty);
@@ -942,12 +876,10 @@ function renderTabCounts() {
 
 function renderPositions() {
   const el=document.getElementById('content-positions');
-
   if(!state.positions.length){
     el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No active positions — click ＋ to add one</div></div>`;
     return;
   }
-
   const gains=state.positions.map(p=>(p.cmp-p.entry)/p.entry*100).filter(x=>x>0);
   const lossArr=state.positions.map(p=>(p.cmp-p.entry)/p.entry*100).filter(x=>x<0);
   const maxGain=gains.length?Math.max(...gains):0.1;
@@ -988,21 +920,12 @@ function cardHTML(p) {
   const pnl=(p.cmp-p.entry)*p.qty;
   const pnlPct=((p.cmp-p.entry)/p.entry)*100;
   const activeSL = p.currentSL||p.stopLoss;
-
-  // ── CHANGE 2: Risk based on Current SL ──────────────────────────
-  // riskAmt can be negative if currentSL > entry (risk-free / locked profit)
   const riskAmt = activeSL ? (p.entry - activeSL) * p.qty : 0;
-  const isRiskFree = riskAmt <= 0;          // SL is above entry → locked profit
-  const lockedProfit = -riskAmt;            // how much profit is locked in at worst case
-
-  // ── CHANGE 1: Live R — based on CMP vs Initial SL ────────────────
-  // This shows how many R multiples the position is currently at
+  const isRiskFree = riskAmt <= 0;
+  const lockedProfit = -riskAmt;
   const liveRNum = calcRNum(p.entry, p.cmp, p.stopLoss);
-  const liveRStr = liveRNum !== null
-    ? `${liveRNum >= 0 ? '+' : ''}${liveRNum.toFixed(2)}R`
-    : '—';
+  const liveRStr = liveRNum !== null ? `${liveRNum >= 0 ? '+' : ''}${liveRNum.toFixed(2)}R` : '—';
   const liveRColor = liveRNum === null ? 'var(--yellow)' : liveRNum >= 0 ? '#15803d' : '#dc2626';
-
   const toPct=p.target?((p.target-p.cmp)/p.cmp*100):null;
   const isW=p.cmp>=p.entry, c=col(isW);
   const held=daysBetween(p.entryDate,today());
@@ -1011,8 +934,6 @@ function cardHTML(p) {
   const cardClass=slHit?' sl-hit':tgtHit?' tgt-hit':'';
   const slBadge=slHit?`<span class="badge badge-sl">⚠ SL HIT</span>`:'';
   const tgtBadge=tgtHit?`<span class="badge badge-tgt">🎯 TGT HIT</span>`:'';
-
-  // Break-even price
   const beCharges=calcCharges(p.entry,p.cmp,p.qty,'delivery');
   const breakEven=p.entry + beCharges.total/p.qty;
   const beColor=p.cmp>=breakEven?'var(--green)':'var(--red)';
@@ -1020,15 +941,11 @@ function cardHTML(p) {
     <span><span class="be-label">Break-even</span> <span class="be-val" style="color:${beColor}">₹${fmt(breakEven)}</span></span>
     ${p.stopLoss?`<span class="r-chip" style="background:${pnlPct>=0?'rgba(22,163,74,0.1)':'rgba(220,38,38,0.1)'};color:${pnlPct>=0?'var(--green)':'var(--red)'}">R ${calcR(p.entry,p.cmp,p.stopLoss)}</span>`:''}
   </div>`;
-
-  // Trailing SL row
   const trailRow=p.trailPct>0?`
     <div class="trail-row">
       <span class="trail-label">Trail SL ${p.trailPct}%</span>
       <span class="trail-val">₹${fmt(p.cmp*(1-p.trailPct/100))}</span>
     </div>`:'';
-
-  // CHANGE 2: Risk Heat uses current SL for bar
   const capRisk=state.capital>0?Math.max(0,riskAmt)/state.capital*100:0;
   const riskHeatColor=isRiskFree?'var(--green)':capRisk<0.5?'var(--green)':capRisk<1.5?'var(--orange)':'var(--red)';
   const riskHeatLabel=isRiskFree?'FREE':capRisk<0.5?'LOW':capRisk<1.5?'MED':'HIGH';
@@ -1039,7 +956,6 @@ function cardHTML(p) {
       <div class="risk-heat-bar-track"><div class="risk-heat-bar-fill" style="width:${isRiskFree?100:riskBarWidth}%;background:${riskHeatColor}"></div></div>
       <span class="risk-heat-val" style="color:${riskHeatColor}">${isRiskFree?'0%':fmt(capRisk,2)+'%'} <span style="font-size:9px;opacity:.7">${riskHeatLabel}</span></span>
     </div>`:'';
-
   const cslNote=p.currentSL&&p.currentSL!==p.stopLoss
     ?`<span class="badge" style="background:rgba(124,58,237,0.07);border-color:rgba(124,58,237,0.2);color:var(--purple)">CSL ₹${fmt(p.currentSL)}</span>`:''
 
@@ -1073,12 +989,10 @@ function cardHTML(p) {
     <div class="sl-tgt-grid">
       <div class="sl-cell"><div class="mini-label">Initial SL</div><div style="font-size:12px;font-weight:700;color:${slHit?'var(--red)':'#dc2626'}">${p.stopLoss?'₹'+fmt(p.stopLoss):'—'}</div></div>
       <div class="tgt-cell"><div class="mini-label">TGT</div><div style="font-size:12px;font-weight:700;color:#15803d">${p.target?'₹'+fmt(p.target):'—'}</div></div>
-      <!-- CHANGE 1: Live R based on CMP vs Initial SL (not static target R:R) -->
       <div class="rr-cell"><div class="mini-label">Live R</div><div style="font-size:12px;font-weight:700;color:${liveRColor}">${liveRStr}</div></div>
     </div>
     <div class="card-footer">
       <span>Val: <b>${fmtC(p.cmp*p.qty)}</b></span>
-      <!-- CHANGE 2: Risk based on current SL; green if risk-free -->
       <span>${isRiskFree?'🔒 Locked:':'Risk:'} <b style="color:${isRiskFree?'var(--green)':'var(--orange)'}">
         ${isRiskFree?'+'+fmtC(lockedProfit):fmtC(riskAmt)}
       </b></span>
@@ -1146,38 +1060,22 @@ function renderJournal() {
     return;
   }
 
-  // ── Interactive Equity Chart ──────────────────────────────────────
   const sorted=[...js].sort((a,b)=>new Date(a.exitDate)-new Date(b.exitDate));
   const startingCapital=state.capital-jTotal;
-  const equityPoints=[{date:'Start',capital:startingCapital,symbol:null,pnl:null,pnlPct:null,reason:null}];
-  let running=startingCapital;
-  sorted.forEach(j=>{
-    running=Math.round((running+j.pnl)*100)/100;
-    equityPoints.push({date:j.exitDate||'?',capital:running,symbol:j.symbol,pnl:j.pnl,pnlPct:j.pnlPct,reason:j.reason,name:j.name,qty:j.qty});
-  });
-  const lastCap=equityPoints[equityPoints.length-1].capital;
-  const caps=equityPoints.map(p=>p.capital);
-  const curveColor=lastCap>=startingCapital?'#22c55e':'#ef4444';
 
-  let runPeak=equityPoints[0].capital, maxDD=0;
-  let maxDDPeak=runPeak, maxDDTrough=runPeak;
-  equityPoints.forEach(pt=>{
-    if(pt.capital>runPeak) runPeak=pt.capital;
-    const dd=runPeak>0?(runPeak-pt.capital)/runPeak*100:0;
-    if(dd>maxDD){ maxDD=dd; maxDDPeak=runPeak; maxDDTrough=pt.capital; }
-  });
-  const finalRunPeak=equityPoints.reduce((pk,pt)=>pt.capital>pk?pt.capital:pk,equityPoints[0].capital);
-  const currentDD=finalRunPeak>0?(finalRunPeak-lastCap)/finalRunPeak*100:0;
-  const maxDDAbsLoss=maxDDPeak-maxDDTrough;
-  const peakCap=Math.max(...caps);
-  const totalReturnPct=startingCapital>0?(jTotal/startingCapital)*100:0;
+  // Derive default custom date range from actual data
+  const allDates = sorted.map(t=>t.exitDate).filter(Boolean).sort();
+  const defaultFrom = allDates[0] || today();
+  const defaultTo   = allDates[allDates.length-1] || today();
 
-  // Store all sorted trades globally — the canvas renderer will filter dynamically
   window._eqAllTrades  = sorted;
   window._eqStartCap   = startingCapital;
   window._eqCapital    = state.capital;
   window._eqCurPeriod  = 'ALL';
   window._eqCurMode    = 'trades';
+  // Custom date range state
+  window._eqCustomFrom = defaultFrom;
+  window._eqCustomTo   = defaultTo;
 
   const btnBase = 'border:none;border-radius:7px;padding:5px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:Montserrat,sans-serif;transition:all .15s;white-space:nowrap;';
   const btnOff  = btnBase+'background:transparent;color:#94a3b8;';
@@ -1188,19 +1086,32 @@ function renderJournal() {
       <span>📈 Equity Curve</span>
     </div>
     <div id="eq-stat-cards" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+
+    <!-- Controls row: period buttons + mode buttons -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
       <div style="display:flex;gap:3px;background:#f1f5f9;border-radius:9px;padding:3px;" id="eq-period-grp">
-        <button id="eq-p-1M"  style="${btnOff}" onclick="setPeriodEq('1M')">1M</button>
-        <button id="eq-p-3M"  style="${btnOff}" onclick="setPeriodEq('3M')">3M</button>
-        <button id="eq-p-6M"  style="${btnOff}" onclick="setPeriodEq('6M')">6M</button>
-        <button id="eq-p-YTD" style="${btnOff}" onclick="setPeriodEq('YTD')">YTD</button>
-        <button id="eq-p-ALL" style="${btnOn}"  onclick="setPeriodEq('ALL')">All time</button>
+        <button id="eq-p-1M"   style="${btnOff}" onclick="setPeriodEq('1M')">1M</button>
+        <button id="eq-p-3M"   style="${btnOff}" onclick="setPeriodEq('3M')">3M</button>
+        <button id="eq-p-6M"   style="${btnOff}" onclick="setPeriodEq('6M')">6M</button>
+        <button id="eq-p-YTD"  style="${btnOff}" onclick="setPeriodEq('YTD')">YTD</button>
+        <button id="eq-p-ALL"  style="${btnOn}"  onclick="setPeriodEq('ALL')">All</button>
+        <button id="eq-p-CUST" style="${btnOff}" onclick="setPeriodEq('CUST')">Custom</button>
       </div>
       <div style="display:flex;gap:3px;background:#f1f5f9;border-radius:9px;padding:3px;" id="eq-mode-grp">
-        <button id="eq-m-trades"  style="${btnOn}"  onclick="setModeEq('trades')">Each trade</button>
+        <button id="eq-m-trades"  style="${btnOn}"  onclick="setModeEq('trades')">Per trade</button>
         <button id="eq-m-monthly" style="${btnOff}" onclick="setModeEq('monthly')">Monthly</button>
       </div>
     </div>
+
+    <!-- Custom date range row (hidden by default) -->
+    <div id="eq-custom-row" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;background:#f8fafc;border:1px solid var(--border);border-radius:9px;padding:10px 12px">
+      <span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">From</span>
+      <input type="date" class="eq-date-input" id="eq-from" value="${defaultFrom}" onchange="onCustomDateChange()">
+      <span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">To</span>
+      <input type="date" class="eq-date-input" id="eq-to" value="${defaultTo}" onchange="onCustomDateChange()">
+      <div id="eq-custom-summary" style="font-size:11px;color:var(--text3);font-weight:600;margin-left:4px"></div>
+    </div>
+
     <div id="eq-wrap" style="position:relative;user-select:none">
       <canvas id="eq-canvas" style="display:block;width:100%;border-radius:8px"></canvas>
       <div id="eq-tip" style="display:none;position:fixed;background:#1e293b;border:1px solid rgba(255,255,255,0.1);color:#f1f5f9;border-radius:10px;padding:11px 14px;font-size:11px;pointer-events:none;z-index:50;min-width:180px;max-width:230px;box-shadow:0 8px 24px rgba(0,0,0,0.35)"></div>
@@ -1225,9 +1136,7 @@ function renderJournal() {
     const mWr=mT>0?(mW/mT*100):0;
     const mc=mPnl>=0?'#22c55e':'#ef4444';
     const label=m==='Unknown'?'Unknown':new Date(m+'-01').toLocaleDateString('en-IN',{year:'numeric',month:'short'});
-    // Monthly % = P&L as % of total capital (portfolio impact)
     const mPct=state.capital>0?(mPnl/state.capital)*100:0;
-    // Month header: clean — just P&L ₹, P&L %, WR%, count. No charges.
     const monthHeader=`<div class="month-section">
       <div class="month-header" onclick="toggleMonth('${m}')">
         <span class="month-name">${label}</span>
@@ -1246,7 +1155,6 @@ function renderJournal() {
       const rBadge=j.rMultiple!=null
         ?`<span style="font-size:10px;font-weight:800;padding:1px 7px;border-radius:12px;background:${j.rMultiple>=0?'rgba(22,163,74,0.1)':'rgba(220,38,38,0.1)'};color:${j.rMultiple>=0?'var(--green)':'var(--red)'}">${j.rMultiple>=0?'+':''}${j.rMultiple.toFixed(2)}R</span>`
         :'<span style="color:var(--text4)">—</span>';
-      // Show partial tag in symbol if applicable
       const partialTag = j.isPartial ? `<span style="font-size:9px;background:rgba(234,88,12,0.1);border:1px solid rgba(234,88,12,0.2);border-radius:4px;padding:1px 5px;color:var(--orange);margin-left:3px">½</span>` : '';
       return `<div class="j-row${rowClass}" onclick="openJournalDetail(${j.id})">
         <span class="j-symbol">${j.symbol}${star}${partialTag}</span>
@@ -1273,21 +1181,25 @@ function renderJournal() {
     <style>.j-row{grid-template-columns:75px minmax(0,1fr) 80px 80px 45px 45px 85px 70px 70px 85px;min-width:780px}</style>
     ${tableHead}${tableRows}
   </div>`;
+
   setTimeout(initEquityChart, 0);
 }
 
 // ══════════════════════════════════════════
-//  INTERACTIVE EQUITY CHART (Canvas + Filters)
+//  EQUITY CHART — PERIOD / MODE / CUSTOM
 // ══════════════════════════════════════════
 function setPeriodEq(p) {
   window._eqCurPeriod = p;
-  ['1M','3M','6M','YTD','ALL'].forEach(k => {
+  ['1M','3M','6M','YTD','ALL','CUST'].forEach(k => {
     const b = document.getElementById('eq-p-'+k);
     if (!b) return;
     const on = k === p;
     b.style.background = on ? '#0f172a' : 'transparent';
     b.style.color       = on ? '#fff'    : '#94a3b8';
   });
+  // Show/hide custom date row
+  const custRow = document.getElementById('eq-custom-row');
+  if (custRow) custRow.style.display = p === 'CUST' ? 'flex' : 'none';
   drawEquityChart();
 }
 
@@ -1303,6 +1215,15 @@ function setModeEq(m) {
   drawEquityChart();
 }
 
+function onCustomDateChange() {
+  const fromEl = document.getElementById('eq-from');
+  const toEl   = document.getElementById('eq-to');
+  if (!fromEl || !toEl) return;
+  window._eqCustomFrom = fromEl.value;
+  window._eqCustomTo   = toEl.value;
+  drawEquityChart();
+}
+
 function getEqFilteredPts() {
   const allTrades  = window._eqAllTrades  || [];
   const startCap   = window._eqStartCap   || 0;
@@ -1310,23 +1231,45 @@ function getEqFilteredPts() {
   const period     = window._eqCurPeriod  || 'ALL';
   const mode       = window._eqCurMode    || 'trades';
 
-  // Find period cutoff
   const lastDate   = allTrades.length ? new Date(allTrades[allTrades.length-1].exitDate) : new Date();
-  let cutoff = new Date('2000-01-01');
+  let cutoff    = new Date('2000-01-01');
+  let cutoffEnd = new Date('2099-12-31');
+
   if      (period === '1M')  cutoff = new Date(lastDate.getTime() - 30*86400000);
   else if (period === '3M')  cutoff = new Date(lastDate.getTime() - 91*86400000);
   else if (period === '6M')  cutoff = new Date(lastDate.getTime() - 183*86400000);
   else if (period === 'YTD') cutoff = new Date(lastDate.getFullYear()+'-01-01');
+  else if (period === 'CUST') {
+    const f = window._eqCustomFrom, t = window._eqCustomTo;
+    if (f) cutoff    = new Date(f);
+    if (t) cutoffEnd = new Date(t + 'T23:59:59');
+  }
 
-  // Accumulate balance for trades before cutoff to get the period's starting balance
+  // Accumulate balance for trades BEFORE the cutoff window
   let running = startCap;
-  allTrades.forEach(t => { if (new Date(t.exitDate||'') < cutoff) running = Math.round((running+t.pnl)*100)/100; });
+  allTrades.forEach(t => {
+    const d = new Date(t.exitDate||'');
+    if (d < cutoff) running = Math.round((running+t.pnl)*100)/100;
+  });
   const periodStartCap = running;
 
-  const filtered = allTrades.filter(t => new Date(t.exitDate||'') >= cutoff);
+  const filtered = allTrades.filter(t => {
+    const d = new Date(t.exitDate||'');
+    return d >= cutoff && d <= cutoffEnd;
+  });
+
+  // Update custom summary
+  const summaryEl = document.getElementById('eq-custom-summary');
+  if (summaryEl && period === 'CUST') {
+    const cnt = filtered.length;
+    const pnl = filtered.reduce((s,t)=>s+t.pnl,0);
+    const c   = pnl >= 0 ? '#16a34a' : '#dc2626';
+    summaryEl.innerHTML = `${cnt} trade${cnt!==1?'s':''} &nbsp;·&nbsp; <span style="color:${c};font-weight:700">${sign(pnl)}${fmtC(pnl)}</span>`;
+  }
 
   if (mode === 'trades') {
     const pts = [{date:'Start', capital:periodStartCap, pnl:null, symbol:null, name:null, reason:null, pnlPct:null}];
+    running = periodStartCap;
     filtered.forEach(t => {
       running = Math.round((running+t.pnl)*100)/100;
       pts.push({date:t.exitDate||'?', capital:running, pnl:t.pnl, symbol:t.symbol, name:t.name, reason:t.reason, pnlPct:t.pnlPct});
@@ -1374,7 +1317,6 @@ function drawEquityChart() {
   const jTotalPeriod = lastCap - periodStartCap;
   const curveColor   = lastCap >= periodStartCap ? '#22c55e' : '#ef4444';
 
-  // Stats for period
   let runPk = caps[0], maxDD = 0, maxDDL = 0;
   caps.forEach(c => {
     if (c > runPk) runPk = c;
@@ -1387,13 +1329,12 @@ function drawEquityChart() {
   const total    = pts.filter(p => p.pnl != null).length;
   const wr       = total > 0 ? Math.round(wins/total*100) : 0;
 
-  // Update stat cards
   if (statEl) {
     const sc = [
-      {l:'Balance',      v:fmtC(lastCap),                 s:sign(jTotalPeriod)+fmtC(jTotalPeriod),      c:curveColor},
+      {l:'Balance',       v:fmtC(lastCap),                  s:sign(jTotalPeriod)+fmtC(jTotalPeriod),       c:curveColor},
       {l:'Period Return', v:sign(retPct)+fmt(retPct,2)+'%', s:total+' '+(mode==='monthly'?'months':'trades'), c:curveColor},
-      {l:'Max Drawdown', v:'-'+fmt(maxDD,2)+'%',          s:'-'+fmtC(maxDDL),                           c:'#dc2626'},
-      {l:'Win Rate',     v:total?wr+'%':'—',              s:'Peak '+fmtC(peakCap),                      c:'#7c3aed'},
+      {l:'Max Drawdown',  v:'-'+fmt(maxDD,2)+'%',           s:'-'+fmtC(maxDDL),                            c:'#dc2626'},
+      {l:'Win Rate',      v:total?wr+'%':'—',               s:'Peak '+fmtC(peakCap),                       c:'#7c3aed'},
     ];
     statEl.innerHTML = sc.map(s=>`
       <div style="flex:1;min-width:80px;background:#f8fafc;border:1px solid rgba(0,0,0,0.07);border-radius:10px;padding:8px 12px">
@@ -1403,11 +1344,16 @@ function drawEquityChart() {
       </div>`).join('');
   }
 
-  // Canvas setup
   const DPR    = window.devicePixelRatio || 1;
   const W      = wrap.clientWidth || 500;
-  const BAR_H  = (mode === 'trades' && n > 1) ? 48 : 0;
-  const H      = 230 + BAR_H;
+
+  // ── Drawdown sub-chart: rendered below equity line ──────────────
+  const SHOW_DD  = (n > 2);
+  const DD_H     = SHOW_DD ? 52 : 0;
+  const DD_GAP   = SHOW_DD ? 6  : 0;
+  const BAR_H    = (mode === 'trades' && n > 1) ? 44 : 0;
+  const H        = 230 + DD_GAP + DD_H + BAR_H;
+
   canvas.width  = W * DPR;
   canvas.height = H * DPR;
   canvas.style.width  = W + 'px';
@@ -1416,9 +1362,10 @@ function drawEquityChart() {
   ctx.scale(DPR, DPR);
 
   const PL=58, PR=14, PT=18, PB=28;
-  const LH  = H - BAR_H - (BAR_H > 0 ? 6 : 0);
-  const CW  = W - PL - PR;
-  const CH  = LH - PT - PB;
+  // equity line area height
+  const LINE_H  = 230;
+  const CW      = W - PL - PR;
+  const CH      = LINE_H - PT - PB;
 
   const rawMin = Math.min(...caps), rawMax = Math.max(...caps);
   const pad    = Math.max((rawMax-rawMin)*0.15, Math.abs(rawMax)*0.04, 4000);
@@ -1428,7 +1375,6 @@ function drawEquityChart() {
 
   const DOT_R  = mode === 'monthly' ? 5.5 : 3.5;
 
-  // Draw background
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, W, H);
 
@@ -1442,7 +1388,7 @@ function drawEquityChart() {
     ctx.beginPath(); ctx.moveTo(PL, y); ctx.lineTo(W-PR, y); ctx.stroke();
   }
 
-  // Y labels
+  // Y axis labels
   ctx.fillStyle = '#94a3b8';
   ctx.font = '600 10px Montserrat, sans-serif';
   ctx.textAlign = 'right';
@@ -1498,7 +1444,7 @@ function drawEquityChart() {
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.8; ctx.stroke();
   });
 
-  // X-axis date labels
+  // X-axis labels (at equity chart bottom)
   const showEvery = Math.max(1, Math.ceil(n/7));
   ctx.fillStyle = '#94a3b8';
   ctx.font = '500 9px Montserrat, sans-serif';
@@ -1513,13 +1459,78 @@ function drawEquityChart() {
     }
   });
 
-  // Per-trade P&L bars (trades mode only)
+  // ── Drawdown sub-chart ─────────────────────────────────────────
+  if (SHOW_DD) {
+    const ddTop = LINE_H + DD_GAP;
+    const ddH   = DD_H - 4;
+
+    // Calculate running drawdown series
+    let pk = caps[0];
+    const ddSeries = caps.map(c => {
+      if (c > pk) pk = c;
+      return pk > 0 ? (pk - c) / pk * 100 : 0;
+    });
+    const ddMax = Math.max(...ddSeries, 0.5);
+
+    // Label
+    ctx.fillStyle = '#dc2626';
+    ctx.font = '600 9px Montserrat, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('DD%', PL-4, ddTop + 10);
+
+    // Separator line
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(PL, ddTop - 2);
+    ctx.lineTo(W - PR, ddTop - 2);
+    ctx.stroke();
+
+    // Fill area
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(toX(0), ddTop + ddH);
+    ddSeries.forEach((dd, i) => {
+      const y = ddTop + ddH - (dd / ddMax) * ddH;
+      ctx.lineTo(toX(i), y);
+    });
+    ctx.lineTo(toX(n-1), ddTop + ddH);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(220,38,38,0.18)';
+    ctx.fill();
+    ctx.restore();
+
+    // Drawdown line
+    ctx.beginPath();
+    ddSeries.forEach((dd, i) => {
+      const y = ddTop + ddH - (dd / ddMax) * ddH;
+      i===0 ? ctx.moveTo(toX(i), y) : ctx.lineTo(toX(i), y);
+    });
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // Max DD label inline
+    const worstI = ddSeries.indexOf(ddMax);
+    const wX = toX(worstI);
+    const wY = ddTop + ddH - (ddMax/ddMax)*ddH;
+    ctx.fillStyle = '#ef4444';
+    ctx.font = '700 9px Montserrat, sans-serif';
+    ctx.textAlign = wX > W/2 ? 'right' : 'left';
+    ctx.fillText('-'+fmt(ddMax,1)+'%', wX + (wX > W/2 ? -5 : 5), wY - 4);
+  }
+
+  // ── Per-trade P&L bars ──────────────────────────────────────────
   if (BAR_H > 0 && n > 1) {
-    const bY0    = LH + 4;
+    const bY0   = LINE_H + DD_GAP + DD_H + 4;
     const maxAbs = Math.max(...pts.filter(p=>p.pnl!=null).map(p=>Math.abs(p.pnl)), 1);
-    const bW     = Math.max(3, Math.min(12, (CW/(n-1))*0.5));
+    const bW    = Math.max(3, Math.min(12, (CW/(n-1))*0.5));
+
+    // Separator
     ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(PL, bY0-1); ctx.lineTo(W-PR, bY0-1); ctx.stroke();
+
     pts.forEach((pt,i) => {
       if (i===0||pt.pnl==null) return;
       const x  = toX(i);
@@ -1536,16 +1547,17 @@ function drawEquityChart() {
 
   // Legend
   if (legEl) {
-    legEl.innerHTML = mode === 'monthly'
+    const ddNote = SHOW_DD ? `<span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:4px;border-radius:2px;background:#ef4444;opacity:.6"></span>Drawdown</span>` : '';
+    legEl.innerHTML = (mode === 'monthly'
       ? `<span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e"></span>Profitable month</span>
-         <span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444"></span>Loss month</span>
-         <span style="font-size:10px;color:#94a3b8">Hover dots for monthly breakdown</span>`
-      : `<span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e"></span>Winning trade</span>
-         <span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444"></span>Losing trade</span>
-         <span style="font-size:10px;color:#94a3b8">Hover / tap dots for details</span>`;
+         <span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444"></span>Loss month</span>`
+      : `<span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e"></span>Win</span>
+         <span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444"></span>Loss</span>`)
+      + ddNote
+      + `<span style="font-size:10px;color:#94a3b8">Tap dots for details</span>`;
   }
 
-  // ── Hover / touch ──────────────────────────────────────────────────
+  // ── Store dot positions for hover ───────────────────────────────
   const dotPos = pts.map((_,i) => ({x:toX(i), y:toY(pts[i].capital)}));
   let lastHL = -1;
 
@@ -1555,7 +1567,7 @@ function drawEquityChart() {
     pts.forEach((pt,i) => {
       const dp = dotPos[i], isHL = i===hl;
       const dc = pt.pnl==null ? '#94a3b8' : pt.pnl>=0 ? '#22c55e' : '#ef4444';
-      ctx.clearRect(dp.x-18, dp.y-18, 36, 36);
+      ctx.clearRect(dp.x-20, dp.y-20, 40, 40);
       if (isHL) {
         ctx.beginPath(); ctx.arc(dp.x, dp.y, DOT_R+9, 0, Math.PI*2);
         ctx.fillStyle = dc+'28'; ctx.fill();
@@ -1569,6 +1581,9 @@ function drawEquityChart() {
   function onMove(cx, cy) {
     const rect = canvas.getBoundingClientRect();
     const mx   = cx - rect.left;
+    // Only respond to pointer inside the equity-line zone
+    const my   = cy - rect.top;
+    if (my > LINE_H + 2) { redrawDots(-1); tip.style.display='none'; return; }
     let cl = -1, md = mode==='monthly' ? 50 : 32;
     dotPos.forEach((dp,i) => { const d=Math.abs(dp.x-mx); if(d<md){md=d;cl=i;} });
     redrawDots(cl);
@@ -1599,7 +1614,6 @@ function drawEquityChart() {
 
     const dp  = dotPos[cl];
     const tw  = 220;
-    // dp.x is canvas-relative; convert to viewport for position:fixed
     const canvasRect = canvas.getBoundingClientRect();
     const vpX = canvasRect.left + dp.x;
     const vpY = canvasRect.top  + dp.y;
@@ -1610,7 +1624,6 @@ function drawEquityChart() {
     tip.style.display = 'block';
   }
 
-  // ── Attach events (AbortController clears previous listeners on re-draw) ──
   if (canvas._eqAbort) canvas._eqAbort.abort();
   canvas._eqAbort = new AbortController();
   const sig = canvas._eqAbort.signal;
@@ -1618,16 +1631,13 @@ function drawEquityChart() {
   canvas.addEventListener('mousemove',  e => onMove(e.clientX, e.clientY), {signal:sig});
   canvas.addEventListener('mouseleave', () => { redrawDots(-1); tip.style.display='none'; }, {signal:sig});
 
-  // Mobile: show on tap, hide 2.5s later or on next tap outside canvas
   canvas.addEventListener('touchstart', e => {
     e.preventDefault();
     onMove(e.touches[0].clientX, e.touches[0].clientY);
-    // Auto-hide after 2.5s so it doesn't stay on screen after the user scrolls away
     clearTimeout(canvas._tipTimer);
     canvas._tipTimer = setTimeout(() => { tip.style.display='none'; redrawDots(-1); }, 2500);
   }, {passive:false, signal:sig});
 
-  // Tap anywhere outside canvas hides the tip immediately
   const outsideHide = e => {
     if (!canvas.contains(e.target) && tip.style.display !== 'none') {
       tip.style.display = 'none';
@@ -1741,79 +1751,7 @@ function deletePosition(id) {
 }
 
 // ══════════════════════════════════════════
-//  PRICE JOURNEY (CMP history visualiser)
-// ══════════════════════════════════════════
-function buildPriceJourneyHTML(p) {
-  const hist = p.cmpHistory||[];
-  if(hist.length < 2) return ''; // not enough data to show
-
-  const allPrices = hist.map(h=>h.price);
-  const peakSnap  = hist.reduce((b,h)=>h.pnlAbs>b.pnlAbs?h:b, hist[0]);
-  const troughSnap= hist.reduce((b,h)=>h.pnlAbs<b.pnlAbs?h:b, hist[0]);
-  const lastSnap  = hist[hist.length-1];
-  const exitEff   = peakSnap.pnlAbs!==0
-    ? Math.round((lastSnap.pnlAbs/peakSnap.pnlAbs)*100)
-    : 100;
-  const effColor  = exitEff>=80?'#16a34a':exitEff>=50?'#ea580c':'#dc2626';
-
-  // Show at most 8 entries on mobile — always include entry, peak, current
-  const keyIdxs = new Set([0, hist.indexOf(peakSnap), hist.indexOf(troughSnap), hist.length-1]);
-  let visible = hist;
-  if(hist.length > 8) {
-    // Sample: always include key points, fill remaining evenly
-    const step = Math.ceil(hist.length / 6);
-    for(let i=0;i<hist.length;i+=step) keyIdxs.add(i);
-    visible = hist.filter((_,i)=>keyIdxs.has(i));
-  }
-
-  const fmtD = d => { try { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}); } catch { return d; }};
-
-  const rows = visible.map((h,i) => {
-    const isPeak    = h===peakSnap && peakSnap.pnlAbs>0;
-    const isTrough  = h===troughSnap && troughSnap.pnlAbs<0 && h!==peakSnap;
-    const isLast    = h===lastSnap;
-    const isFirst   = h===hist[0];
-    const c         = h.pnlAbs>=0?'#16a34a':'#dc2626';
-    let badge='';
-    if(isPeak)   badge=`<span style="font-size:9px;background:rgba(22,163,74,0.1);color:#16a34a;border-radius:4px;padding:1px 5px;font-weight:700;margin-left:4px">PEAK</span>`;
-    if(isTrough) badge=`<span style="font-size:9px;background:rgba(220,38,38,0.1);color:#dc2626;border-radius:4px;padding:1px 5px;font-weight:700;margin-left:4px">LOW</span>`;
-    if(isLast&&!isPeak)   badge+=`<span style="font-size:9px;background:rgba(37,99,235,0.1);color:#2563eb;border-radius:4px;padding:1px 5px;font-weight:700;margin-left:4px">NOW</span>`;
-    if(isFirst)  badge+=`<span style="font-size:9px;background:rgba(71,85,105,0.1);color:#475569;border-radius:4px;padding:1px 5px;font-weight:700;margin-left:4px">ENTRY DAY</span>`;
-    return `<div style="display:grid;grid-template-columns:60px 1fr 1fr;gap:4px;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(0,0,0,0.05);${isPeak?'background:rgba(22,163,74,0.04)':''}${isTrough?'background:rgba(220,38,38,0.03)':''}">
-      <span style="font-size:10px;color:#94a3b8;font-weight:500">${fmtD(h.date)}</span>
-      <span style="font-size:12px;font-weight:700;color:#0f172a">₹${fmt(h.price)}${badge}</span>
-      <span style="font-size:12px;font-weight:700;color:${c};text-align:right">${sign(h.pnlAbs)}${fmtC(h.pnlAbs)}<span style="font-size:9px;opacity:.7;margin-left:3px">${sign(h.pnlPct)}${fmt(Math.abs(h.pnlPct),1)}%</span></span>
-    </div>`;
-  }).join('');
-
-  return `<div style="border:1px solid rgba(0,0,0,0.08);border-radius:12px;overflow:hidden;margin-bottom:14px">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8fafc;border-bottom:1px solid rgba(0,0,0,0.06)">
-      <span style="font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.08em">📈 Price Journey · ${hist.length} updates</span>
-      <div style="display:flex;gap:8px;align-items:center">
-        <span style="font-size:10px;color:#94a3b8">Exit efficiency</span>
-        <span style="font-size:11px;font-weight:800;color:${effColor}">${exitEff}%</span>
-      </div>
-    </div>
-    <div style="max-height:200px;overflow-y:auto;-webkit-overflow-scrolling:touch">
-      ${rows}
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(0,0,0,0.06)">
-      <div style="background:#fff;padding:8px 12px">
-        <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Best price seen</div>
-        <div style="font-size:13px;font-weight:800;color:#16a34a">₹${fmt(peakSnap.price)}</div>
-        <div style="font-size:10px;color:#16a34a">${sign(peakSnap.pnlAbs)}${fmtC(peakSnap.pnlAbs)} on ${fmtD(peakSnap.date)}</div>
-      </div>
-      <div style="background:#fff;padding:8px 12px">
-        <div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Left on table</div>
-        <div style="font-size:13px;font-weight:800;color:${effColor}">₹${fmtC(Math.abs(peakSnap.pnlAbs-lastSnap.pnlAbs)).replace('₹','')}</div>
-        <div style="font-size:10px;color:#94a3b8">vs peak of ${sign(peakSnap.pnlAbs)}${fmtC(peakSnap.pnlAbs)}</div>
-      </div>
-    </div>
-  </div>`;
-}
-
-// ══════════════════════════════════════════
-//  CLOSE TRADE  (supports partial close)
+//  CLOSE TRADE
 // ══════════════════════════════════════════
 function openCloseModal(id) {
   const p=state.positions.find(x=>x.id===id); if(!p) return;
@@ -1838,7 +1776,6 @@ function openCloseModal(id) {
   document.getElementById('net-pnl-box').style.display='none';
   const cd=document.getElementById('charges-detail'); if(cd) cd.style.display='none';
   const ctb=document.getElementById('charges-toggle-btn'); if(ctb) ctb.textContent='▼ show breakdown';
-  // Inject Price Journey above the form
   const journeyEl = document.getElementById('close-journey');
   if(journeyEl) journeyEl.innerHTML = buildPriceJourneyHTML(p);
   openModal('modal-close');
@@ -1846,9 +1783,6 @@ function openCloseModal(id) {
   setTimeout(()=>document.getElementById('c-exit').focus(),100);
 }
 
-// ══════════════════════════════════════════
-//  DHAN / NSE CHARGES CALCULATOR
-// ══════════════════════════════════════════
 function calcCharges(entryPrice, exitPrice, qty, tradeType) {
   const buyVal   = entryPrice * qty;
   const sellVal  = exitPrice  * qty;
@@ -1876,28 +1810,21 @@ function toggleChargesDetail() {
 function updatePnlPreview() {
   const p=state.positions.find(x=>x.id===closingId); if(!p) return;
   const ep=+document.getElementById('c-exit').value;
-
-  // CHANGE 3: use close qty for preview
   const closeQty = Math.min(+document.getElementById('c-qty').value || p.qty, p.qty);
   const isPartial = closeQty > 0 && closeQty < p.qty;
-
-  // Show/hide partial notice and update button text
   document.getElementById('partial-notice').style.display = isPartial ? 'block' : 'none';
   document.getElementById('btn-confirm-close').textContent = isPartial
     ? `Log Partial (${closeQty} of ${p.qty} shares)`
     : 'Log & Close Trade';
-
   if(!ep || closeQty <= 0){
     ['pnl-preview-box','charges-box','net-pnl-box'].forEach(id=>document.getElementById(id).style.display='none');
     return;
   }
-
   const tradeType=document.getElementById('c-tradetype').value;
   const grossPnl=(ep-p.entry)*closeQty, grossPct=((ep-p.entry)/p.entry)*100;
   const ch=calcCharges(p.entry, ep, closeQty, tradeType);
   const netPnl=grossPnl - ch.total, netPct=(netPnl/(p.entry*closeQty))*100;
   const cGross=grossPnl>=0?'#22c55e':'#ef4444', cNet=netPnl>=0?'#22c55e':'#ef4444';
-
   const box=document.getElementById('pnl-preview-box');
   box.style.display='flex';
   box.style.background=grossPnl>=0?'rgba(34,197,94,0.06)':'rgba(239,68,68,0.06)';
@@ -1906,13 +1833,11 @@ function updatePnlPreview() {
   document.getElementById('pnl-preview-pct').style.color=cGross;
   document.getElementById('pnl-preview-val').textContent=`${sign(grossPnl)}${fmtC(grossPnl)}`;
   document.getElementById('pnl-preview-pct').textContent=`${sign(grossPct)}${fmt(grossPct,2)}%`;
-
   document.getElementById('charges-box').style.display='block';
   document.getElementById('charges-total-val').textContent=`-₹${fmt(ch.total,2)}`;
   const rows=[['Brokerage',ch.brokerage],['STT',ch.stt],['Exch. Charges',ch.exchangeCharges],['SEBI',ch.sebi],['IPFT',ch.ipft],['GST (18%)',ch.gst],['Stamp Duty',ch.stamp]];
   document.getElementById('charges-grid').innerHTML=rows.map(([l,v])=>
     `<div class="charges-row"><span class="charges-label">${l}</span><span class="charges-val">₹${fmt(v,2)}</span></div>`).join('');
-
   const netBox=document.getElementById('net-pnl-box');
   netBox.style.display='flex';
   netBox.style.background=netPnl>=0?'rgba(34,197,94,0.08)':'rgba(239,68,68,0.08)';
@@ -1927,12 +1852,9 @@ function confirmClose() {
   const p=state.positions.find(x=>x.id===closingId); if(!p) return;
   const ep=+document.getElementById('c-exit').value;
   if(!ep){alert('Please enter an exit price.');return;}
-
-  // CHANGE 3: read close qty; validate
   const rawQty = +document.getElementById('c-qty').value;
   const closeQty = rawQty > 0 ? Math.min(rawQty, p.qty) : p.qty;
   if(closeQty <= 0){alert('Invalid quantity.');return;}
-
   const isPartial = closeQty < p.qty;
   const exitDate=document.getElementById('c-date').value;
   const tradeType=document.getElementById('c-tradetype').value;
@@ -1942,42 +1864,30 @@ function confirmClose() {
   const grossPnlPct=((ep-p.entry)/p.entry)*100;
   const pnlPct=Math.round((pnl/(p.entry*closeQty))*10000)/100;
   const capitalImpactPct = state.capital>0 ? (pnl/state.capital)*100 : 0;
-  // CHANGE 1: rMultiple based on Initial SL
   const rMultiple = p.stopLoss&&p.stopLoss<p.entry ? (ep-p.entry)/(p.entry-p.stopLoss) : null;
-
-  // Record exit price as final snapshot so history is complete
   p.cmp = ep;
   recordCMPSnapshot(p);
   const savedHistory = p.cmpHistory ? [...p.cmpHistory] : [];
-
   const trade={
     id:Date.now(), symbol:p.symbol, name:p.name, sector:p.sector,
     entryPrice:p.entry, exitPrice:ep, qty:closeQty,
     grossPnl: Math.round(grossPnl*100)/100,
     grossPnlPct: Math.round(grossPnlPct*100)/100,
     charges: ch, tradeType,
-    pnl, pnlPct,
-    capitalImpactPct,
-    rMultiple,
+    pnl, pnlPct, capitalImpactPct, rMultiple,
     initialSL: p.stopLoss,
     entryDate:p.entryDate, exitDate, holdingDays:daysBetween(p.entryDate,exitDate),
     reason:document.getElementById('c-reason').value,
     stopLoss:p.stopLoss, target:p.target,
-    isPartial,
-    remainingQty: isPartial ? p.qty - closeQty : 0,
-    cmpHistory: savedHistory   // Price Journey saved in journal
+    isPartial, remainingQty: isPartial ? p.qty - closeQty : 0,
+    cmpHistory: savedHistory
   };
-
   state.journal=[trade,...state.journal];
-
   if(isPartial){
-    // CHANGE 3: reduce position qty, keep it active
     p.qty = p.qty - closeQty;
   } else {
-    // Full close: remove position
     state.positions=state.positions.filter(x=>x.id!==closingId);
   }
-
   state.capital=Math.round((state.capital+pnl)*100)/100;
   saveState(); closeModal('modal-close'); render();
 }
@@ -1988,54 +1898,39 @@ function confirmClose() {
 function openJournalDetail(id) {
   const j=state.journal.find(x=>x.id===id); if(!j) return;
   const isW=j.pnl>=0, c=isW?'#22c55e':'#ef4444', rc=reasonColor(j.reason);
-
-  let maeMfeHTML='';
-  if(j.mae||j.mfe){
-    const maePct=j.mae?((j.entryPrice-j.mae)/j.entryPrice*100):null;
-    const mfePct=j.mfe?((j.mfe-j.entryPrice)/j.entryPrice*100):null;
-    const exitEff=(j.mfe&&j.mfe>j.entryPrice)?((j.exitPrice-j.entryPrice)/(j.mfe-j.entryPrice)*100):null;
-    const brokeSlLine=j.mae&&j.stopLoss&&j.mae<j.stopLoss;
-    maeMfeHTML=`<div class="mae-mfe-section"><div class="mae-mfe-title">📐 MAE / MFE Analysis</div><div class="mae-mfe-grid">${j.mae?`<div class="mae-cell"><div class="mae-mfe-label">Max Adverse (MAE)</div><div class="mae-mfe-val">₹${fmt(j.mae)}</div><div class="mae-mfe-sub">${maePct?`-${fmt(maePct,2)}% vs entry`:''}${brokeSlLine?' ⚠ Broke SL line':''}</div></div>`:''} ${j.mfe?`<div class="mfe-cell"><div class="mae-mfe-label">Max Favorable (MFE)</div><div class="mae-mfe-val">₹${fmt(j.mfe)}</div><div class="mae-mfe-sub">${mfePct?`+${fmt(mfePct,2)}% vs entry`:''}</div></div>`:''}</div>${exitEff!==null?`<div class="efficiency-bar"><span class="eff-label">Exit Efficiency</span><span class="eff-val" style="color:${exitEff>=70?'#22c55e':exitEff>=40?'#f97316':'#ef4444'}">${fmt(exitEff,1)}%</span></div>`:''}</div>`;
-  }
-
   document.getElementById('detail-title').textContent=`Trade — ${j.symbol}${j.isPartial?' (Partial)':''}`;
-
-  const tradeTypeBadge=j.tradeType?`<span style="background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2);border-radius:4px;padding:1px 7px;font-size:10px;color:#60a5fa;font-family:'DM Mono',monospace">${j.tradeType==='delivery'?'CNC / Delivery':'Intraday MIS'}</span>`:'';
-  const partialBadge=j.isPartial?`<span style="background:rgba(234,88,12,0.08);border:1px solid rgba(234,88,12,0.2);border-radius:4px;padding:1px 7px;font-size:10px;color:var(--orange);font-family:'DM Mono',monospace">Partial Exit — ${j.qty} shares</span>`:'';
+  const tradeTypeBadge=j.tradeType?`<span style="background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2);border-radius:4px;padding:1px 7px;font-size:10px;color:#60a5fa">${j.tradeType==='delivery'?'CNC / Delivery':'Intraday MIS'}</span>`:'';
+  const partialBadge=j.isPartial?`<span style="background:rgba(234,88,12,0.08);border:1px solid rgba(234,88,12,0.2);border-radius:4px;padding:1px 7px;font-size:10px;color:var(--orange)">Partial Exit — ${j.qty} shares</span>`:'';
   let chargesHTML='';
   if(j.charges){
     const ch=j.charges;
     const rows=[['Brokerage',ch.brokerage],['STT',ch.stt],['Exch. Charges',ch.exchangeCharges],['SEBI',ch.sebi],['IPFT',ch.ipft],['GST (18%)',ch.gst],['Stamp Duty',ch.stamp]];
     chargesHTML=`<div class="charges-box" style="margin:12px 0"><div class="charges-title"><span>🏦 Dhan / NSE Charges</span><div style="display:flex;gap:6px">${partialBadge}${tradeTypeBadge}</div></div><div class="charges-grid">${rows.map(([l,v])=>`<div class="charges-row"><span class="charges-label">${l}</span><span class="charges-val">₹${fmt(v,2)}</span></div>`).join('')}</div><div class="charges-total-row"><span class="charges-total-label">Total Charges</span><span class="charges-total-val">-₹${fmt(ch.total,2)}</span></div></div>`;
   }
-  const grossSection = j.grossPnl!=null ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px"><div><div style="font-size:9px;color:#6b7280;font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:2px">Gross P&L</div><div style="font-size:15px;font-weight:600;color:${j.grossPnl>=0?'#22c55e':'#ef4444'};font-family:'DM Mono',monospace">${sign(j.grossPnl)}${fmtC(j.grossPnl)}</div></div><div style="text-align:right"><div style="font-size:9px;color:#6b7280;font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:2px">Gross Return</div><div style="font-size:15px;font-weight:600;color:${j.grossPnl>=0?'#22c55e':'#ef4444'};font-family:'DM Mono',monospace">${sign(j.grossPnlPct||0)}${fmt(j.grossPnlPct||0,2)}%</div></div></div>` : '';
-
-  // Build price journey from saved cmpHistory if available
+  const grossSection = j.grossPnl!=null ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:8px 12px;background:rgba(0,0,0,0.02);border-radius:8px"><div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:2px">Gross P&L</div><div style="font-size:15px;font-weight:600;color:${j.grossPnl>=0?'#22c55e':'#ef4444'}">${sign(j.grossPnl)}${fmtC(j.grossPnl)}</div></div><div style="text-align:right"><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:2px">Gross Return</div><div style="font-size:15px;font-weight:600;color:${j.grossPnl>=0?'#22c55e':'#ef4444'}">${sign(j.grossPnlPct||0)}${fmt(j.grossPnlPct||0,2)}%</div></div></div>` : '';
   const journeyHTML = j.cmpHistory && j.cmpHistory.length >= 2
     ? buildPriceJourneyHTML({entry: j.entryPrice, qty: j.qty, cmpHistory: j.cmpHistory})
     : '';
-
   document.getElementById('detail-body').innerHTML=`
     <div class="detail-grid">
       ${[['Symbol',j.symbol+(j.isPartial?' ½':'')],['Company',j.name],['Sector',j.sector],['Held',j.holdingDays+' days'],
          ['Entry Date',j.entryDate],['Exit Date',j.exitDate],['Entry Price','₹'+fmt(j.entryPrice)],
-         ['Exit Price','₹'+fmt(j.exitPrice)],['Qty Closed',j.qty+(j.isPartial?` (partial)`:'')],['Position Size',fmtC(j.entryPrice*j.qty)],
+         ['Exit Price','₹'+fmt(j.exitPrice)],['Qty Closed',j.qty+(j.isPartial?' (partial)':'')],['Position Size',fmtC(j.entryPrice*j.qty)],
          ['Stop Loss',j.stopLoss?'₹'+fmt(j.stopLoss):'—'],['Target',j.target?'₹'+fmt(j.target):'—']]
         .map(([l,v])=>`<div class="detail-cell"><div class="detail-label">${l}</div><div class="detail-value">${v}</div></div>`).join('')}
     </div>
     ${grossSection}
     ${chargesHTML}
     <div class="pnl-box" style="background:${isW?'rgba(34,197,94,0.08)':'rgba(239,68,68,0.08)'};border:2px solid ${isW?'rgba(34,197,94,0.4)':'rgba(239,68,68,0.4)'}">
-      <div><div style="font-size:9px;color:#6b7280;font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:4px">Net P&L${j.charges?' (after charges)':''}</div><div style="font-size:22px;font-weight:700;color:${c};font-family:'DM Mono',monospace">${sign(j.pnl)}${fmtC(j.pnl)}</div></div>
-      <div style="text-align:right"><div style="font-size:9px;color:#6b7280;font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:4px">Net Return</div><div style="font-size:20px;font-weight:700;color:${c};font-family:'DM Mono',monospace">${sign(j.pnlPct)}${fmt(j.pnlPct,2)}%</div></div>
+      <div><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:4px">Net P&L${j.charges?' (after charges)':''}</div><div style="font-size:22px;font-weight:700;color:${c}">${sign(j.pnl)}${fmtC(j.pnl)}</div></div>
+      <div style="text-align:right"><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:4px">Net Return</div><div style="font-size:20px;font-weight:700;color:${c}">${sign(j.pnlPct)}${fmt(j.pnlPct,2)}%</div></div>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <span style="font-size:12px;color:#6b7280">Exit reason</span>
       <span class="reason-badge" style="background:${rc}1a;border-color:${rc}40;color:${rc}">${j.reason}</span>
     </div>
     ${journeyHTML}
-    ${maeMfeHTML}
-    ${j.notes?`<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px 13px;margin-top:12px"><div style="font-size:9px;color:#6b7280;font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:6px">Notes</div><div style="font-size:13px;color:#9ca3af;line-height:1.65">${j.notes}</div></div>`:''}
+    ${j.notes?`<div style="background:rgba(0,0,0,0.02);border:1px solid var(--border);border-radius:8px;padding:10px 13px;margin-top:12px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:6px">Notes</div><div style="font-size:13px;color:var(--text2);line-height:1.65">${j.notes}</div></div>`:''}
     <button class="btn btn-danger" style="width:100%;margin-top:16px;padding:10px" onclick="deleteJournalEntry(${j.id})">Delete from Journal</button>`;
   openModal('modal-detail');
 }
@@ -2059,7 +1954,6 @@ function saveCapital() {
   state.capital=v; saveState(); closeModal('modal-capital'); renderMetrics();
 }
 
-// Keyboard ESC
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape') document.querySelectorAll('.modal-overlay').forEach(el=>el.style.display='none');
 });
