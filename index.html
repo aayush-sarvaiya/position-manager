@@ -1375,175 +1375,191 @@ function drawEquityChart() {
 
   const DOT_R  = mode === 'monthly' ? 5.5 : 3.5;
 
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, W, H);
-
-  // Grid lines
-  const TICKS = 5;
-  ctx.strokeStyle = 'rgba(0,0,0,0.05)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i < TICKS; i++) {
-    const v = yMin + (yMax-yMin)*i/(TICKS-1);
-    const y = Math.round(toY(v)) + 0.5;
-    ctx.beginPath(); ctx.moveTo(PL, y); ctx.lineTo(W-PR, y); ctx.stroke();
-  }
-
-  // Y axis labels
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '600 10px Montserrat, sans-serif';
-  ctx.textAlign = 'right';
-  for (let i = 0; i < TICKS; i++) {
-    const v = yMin + (yMax-yMin)*i/(TICKS-1);
-    ctx.fillText(fmtC(v), PL-6, toY(v)+3.5);
-  }
-
-  // Starting capital baseline
-  const baseY = toY(periodStartCap);
-  if (baseY > PT && baseY < PT+CH) {
-    ctx.save();
-    ctx.setLineDash([5,4]);
-    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(PL, baseY); ctx.lineTo(W-PR, baseY); ctx.stroke();
-    ctx.restore();
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '500 9px Montserrat, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('start', PL+4, baseY-4);
-  }
-
-  // Area fill
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(toX(0), PT+CH);
-  pts.forEach((_,i) => ctx.lineTo(toX(i), toY(pts[i].capital)));
-  ctx.lineTo(toX(n-1), PT+CH);
-  ctx.closePath();
-  const grad = ctx.createLinearGradient(0, PT, 0, PT+CH);
-  grad.addColorStop(0, curveColor+'44');
-  grad.addColorStop(1, curveColor+'06');
-  ctx.fillStyle = grad;
-  ctx.fill();
-  ctx.restore();
-
-  // Equity line
-  ctx.beginPath();
-  pts.forEach((_,i) => { const x=toX(i), y=toY(pts[i].capital); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
-  ctx.strokeStyle = curveColor;
-  ctx.lineWidth   = 2.2;
-  ctx.lineJoin    = 'round';
-  ctx.lineCap     = 'round';
-  ctx.stroke();
-
-  // Dots
-  pts.forEach((pt,i) => {
-    const x=toX(i), y=toY(pt.capital);
-    const dc = pt.pnl==null ? '#94a3b8' : pt.pnl>=0 ? '#22c55e' : '#ef4444';
-    ctx.beginPath(); ctx.arc(x, y, DOT_R, 0, Math.PI*2);
-    ctx.fillStyle = dc; ctx.fill();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.8; ctx.stroke();
+  // ── Drawdown series (precomputed once per full layout) ──────────
+  let ddPk = caps[0];
+  const ddSeries = caps.map(c => {
+    if (c > ddPk) ddPk = c;
+    return ddPk > 0 ? (ddPk - c) / ddPk * 100 : 0;
   });
+  const ddMax = Math.max(...ddSeries, 0.5);
 
-  // X-axis labels (at equity chart bottom)
-  const showEvery = Math.max(1, Math.ceil(n/7));
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '500 9px Montserrat, sans-serif';
-  ctx.textAlign = 'center';
-  pts.forEach((pt,i) => {
-    if (i===0 || i===n-1 || i%showEvery===0) {
-      const lbl = pt.date==='Start' ? 'Start'
-        : mode==='monthly' && pt.ym
-          ? (() => { try { return new Date(pt.ym+'-01').toLocaleDateString('en-IN',{month:'short'}); } catch { return pt.ym; }})()
-          : (() => { try { return new Date(pt.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}); } catch { return pt.date; }})();
-      ctx.fillText(lbl, toX(i), PT+CH+18);
+  const dotPos = pts.map((_,i) => ({x:toX(i), y:toY(pts[i].capital)}));
+
+  // ── paint(): draws the ENTIRE canvas from scratch every time.
+  // Always a full repaint (never a partial clearRect) so mouse/touch
+  // interaction can never leave stale pixels behind — this was the
+  // cause of the corrupted-looking chart on Android tap/hover. ──────
+  function paint(hl) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, W, H);
+
+    // Grid lines
+    const TICKS = 5;
+    ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < TICKS; i++) {
+      const v = yMin + (yMax-yMin)*i/(TICKS-1);
+      const y = Math.round(toY(v)) + 0.5;
+      ctx.beginPath(); ctx.moveTo(PL, y); ctx.lineTo(W-PR, y); ctx.stroke();
     }
-  });
 
-  // ── Drawdown sub-chart ─────────────────────────────────────────
-  if (SHOW_DD) {
-    const ddTop = LINE_H + DD_GAP;
-    const ddH   = DD_H - 4;
-
-    // Calculate running drawdown series
-    let pk = caps[0];
-    const ddSeries = caps.map(c => {
-      if (c > pk) pk = c;
-      return pk > 0 ? (pk - c) / pk * 100 : 0;
-    });
-    const ddMax = Math.max(...ddSeries, 0.5);
-
-    // Label
-    ctx.fillStyle = '#dc2626';
-    ctx.font = '600 9px Montserrat, sans-serif';
+    // Y axis labels
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '600 10px Montserrat, sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText('DD%', PL-4, ddTop + 10);
+    for (let i = 0; i < TICKS; i++) {
+      const v = yMin + (yMax-yMin)*i/(TICKS-1);
+      ctx.fillText(fmtC(v), PL-6, toY(v)+3.5);
+    }
 
-    // Separator line
-    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(PL, ddTop - 2);
-    ctx.lineTo(W - PR, ddTop - 2);
-    ctx.stroke();
+    // Starting capital baseline
+    const baseY = toY(periodStartCap);
+    if (baseY > PT && baseY < PT+CH) {
+      ctx.save();
+      ctx.setLineDash([5,4]);
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(PL, baseY); ctx.lineTo(W-PR, baseY); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '500 9px Montserrat, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('start', PL+4, baseY-4);
+    }
 
-    // Fill area
+    // Area fill
     ctx.save();
     ctx.beginPath();
-    ctx.moveTo(toX(0), ddTop + ddH);
-    ddSeries.forEach((dd, i) => {
-      const y = ddTop + ddH - (dd / ddMax) * ddH;
-      ctx.lineTo(toX(i), y);
-    });
-    ctx.lineTo(toX(n-1), ddTop + ddH);
+    ctx.moveTo(toX(0), PT+CH);
+    pts.forEach((_,i) => ctx.lineTo(toX(i), toY(pts[i].capital)));
+    ctx.lineTo(toX(n-1), PT+CH);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(220,38,38,0.18)';
+    const grad = ctx.createLinearGradient(0, PT, 0, PT+CH);
+    grad.addColorStop(0, curveColor+'44');
+    grad.addColorStop(1, curveColor+'06');
+    ctx.fillStyle = grad;
     ctx.fill();
     ctx.restore();
 
-    // Drawdown line
+    // Equity line
     ctx.beginPath();
-    ddSeries.forEach((dd, i) => {
-      const y = ddTop + ddH - (dd / ddMax) * ddH;
-      i===0 ? ctx.moveTo(toX(i), y) : ctx.lineTo(toX(i), y);
-    });
-    ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 1.5;
-    ctx.lineJoin = 'round';
+    pts.forEach((_,i) => { const x=toX(i), y=toY(pts[i].capital); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+    ctx.strokeStyle = curveColor;
+    ctx.lineWidth   = 2.2;
+    ctx.lineJoin    = 'round';
+    ctx.lineCap     = 'round';
     ctx.stroke();
 
-    // Max DD label inline
-    const worstI = ddSeries.indexOf(ddMax);
-    const wX = toX(worstI);
-    const wY = ddTop + ddH - (ddMax/ddMax)*ddH;
-    ctx.fillStyle = '#ef4444';
-    ctx.font = '700 9px Montserrat, sans-serif';
-    ctx.textAlign = wX > W/2 ? 'right' : 'left';
-    ctx.fillText('-'+fmt(ddMax,1)+'%', wX + (wX > W/2 ? -5 : 5), wY - 4);
-  }
-
-  // ── Per-trade P&L bars ──────────────────────────────────────────
-  if (BAR_H > 0 && n > 1) {
-    const bY0   = LINE_H + DD_GAP + DD_H + 4;
-    const maxAbs = Math.max(...pts.filter(p=>p.pnl!=null).map(p=>Math.abs(p.pnl)), 1);
-    const bW    = Math.max(3, Math.min(12, (CW/(n-1))*0.5));
-
-    // Separator
-    ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(PL, bY0-1); ctx.lineTo(W-PR, bY0-1); ctx.stroke();
-
+    // Dots (with highlight ring for hl index)
     pts.forEach((pt,i) => {
-      if (i===0||pt.pnl==null) return;
-      const x  = toX(i);
-      const bh = Math.max(2, Math.abs(pt.pnl)/maxAbs*(BAR_H-10)/2);
-      const bx = x - bW/2, by = pt.pnl>=0 ? bY0-bh : bY0;
-      ctx.fillStyle = pt.pnl>=0 ? 'rgba(34,197,94,0.75)' : 'rgba(239,68,68,0.75)';
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(bx, by, bW, bh, 1.5) : ctx.rect(bx, by, bW, bh);
-      ctx.fill();
+      const x=toX(i), y=toY(pt.capital);
+      const dc = pt.pnl==null ? '#94a3b8' : pt.pnl>=0 ? '#22c55e' : '#ef4444';
+      const isHL = i===hl;
+      if (isHL) {
+        ctx.beginPath(); ctx.arc(x, y, DOT_R+9, 0, Math.PI*2);
+        ctx.fillStyle = dc+'28'; ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(x, y, isHL ? DOT_R+3 : DOT_R, 0, Math.PI*2);
+      ctx.fillStyle = dc; ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = isHL ? 2.5 : 1.8; ctx.stroke();
     });
-    ctx.strokeStyle = 'rgba(0,0,0,0.07)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(PL, bY0); ctx.lineTo(W-PR, bY0); ctx.stroke();
+
+    // X-axis labels (at equity chart bottom)
+    const showEvery = Math.max(1, Math.ceil(n/7));
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '500 9px Montserrat, sans-serif';
+    ctx.textAlign = 'center';
+    pts.forEach((pt,i) => {
+      if (i===0 || i===n-1 || i%showEvery===0) {
+        const lbl = pt.date==='Start' ? 'Start'
+          : mode==='monthly' && pt.ym
+            ? (() => { try { return new Date(pt.ym+'-01').toLocaleDateString('en-IN',{month:'short'}); } catch { return pt.ym; }})()
+            : (() => { try { return new Date(pt.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}); } catch { return pt.date; }})();
+        ctx.fillText(lbl, toX(i), PT+CH+18);
+      }
+    });
+
+    // ── Drawdown sub-chart ─────────────────────────────────────────
+    if (SHOW_DD) {
+      const ddTop = LINE_H + DD_GAP;
+      const ddH   = DD_H - 4;
+
+      // Label
+      ctx.fillStyle = '#dc2626';
+      ctx.font = '600 9px Montserrat, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('DD%', PL-4, ddTop + 10);
+
+      // Separator line
+      ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(PL, ddTop - 2);
+      ctx.lineTo(W - PR, ddTop - 2);
+      ctx.stroke();
+
+      // Fill area
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(toX(0), ddTop + ddH);
+      ddSeries.forEach((dd, i) => {
+        const y = ddTop + ddH - (dd / ddMax) * ddH;
+        ctx.lineTo(toX(i), y);
+      });
+      ctx.lineTo(toX(n-1), ddTop + ddH);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(220,38,38,0.18)';
+      ctx.fill();
+      ctx.restore();
+
+      // Drawdown line
+      ctx.beginPath();
+      ddSeries.forEach((dd, i) => {
+        const y = ddTop + ddH - (dd / ddMax) * ddH;
+        i===0 ? ctx.moveTo(toX(i), y) : ctx.lineTo(toX(i), y);
+      });
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 1.5;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      // Max DD label inline
+      const worstI = ddSeries.indexOf(ddMax);
+      const wX = toX(worstI);
+      const wY = ddTop + ddH - (ddMax/ddMax)*ddH;
+      ctx.fillStyle = '#ef4444';
+      ctx.font = '700 9px Montserrat, sans-serif';
+      ctx.textAlign = wX > W/2 ? 'right' : 'left';
+      ctx.fillText('-'+fmt(ddMax,1)+'%', wX + (wX > W/2 ? -5 : 5), wY - 4);
+    }
+
+    // ── Per-trade P&L bars ──────────────────────────────────────────
+    if (BAR_H > 0 && n > 1) {
+      const bY0   = LINE_H + DD_GAP + DD_H + 4;
+      const maxAbs = Math.max(...pts.filter(p=>p.pnl!=null).map(p=>Math.abs(p.pnl)), 1);
+      const bW    = Math.max(3, Math.min(12, (CW/(n-1))*0.5));
+
+      // Separator
+      ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(PL, bY0-1); ctx.lineTo(W-PR, bY0-1); ctx.stroke();
+
+      pts.forEach((pt,i) => {
+        if (i===0||pt.pnl==null) return;
+        const x  = toX(i);
+        const bh = Math.max(2, Math.abs(pt.pnl)/maxAbs*(BAR_H-10)/2);
+        const bx = x - bW/2, by = pt.pnl>=0 ? bY0-bh : bY0;
+        ctx.fillStyle = pt.pnl>=0 ? 'rgba(34,197,94,0.75)' : 'rgba(239,68,68,0.75)';
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(bx, by, bW, bh, 1.5) : ctx.rect(bx, by, bW, bh);
+        ctx.fill();
+      });
+      ctx.strokeStyle = 'rgba(0,0,0,0.07)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(PL, bY0); ctx.lineTo(W-PR, bY0); ctx.stroke();
+    }
   }
+
+  paint(-1);
 
   // Legend
   if (legEl) {
@@ -1557,36 +1573,18 @@ function drawEquityChart() {
       + `<span style="font-size:10px;color:#94a3b8">Tap dots for details</span>`;
   }
 
-  // ── Store dot positions for hover ───────────────────────────────
-  const dotPos = pts.map((_,i) => ({x:toX(i), y:toY(pts[i].capital)}));
+  // ── Hover / tap handling — always triggers a full paint() so the
+  // canvas can never accumulate stale pixels, on mouse or touch. ────
   let lastHL = -1;
-
-  function redrawDots(hl) {
-    if (hl === lastHL) return;
-    lastHL = hl;
-    pts.forEach((pt,i) => {
-      const dp = dotPos[i], isHL = i===hl;
-      const dc = pt.pnl==null ? '#94a3b8' : pt.pnl>=0 ? '#22c55e' : '#ef4444';
-      ctx.clearRect(dp.x-20, dp.y-20, 40, 40);
-      if (isHL) {
-        ctx.beginPath(); ctx.arc(dp.x, dp.y, DOT_R+9, 0, Math.PI*2);
-        ctx.fillStyle = dc+'28'; ctx.fill();
-      }
-      ctx.beginPath(); ctx.arc(dp.x, dp.y, isHL ? DOT_R+3 : DOT_R, 0, Math.PI*2);
-      ctx.fillStyle = dc; ctx.fill();
-      ctx.strokeStyle = '#fff'; ctx.lineWidth = isHL ? 2.5 : 1.8; ctx.stroke();
-    });
-  }
 
   function onMove(cx, cy) {
     const rect = canvas.getBoundingClientRect();
     const mx   = cx - rect.left;
-    // Only respond to pointer inside the equity-line zone
     const my   = cy - rect.top;
-    if (my > LINE_H + 2) { redrawDots(-1); tip.style.display='none'; return; }
+    if (my > LINE_H + 2) { if (lastHL !== -1) { paint(-1); lastHL=-1; } tip.style.display='none'; return; }
     let cl = -1, md = mode==='monthly' ? 50 : 32;
     dotPos.forEach((dp,i) => { const d=Math.abs(dp.x-mx); if(d<md){md=d;cl=i;} });
-    redrawDots(cl);
+    if (cl !== lastHL) { paint(cl); lastHL = cl; }
     if (cl === -1) { tip.style.display='none'; return; }
 
     const pt = pts[cl];
@@ -1624,25 +1622,41 @@ function drawEquityChart() {
     tip.style.display = 'block';
   }
 
+  function hideAll() {
+    if (lastHL !== -1) { paint(-1); lastHL = -1; }
+    tip.style.display = 'none';
+  }
+
   if (canvas._eqAbort) canvas._eqAbort.abort();
   canvas._eqAbort = new AbortController();
   const sig = canvas._eqAbort.signal;
 
   canvas.addEventListener('mousemove',  e => onMove(e.clientX, e.clientY), {signal:sig});
-  canvas.addEventListener('mouseleave', () => { redrawDots(-1); tip.style.display='none'; }, {signal:sig});
+  canvas.addEventListener('mouseleave', hideAll, {signal:sig});
 
   canvas.addEventListener('touchstart', e => {
     e.preventDefault();
     onMove(e.touches[0].clientX, e.touches[0].clientY);
     clearTimeout(canvas._tipTimer);
-    canvas._tipTimer = setTimeout(() => { tip.style.display='none'; redrawDots(-1); }, 2500);
+    canvas._tipTimer = setTimeout(hideAll, 2500);
   }, {passive:false, signal:sig});
+
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    onMove(e.touches[0].clientX, e.touches[0].clientY);
+    clearTimeout(canvas._tipTimer);
+    canvas._tipTimer = setTimeout(hideAll, 2500);
+  }, {passive:false, signal:sig});
+
+  canvas.addEventListener('touchend', () => {
+    clearTimeout(canvas._tipTimer);
+    canvas._tipTimer = setTimeout(hideAll, 2500);
+  }, {signal:sig});
 
   const outsideHide = e => {
     if (!canvas.contains(e.target) && tip.style.display !== 'none') {
-      tip.style.display = 'none';
-      redrawDots(-1);
       clearTimeout(canvas._tipTimer);
+      hideAll();
     }
   };
   document.addEventListener('touchstart', outsideHide, {passive:true, signal:sig});
