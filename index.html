@@ -139,6 +139,7 @@
   .card-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 5px; opacity: 0; transition: opacity .15s; }
   .card:hover .card-actions { opacity: 1; }
   .card-actions .btn-close-trade { background: rgba(22,163,74,0.1); border: 1px solid rgba(22,163,74,0.25); border-radius: 7px; color: var(--green); padding: 4px 9px; font-size: 10px; cursor: pointer; font-family: 'Montserrat',sans-serif; font-weight: 700; }
+  .card-actions .btn-chart { background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.2); border-radius: 7px; color: var(--blue); padding: 4px 9px; font-size: 10px; cursor: pointer; font-family: 'Montserrat',sans-serif; font-weight: 700; }
   .card-actions .btn-delete { background: rgba(220,38,38,0.07); border: 1px solid rgba(220,38,38,0.18); border-radius: 7px; color: #dc2626; width: 26px; height: 26px; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
   .card-symbol { font-weight: 800; font-size: 15px; color: var(--text); letter-spacing: -.3px; }
@@ -259,6 +260,11 @@
 
   .pj-tag { font-size:9px; border-radius:4px; padding:1px 5px; font-weight:700; margin-left:4px; display:inline-block; }
 
+  .loss-nudge { display:flex; justify-content:space-between; align-items:center; gap:12px; background:rgba(220,38,38,0.06); border:1px solid rgba(220,38,38,0.22); border-radius:12px; padding:12px 16px; margin-bottom:16px; }
+  .loss-nudge-text { font-size:12px; color:#991b1b; font-weight:600; line-height:1.5; }
+  .loss-nudge-text b { color:#dc2626; }
+  .loss-nudge-dismiss { background:#fff; border:1px solid rgba(220,38,38,0.3); border-radius:8px; padding:6px 14px; font-size:11px; font-weight:700; color:#dc2626; cursor:pointer; font-family:'Montserrat',sans-serif; white-space:nowrap; flex-shrink:0; }
+
   .card-mobile-actions { display: none; }
   @media (max-width: 768px) {
     .card-actions { display: none !important; }
@@ -271,11 +277,17 @@
       border-radius: 9px; color: var(--green); padding: 9px 12px; font-size: 12px;
       cursor: pointer; font-family: 'Montserrat', sans-serif; font-weight: 700; text-align: center;
     }
+    .card-mobile-actions .btn-chart {
+      flex: 1; background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.2);
+      border-radius: 9px; color: var(--blue); padding: 9px 12px; font-size: 12px;
+      cursor: pointer; font-family: 'Montserrat', sans-serif; font-weight: 700; text-align: center;
+    }
     .card-mobile-actions .btn-delete {
       background: rgba(220,38,38,0.07); border: 1px solid rgba(220,38,38,0.18);
       border-radius: 9px; color: #dc2626; width: 42px; font-size: 18px;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
+    .loss-nudge { flex-direction:column; align-items:flex-start; }
   }
 
   .btn-ai { display:none; }
@@ -460,6 +472,52 @@
   </div>
 </div>
 
+<!-- Candlestick Chart Modal (per position) -->
+<div class="modal-overlay" id="modal-chart" style="display:none">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <div class="modal-title" id="chart-modal-title">📊 Chart</div>
+      <button class="modal-close" onclick="closeModal('modal-chart')">×</button>
+    </div>
+    <div id="chart-meta" style="font-size:11px;color:var(--text2);margin-bottom:10px;display:flex;gap:14px;flex-wrap:wrap;font-weight:600"></div>
+    <div style="position:relative;user-select:none;margin-bottom:10px">
+      <canvas id="pos-candle-canvas" style="display:block;width:100%;border-radius:8px;border:1px solid var(--border)"></canvas>
+      <div id="pos-candle-tip" style="display:none;position:fixed;background:#1e293b;border:1px solid rgba(255,255,255,0.1);color:#f1f5f9;border-radius:10px;padding:11px 14px;font-size:11px;pointer-events:none;z-index:150;min-width:150px;max-width:230px;box-shadow:0 8px 24px rgba(0,0,0,0.35)"></div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+      <span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#22c55e"></span>Up day</span>
+      <span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#ef4444"></span>Down day</span>
+      <span style="font-size:10px;color:#94a3b8">Tap/hover a candle for OHLC</span>
+    </div>
+
+    <div style="font-size:10px;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;font-weight:700;margin-bottom:8px">＋ Add / update a day</div>
+    <div class="form-grid" style="margin-bottom:2px">
+      <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="ohlc-date" type="date"></div>
+      <div class="form-group"><label class="form-label">Open</label><input class="form-input" id="ohlc-open" type="number" placeholder="0.00"></div>
+      <div class="form-group"><label class="form-label">High</label><input class="form-input" id="ohlc-high" type="number" placeholder="0.00"></div>
+      <div class="form-group"><label class="form-label">Low</label><input class="form-input" id="ohlc-low" type="number" placeholder="0.00"></div>
+      <div class="form-group full"><label class="form-label">Close</label><input class="form-input" id="ohlc-close" type="number" placeholder="0.00"></div>
+    </div>
+    <div class="modal-footer" style="margin-bottom:20px">
+      <button class="btn btn-primary" style="flex:1" onclick="addOHLCDay()">Save Day</button>
+    </div>
+
+    <div style="font-size:10px;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;font-weight:700;margin-bottom:8px">📋 Bulk paste</div>
+    <p class="bulk-hint">
+      One line per day: <strong style="color:var(--text)">YYYY-MM-DD OPEN HIGH LOW CLOSE</strong><br>
+      Comma, space or tab separated.
+    </p>
+    <textarea class="form-textarea" id="ohlc-bulk-input" style="min-height:90px;font-size:12px" placeholder="2026-07-24 161 165 160 162.2&#10;2026-07-25 162.5 168 161 166.7"></textarea>
+    <div id="ohlc-bulk-result" class="bulk-result" style="display:none"></div>
+    <div class="modal-footer" style="margin-top:12px;margin-bottom:20px">
+      <button class="btn btn-secondary" style="flex:1" onclick="applyBulkOHLC()">Apply Bulk Rows</button>
+    </div>
+
+    <div style="font-size:10px;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;font-weight:700;margin-bottom:8px">🗓 Saved days (<span id="ohlc-count">0</span>)</div>
+    <div id="ohlc-list" style="max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:10px"></div>
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════
 //  STATE
@@ -469,18 +527,20 @@ const STORAGE_KEY = 'pm-html-v1';
 let state = {
   capital: 500000,
   positions: [
-    { id:1, symbol:'RELIANCE', name:'Reliance Industries', entry:1280, cmp:1295, qty:10, stopLoss:1230, target:1380, sector:'Energy', entryDate:'2025-03-10' },
-    { id:2, symbol:'TCS',      name:'Tata Consultancy',    entry:3200, cmp:3150, qty:8,  stopLoss:3050, target:3500, sector:'IT',     entryDate:'2025-03-18' },
-    { id:3, symbol:'INFY',     name:'Infosys',             entry:1380, cmp:1410, qty:15, stopLoss:1320, target:1500, sector:'IT',     entryDate:'2025-04-01' },
+    { id:1, symbol:'RELIANCE', name:'Reliance Industries', entry:1280, cmp:1295, qty:10, stopLoss:1230, target:1380, sector:'Energy', entryDate:'2025-03-10', ohlc:[] },
+    { id:2, symbol:'TCS',      name:'Tata Consultancy',    entry:3200, cmp:3150, qty:8,  stopLoss:3050, target:3500, sector:'IT',     entryDate:'2025-03-18', ohlc:[] },
+    { id:3, symbol:'INFY',     name:'Infosys',             entry:1380, cmp:1410, qty:15, stopLoss:1320, target:1500, sector:'IT',     entryDate:'2025-04-01', ohlc:[] },
   ],
   journal: []
 };
 
 let editingId  = null;
 let closingId  = null;
+let chartingId = null;
 let currentTab = 'positions';
 let sortBy     = 'default';
 let toastTimer = null;
+let lossNudge  = { date:null, dismissedAt:0 };
 
 // ══════════════════════════════════════════
 //  PERSIST
@@ -490,6 +550,9 @@ function saveState() {
 }
 function loadState() {
   try { const r=localStorage.getItem(STORAGE_KEY); if(r) state=JSON.parse(r); } catch(e) {}
+}
+function loadLossNudge() {
+  try { const r=localStorage.getItem('pm-loss-nudge'); if(r) lossNudge=JSON.parse(r); } catch(e) {}
 }
 
 // ══════════════════════════════════════════
@@ -547,6 +610,20 @@ function showToast(type, title, body) {
 
 function requestNotifPermission() {
   if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
+}
+
+// ══════════════════════════════════════════
+//  LOSS-STREAK NUDGE
+// ══════════════════════════════════════════
+function currentLossStreak() {
+  let streak=0;
+  for(const j of state.journal) { if(j.pnl<=0) streak++; else break; }
+  return streak;
+}
+function dismissLossNudge(streak) {
+  lossNudge = { date: today(), dismissedAt: streak };
+  try { localStorage.setItem('pm-loss-nudge', JSON.stringify(lossNudge)); } catch(e) {}
+  renderPositions();
 }
 
 // ══════════════════════════════════════════
@@ -809,6 +886,252 @@ function buildPriceJourneyHTML(p) {
 }
 
 // ══════════════════════════════════════════
+//  CANDLESTICK CHART (reusable — position modal + journal detail)
+// ══════════════════════════════════════════
+function drawCandlestickChart(canvasId, tipId, data, refLines) {
+  const canvas = document.getElementById(canvasId);
+  const tip    = document.getElementById(tipId);
+  if(!canvas) return;
+  const n = data.length;
+
+  if(n === 0) {
+    const DPR0 = window.devicePixelRatio||1;
+    const W0 = (canvas.parentElement && canvas.parentElement.clientWidth) || 400;
+    canvas.width = W0*DPR0; canvas.height = 200*DPR0;
+    canvas.style.width = W0+'px'; canvas.style.height = '200px';
+    const ctx0 = canvas.getContext('2d');
+    ctx0.scale(DPR0,DPR0);
+    ctx0.clearRect(0,0,W0,200);
+    ctx0.fillStyle='#f8fafc'; ctx0.fillRect(0,0,W0,200);
+    ctx0.fillStyle='#94a3b8'; ctx0.font='600 12px Montserrat, sans-serif'; ctx0.textAlign='center';
+    ctx0.fillText('No OHLC data yet — add daily prices below', W0/2, 100);
+    if(tip) tip.style.display='none';
+    return;
+  }
+
+  const DPR = window.devicePixelRatio || 1;
+  const W   = (canvas.parentElement && canvas.parentElement.clientWidth) || 400;
+  const H   = 240;
+  const PL=54, PR=14, PT=16, PB=26;
+  canvas.width = W*DPR; canvas.height = H*DPR;
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+
+  let allVals = [];
+  data.forEach(d=>{ allVals.push(d.high, d.low); });
+  (refLines||[]).forEach(r=>{ if(r.value!=null) allVals.push(r.value); });
+  const rawMin = Math.min(...allVals), rawMax = Math.max(...allVals);
+  const pad = Math.max((rawMax-rawMin)*0.1, rawMax*0.015, 1);
+  const yMin = rawMin-pad, yMax = rawMax+pad, yR = (yMax-yMin)||1;
+
+  const CW = W-PL-PR, CH = H-PT-PB;
+  const slot = CW/n;
+  const bodyW = Math.max(2, Math.min(14, slot*0.6));
+  const toX = i => PL + slot*i + slot/2;
+  const toY = v => PT + CH - ((v-yMin)/yR)*CH;
+
+  function paint(hl) {
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+    const TICKS=5;
+    ctx.font='600 10px Montserrat, sans-serif'; ctx.textAlign='right';
+    for(let i=0;i<TICKS;i++) {
+      const v = yMin+(yMax-yMin)*i/(TICKS-1);
+      const y = Math.round(toY(v))+0.5;
+      ctx.strokeStyle='rgba(0,0,0,0.05)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(PL,y); ctx.lineTo(W-PR,y); ctx.stroke();
+      ctx.fillStyle='#94a3b8';
+      ctx.fillText(fmt(v,1), PL-6, y+3.5);
+    }
+
+    data.forEach((d,i)=>{
+      const x=toX(i);
+      const isUp = d.close>=d.open;
+      const c = isUp?'#22c55e':'#ef4444';
+      const isHL = i===hl;
+      ctx.strokeStyle=c; ctx.lineWidth=isHL?2:1.3;
+      ctx.beginPath(); ctx.moveTo(x, toY(d.high)); ctx.lineTo(x, toY(d.low)); ctx.stroke();
+      const oy=toY(d.open), cy=toY(d.close);
+      const top=Math.min(oy,cy), bh=Math.max(1.5, Math.abs(cy-oy));
+      ctx.fillStyle=c;
+      if(ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x-bodyW/2, top, bodyW, bh, 1); ctx.fill(); }
+      else ctx.fillRect(x-bodyW/2, top, bodyW, bh);
+      if(isHL) { ctx.strokeStyle=c; ctx.lineWidth=1.5; ctx.strokeRect(x-bodyW/2-2, top-2, bodyW+4, bh+4); }
+    });
+
+    (refLines||[]).forEach(r=>{
+      if(r.value==null) return;
+      const y=toY(r.value);
+      ctx.save();
+      if(r.dash!==false) ctx.setLineDash([5,4]);
+      ctx.strokeStyle=r.color; ctx.lineWidth=1.3;
+      ctx.beginPath(); ctx.moveTo(PL,y); ctx.lineTo(W-PR,y); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle=r.color; ctx.font='700 9px Montserrat, sans-serif'; ctx.textAlign='left';
+      const ly = y-4 > PT+8 ? y-4 : y+12;
+      ctx.fillText(`${r.label} ₹${fmt(r.value,1)}`, PL+4, ly);
+    });
+
+    const showEvery = Math.max(1, Math.ceil(n/6));
+    ctx.fillStyle='#94a3b8'; ctx.font='500 9px Montserrat, sans-serif'; ctx.textAlign='center';
+    data.forEach((d,i)=>{
+      if(i===0||i===n-1||i%showEvery===0) {
+        let lbl=d.date; try { lbl=new Date(d.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}); } catch(e){}
+        ctx.fillText(lbl, toX(i), PT+CH+16);
+      }
+    });
+  }
+  paint(-1);
+
+  if(canvas._candleAbort) canvas._candleAbort.abort();
+  canvas._candleAbort = new AbortController();
+  const sig = canvas._candleAbort.signal;
+  let lastHL = -1;
+
+  function onMove(cx, cy) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = cx-rect.left;
+    if(mx < PL-slot/2 || mx > W-PR+slot/2) { if(lastHL!==-1){paint(-1); lastHL=-1;} if(tip) tip.style.display='none'; return; }
+    let idx = Math.floor((mx-PL)/slot);
+    if(idx<0) idx=0; if(idx>n-1) idx=n-1;
+    if(idx!==lastHL) { paint(idx); lastHL=idx; }
+    if(!tip) return;
+    const d = data[idx];
+    let lbl=d.date; try { lbl=new Date(d.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch(e){}
+    const chg = d.close-d.open, chgPct = d.open ? (chg/d.open*100) : 0;
+    const cc = chg>=0?'#22c55e':'#ef4444';
+    tip.innerHTML = `<div style="font-size:10px;color:#64748b;margin-bottom:5px;font-weight:600">${lbl}</div>
+      <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;margin-bottom:3px"><span style="color:#64748b">Open</span><span style="color:#f1f5f9;font-weight:700">₹${fmt(d.open)}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;margin-bottom:3px"><span style="color:#64748b">High</span><span style="color:#f1f5f9;font-weight:700">₹${fmt(d.high)}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;margin-bottom:3px"><span style="color:#64748b">Low</span><span style="color:#f1f5f9;font-weight:700">₹${fmt(d.low)}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;margin-bottom:3px"><span style="color:#64748b">Close</span><span style="color:#f1f5f9;font-weight:700">₹${fmt(d.close)}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px"><span style="color:#64748b">Day chg</span><span style="color:${cc};font-weight:700">${sign(chg)}${fmt(Math.abs(chg))} (${sign(chgPct)}${fmt(Math.abs(chgPct),2)}%)</span></div>`;
+    const canvasRect = canvas.getBoundingClientRect();
+    const vpX = canvasRect.left+toX(idx), vpY = canvasRect.top+toY(d.close);
+    let tx = vpX+14;
+    if(tx+220 > window.innerWidth-14) tx = vpX-220-14;
+    tip.style.left = tx+'px';
+    tip.style.top  = Math.max(4, vpY-70)+'px';
+    tip.style.display='block';
+  }
+  function hideAll() { if(lastHL!==-1){ paint(-1); lastHL=-1; } if(tip) tip.style.display='none'; }
+
+  canvas.addEventListener('mousemove', e=>onMove(e.clientX,e.clientY), {signal:sig});
+  canvas.addEventListener('mouseleave', hideAll, {signal:sig});
+  canvas.addEventListener('touchstart', e=>{ e.preventDefault(); onMove(e.touches[0].clientX,e.touches[0].clientY); clearTimeout(canvas._tipTimer); canvas._tipTimer=setTimeout(hideAll,2500); }, {passive:false, signal:sig});
+  canvas.addEventListener('touchmove', e=>{ e.preventDefault(); onMove(e.touches[0].clientX,e.touches[0].clientY); clearTimeout(canvas._tipTimer); canvas._tipTimer=setTimeout(hideAll,2500); }, {passive:false, signal:sig});
+  canvas.addEventListener('touchend', ()=>{ clearTimeout(canvas._tipTimer); canvas._tipTimer=setTimeout(hideAll,2500); }, {signal:sig});
+  canvas.style.cursor='crosshair';
+}
+
+// ══════════════════════════════════════════
+//  OHLC ENTRY (per-position chart modal)
+// ══════════════════════════════════════════
+function openChartModal(id) {
+  const p=state.positions.find(x=>x.id===id); if(!p) return;
+  chartingId=id;
+  if(!p.ohlc) p.ohlc=[];
+  document.getElementById('chart-modal-title').textContent = `📊 ${p.symbol} Chart`;
+  document.getElementById('ohlc-date').value = today();
+  ['ohlc-open','ohlc-high','ohlc-low','ohlc-close'].forEach(fid=>document.getElementById(fid).value='');
+  document.getElementById('ohlc-bulk-input').value='';
+  document.getElementById('ohlc-bulk-result').style.display='none';
+  renderChartModal(p);
+  openModal('modal-chart');
+}
+
+function renderChartModal(p) {
+  const sorted = [...(p.ohlc||[])].sort((a,b)=>a.date.localeCompare(b.date));
+  const refLines = [
+    { label:'Entry', value:p.entry,             color:'#2563eb' },
+    { label:'SL',    value:p.stopLoss || null,   color:'#dc2626' },
+    { label:'TGT',   value:p.target  || null,    color:'#16a34a' },
+    { label:'CMP',   value:p.cmp,                color:'#7c3aed', dash:false },
+  ];
+  document.getElementById('chart-meta').innerHTML = [
+    ['Entry', `₹${fmt(p.entry)}`],
+    ['CMP', `₹${fmt(p.cmp)}`],
+    ['Days logged', sorted.length],
+    ['Held', `${daysBetween(p.entryDate, today())}d`],
+  ].map(([l,v])=>`<span>${l}: <b style="color:var(--text)">${v}</b></span>`).join('');
+  drawCandlestickChart('pos-candle-canvas','pos-candle-tip', sorted, refLines);
+  renderOHLCList(sorted);
+}
+
+function renderOHLCList(sorted) {
+  document.getElementById('ohlc-count').textContent = sorted.length;
+  const el = document.getElementById('ohlc-list');
+  if(!sorted.length) { el.innerHTML = `<div style="padding:16px;text-align:center;font-size:11px;color:var(--text3)">No days logged yet</div>`; return; }
+  el.innerHTML = [...sorted].reverse().map(d=>{
+    const isUp = d.close>=d.open;
+    const c = isUp?'var(--green)':'var(--red)';
+    let lbl=d.date; try { lbl=new Date(d.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch(e){}
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px">
+      <span style="min-width:82px;color:var(--text2);font-weight:600">${lbl}</span>
+      <span style="flex:1;color:${c};font-weight:700">O ${fmt(d.open,2)} · H ${fmt(d.high,2)} · L ${fmt(d.low,2)} · C ${fmt(d.close,2)}</span>
+      <button style="background:rgba(220,38,38,0.07);border:1px solid rgba(220,38,38,0.18);border-radius:6px;color:#dc2626;width:22px;height:22px;font-size:13px;cursor:pointer;flex-shrink:0" onclick="deleteOHLCDay('${d.date}')">×</button>
+    </div>`;
+  }).join('');
+}
+
+function addOHLCDay() {
+  const p=state.positions.find(x=>x.id===chartingId); if(!p) return;
+  const date=document.getElementById('ohlc-date').value;
+  const o=+document.getElementById('ohlc-open').value;
+  const h=+document.getElementById('ohlc-high').value;
+  const l=+document.getElementById('ohlc-low').value;
+  const c=+document.getElementById('ohlc-close').value;
+  if(!date||!o||!h||!l||!c) { alert('Please fill date, open, high, low and close.'); return; }
+  if(h<l) { alert('High cannot be less than Low.'); return; }
+  if(!p.ohlc) p.ohlc=[];
+  const idx = p.ohlc.findIndex(d=>d.date===date);
+  const entry = {date, open:o, high:h, low:l, close:c};
+  if(idx>=0) p.ohlc[idx]=entry; else p.ohlc.push(entry);
+  saveState();
+  ['ohlc-open','ohlc-high','ohlc-low','ohlc-close'].forEach(fid=>document.getElementById(fid).value='');
+  renderChartModal(p);
+}
+
+function applyBulkOHLC() {
+  const p=state.positions.find(x=>x.id===chartingId); if(!p) return;
+  if(!p.ohlc) p.ohlc=[];
+  const lines = document.getElementById('ohlc-bulk-input').value.trim().split('\n');
+  let updated=0, invalid=[];
+  lines.forEach(line=>{
+    line=line.trim(); if(!line) return;
+    const parts = line.split(/[\s,\t]+/);
+    if(parts.length<5) { invalid.push(line); return; }
+    const [d,o,h,l,c] = parts;
+    const dt = new Date(d);
+    if(isNaN(dt.getTime())) { invalid.push(line); return; }
+    const O=parseFloat(o), H=parseFloat(h), L=parseFloat(l), C=parseFloat(c);
+    if([O,H,L,C].some(v=>isNaN(v)||v<=0) || H<L) { invalid.push(line); return; }
+    const dateStr = dt.toISOString().slice(0,10);
+    const idx = p.ohlc.findIndex(x=>x.date===dateStr);
+    const entry = {date:dateStr, open:O, high:H, low:L, close:C};
+    if(idx>=0) p.ohlc[idx]=entry; else p.ohlc.push(entry);
+    updated++;
+  });
+  if(updated) saveState();
+  const res=document.getElementById('ohlc-bulk-result');
+  let html='';
+  if(updated) html += `<span style="color:var(--green)">✓ ${updated} day${updated!==1?'s':''} saved</span><br>`;
+  if(invalid.length) html += invalid.map(s=>`<span style="color:var(--text4)">✗ "${s}" — bad format</span>`).join('<br>');
+  res.innerHTML = html || '<span style="color:var(--text4)">Nothing to update.</span>';
+  res.style.display='block';
+  if(updated) renderChartModal(p);
+}
+
+function deleteOHLCDay(date) {
+  const p=state.positions.find(x=>x.id===chartingId); if(!p) return;
+  p.ohlc = (p.ohlc||[]).filter(d=>d.date!==date);
+  saveState();
+  renderChartModal(p);
+}
+
+// ══════════════════════════════════════════
 //  SORT
 // ══════════════════════════════════════════
 function setSort(key) {
@@ -876,8 +1199,16 @@ function renderTabCounts() {
 
 function renderPositions() {
   const el=document.getElementById('content-positions');
+  const lossStreak = currentLossStreak();
+  const nudgeSuppressed = lossNudge.date===today() && lossNudge.dismissedAt>=lossStreak;
+  const showNudge = lossStreak>=3 && !nudgeSuppressed;
+  const nudgeHTML = showNudge ? `<div class="loss-nudge">
+      <div class="loss-nudge-text">❄️ <b>${lossStreak} losses in a row.</b> You've said this is your cue to sit out and wait for a clean setup — not force the next trade.</div>
+      <button class="loss-nudge-dismiss" onclick="dismissLossNudge(${lossStreak})">Got it</button>
+    </div>` : '';
+
   if(!state.positions.length){
-    el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No active positions — click ＋ to add one</div></div>`;
+    el.innerHTML=nudgeHTML+`<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No active positions — click ＋ to add one</div></div>`;
     return;
   }
   const gains=state.positions.map(p=>(p.cmp-p.entry)/p.entry*100).filter(x=>x>0);
@@ -907,7 +1238,7 @@ function renderPositions() {
     <button class="sort-btn${sortBy==='sym'?' active':''}" data-sort="sym" onclick="setSort('sym')">A–Z</button>
   </div>`;
 
-  el.innerHTML=`
+  el.innerHTML=nudgeHTML+`
     <div class="heatmap-wrap">
       <div class="heatmap-title">📊 Portfolio Heatmap</div>
       <div class="heatmap-grid">${hmCells}</div>
@@ -962,6 +1293,7 @@ function cardHTML(p) {
   return `
   <div class="card${cardClass}" onclick="openEditModal(${p.id})">
     <div class="card-actions">
+      <button class="btn-chart" onclick="event.stopPropagation();openChartModal(${p.id})">📊</button>
       <button class="btn-close-trade" onclick="event.stopPropagation();openCloseModal(${p.id})">CLOSE</button>
       <button class="btn-delete" onclick="event.stopPropagation();deletePosition(${p.id})">×</button>
     </div>
@@ -999,6 +1331,7 @@ function cardHTML(p) {
       ${toPct!==null?`<span>→TGT: <b style="color:var(--purple)">${fmt(toPct,1)}%</b></span>`:''}
     </div>
     <div class="card-mobile-actions">
+      <button class="btn-chart" onclick="event.stopPropagation();openChartModal(${p.id})">📊 CHART</button>
       <button class="btn-close-trade" onclick="event.stopPropagation();openCloseModal(${p.id})">⬛ CLOSE TRADE</button>
       <button class="btn-delete" onclick="event.stopPropagation();deletePosition(${p.id})">×</button>
     </div>
@@ -1750,7 +2083,7 @@ function savePosition() {
     Object.assign(p,{symbol:sym,name,entry,cmp,qty,stopLoss:sl,currentSL:csl,target:tgt,trailPct:trail,sector:sec,entryDate:date});
     recordCMPSnapshot(p);
   } else {
-    const p={id:Date.now(),symbol:sym,name,entry,cmp,qty,stopLoss:sl,currentSL:csl,target:tgt,trailPct:trail,sector:sec,entryDate:date,cmpHistory:[]};
+    const p={id:Date.now(),symbol:sym,name,entry,cmp,qty,stopLoss:sl,currentSL:csl,target:tgt,trailPct:trail,sector:sec,entryDate:date,cmpHistory:[],ohlc:[]};
     recordCMPSnapshot(p);
     state.positions.push(p);
     checkAlerts(p);
@@ -1882,6 +2215,7 @@ function confirmClose() {
   p.cmp = ep;
   recordCMPSnapshot(p);
   const savedHistory = p.cmpHistory ? [...p.cmpHistory] : [];
+  const savedOhlc = p.ohlc ? [...p.ohlc] : [];
   const trade={
     id:Date.now(), symbol:p.symbol, name:p.name, sector:p.sector,
     entryPrice:p.entry, exitPrice:ep, qty:closeQty,
@@ -1894,7 +2228,8 @@ function confirmClose() {
     reason:document.getElementById('c-reason').value,
     stopLoss:p.stopLoss, target:p.target,
     isPartial, remainingQty: isPartial ? p.qty - closeQty : 0,
-    cmpHistory: savedHistory
+    cmpHistory: savedHistory,
+    ohlc: savedOhlc
   };
   state.journal=[trade,...state.journal];
   if(isPartial){
@@ -1925,6 +2260,15 @@ function openJournalDetail(id) {
   const journeyHTML = j.cmpHistory && j.cmpHistory.length >= 2
     ? buildPriceJourneyHTML({entry: j.entryPrice, qty: j.qty, cmpHistory: j.cmpHistory})
     : '';
+  const candleHTML = (j.ohlc && j.ohlc.length)
+    ? `<div style="border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:14px;margin-bottom:14px">
+        <div style="font-size:10px;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;font-weight:700;margin-bottom:10px">📊 Trade Chart</div>
+        <div style="position:relative;user-select:none">
+          <canvas id="jnl-candle-canvas" style="display:block;width:100%;border-radius:8px"></canvas>
+          <div id="jnl-candle-tip" style="display:none;position:fixed;background:#1e293b;border:1px solid rgba(255,255,255,0.1);color:#f1f5f9;border-radius:10px;padding:11px 14px;font-size:11px;pointer-events:none;z-index:150;min-width:150px;max-width:230px;box-shadow:0 8px 24px rgba(0,0,0,0.35)"></div>
+        </div>
+      </div>`
+    : '';
   document.getElementById('detail-body').innerHTML=`
     <div class="detail-grid">
       ${[['Symbol',j.symbol+(j.isPartial?' ½':'')],['Company',j.name],['Sector',j.sector],['Held',j.holdingDays+' days'],
@@ -1943,10 +2287,21 @@ function openJournalDetail(id) {
       <span style="font-size:12px;color:#6b7280">Exit reason</span>
       <span class="reason-badge" style="background:${rc}1a;border-color:${rc}40;color:${rc}">${j.reason}</span>
     </div>
+    ${candleHTML}
     ${journeyHTML}
     ${j.notes?`<div style="background:rgba(0,0,0,0.02);border:1px solid var(--border);border-radius:8px;padding:10px 13px;margin-top:12px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:6px">Notes</div><div style="font-size:13px;color:var(--text2);line-height:1.65">${j.notes}</div></div>`:''}
     <button class="btn btn-danger" style="width:100%;margin-top:16px;padding:10px" onclick="deleteJournalEntry(${j.id})">Delete from Journal</button>`;
   openModal('modal-detail');
+  if(j.ohlc && j.ohlc.length){
+    const sortedOhlc=[...j.ohlc].sort((a,b)=>a.date.localeCompare(b.date));
+    const refLines=[
+      {label:'Entry', value:j.entryPrice, color:'#2563eb'},
+      {label:'Exit',  value:j.exitPrice,  color:isW?'#16a34a':'#dc2626', dash:false},
+      {label:'SL',    value:j.stopLoss||null, color:'#dc2626'},
+      {label:'TGT',   value:j.target||null,   color:'#16a34a'},
+    ];
+    setTimeout(()=>drawCandlestickChart('jnl-candle-canvas','jnl-candle-tip', sortedOhlc, refLines), 0);
+  }
 }
 
 function deleteJournalEntry(id) {
@@ -1976,6 +2331,7 @@ document.addEventListener('keydown',e=>{
 //  INIT
 // ══════════════════════════════════════════
 loadState();
+loadLossNudge();
 requestNotifPermission();
 render();
 </script>
