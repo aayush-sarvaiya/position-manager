@@ -927,9 +927,9 @@ function drawCandlestickChart(canvasId, tipId, data, refLines) {
 
   const CW = W-PL-PR, CH = H-PT-PB;
   const rawSlot = CW/n;
-  const slot = Math.max(4, Math.min(46, rawSlot));
+  const slot = Math.max(4, Math.min(28, rawSlot));
   const usedWidth = slot*n;
-  const bodyW = Math.max(2, Math.min(14, slot*0.6));
+  const bodyW = Math.max(2, Math.min(16, slot*0.72));
   const toX = i => PL + slot*i + slot/2;
   const toY = v => PT + CH - ((v-yMin)/yR)*CH;
 
@@ -1015,8 +1015,10 @@ function drawCandlestickChart(canvasId, tipId, data, refLines) {
       <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px"><span style="color:#64748b">Day chg</span><span style="color:${cc};font-weight:700">${sign(chg)}${fmt(Math.abs(chg))} (${sign(chgPct)}${fmt(Math.abs(chgPct),2)}%)</span></div>`;
     const canvasRect = canvas.getBoundingClientRect();
     const vpX = canvasRect.left+toX(idx), vpY = canvasRect.top+toY(d.close);
+    const tw = 220;
     let tx = vpX+14;
-    if(tx+220 > window.innerWidth-14) tx = vpX-220-14;
+    if(tx+tw > window.innerWidth-14) tx = vpX-tw-14;
+    tx = Math.max(8, Math.min(tx, window.innerWidth-tw-8));
     tip.style.left = tx+'px';
     tip.style.top  = Math.max(4, vpY-70)+'px';
     tip.style.display='block';
@@ -1956,6 +1958,7 @@ function drawEquityChart() {
     const vpY = canvasRect.top  + dp.y;
     let tx = vpX + 14;
     if (tx + tw > window.innerWidth - 14) tx = vpX - tw - 14;
+    tx = Math.max(8, Math.min(tx, window.innerWidth - tw - 8));
     tip.style.left    = tx + 'px';
     tip.style.top     = Math.max(4, vpY - 52) + 'px';
     tip.style.display = 'block';
