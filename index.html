@@ -482,7 +482,7 @@
     <div id="chart-meta" style="font-size:11px;color:var(--text2);margin-bottom:10px;display:flex;gap:14px;flex-wrap:wrap;font-weight:600"></div>
     <div style="position:relative;user-select:none;margin-bottom:10px">
       <canvas id="pos-candle-canvas" style="display:block;width:100%;border-radius:8px;border:1px solid var(--border)"></canvas>
-      <div id="pos-candle-tip" style="display:none;position:fixed;background:#1e293b;border:1px solid rgba(255,255,255,0.1);color:#f1f5f9;border-radius:10px;padding:11px 14px;font-size:11px;pointer-events:none;z-index:150;min-width:150px;max-width:230px;box-shadow:0 8px 24px rgba(0,0,0,0.35)"></div>
+      <div id="pos-candle-tip" style="display:none;position:fixed;background:#1e293b;border:1px solid rgba(255,255,255,0.1);color:#f1f5f9;border-radius:10px;padding:11px 14px;font-size:11px;pointer-events:auto;z-index:150;min-width:150px;max-width:230px;box-shadow:0 8px 24px rgba(0,0,0,0.35)"></div>
     </div>
     <div style="display:flex;justify-content:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">
       <span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#22c55e"></span>Up day</span>
@@ -926,7 +926,9 @@ function drawCandlestickChart(canvasId, tipId, data, refLines) {
   const yMin = rawMin-pad, yMax = rawMax+pad, yR = (yMax-yMin)||1;
 
   const CW = W-PL-PR, CH = H-PT-PB;
-  const slot = CW/n;
+  const rawSlot = CW/n;
+  const slot = Math.max(4, Math.min(46, rawSlot));
+  const usedWidth = slot*n;
   const bodyW = Math.max(2, Math.min(14, slot*0.6));
   const toX = i => PL + slot*i + slot/2;
   const toY = v => PT + CH - ((v-yMin)/yR)*CH;
@@ -993,7 +995,7 @@ function drawCandlestickChart(canvasId, tipId, data, refLines) {
   function onMove(cx, cy) {
     const rect = canvas.getBoundingClientRect();
     const mx = cx-rect.left;
-    if(mx < PL-slot/2 || mx > W-PR+slot/2) { if(lastHL!==-1){paint(-1); lastHL=-1;} if(tip) tip.style.display='none'; return; }
+    if(mx < PL-slot/2 || mx > PL+usedWidth+slot/2) { if(lastHL!==-1){paint(-1); lastHL=-1;} if(tip) tip.style.display='none'; return; }
     let idx = Math.floor((mx-PL)/slot);
     if(idx<0) idx=0; if(idx>n-1) idx=n-1;
     if(idx!==lastHL) { paint(idx); lastHL=idx; }
@@ -1002,7 +1004,10 @@ function drawCandlestickChart(canvasId, tipId, data, refLines) {
     let lbl=d.date; try { lbl=new Date(d.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch(e){}
     const chg = d.close-d.open, chgPct = d.open ? (chg/d.open*100) : 0;
     const cc = chg>=0?'#22c55e':'#ef4444';
-    tip.innerHTML = `<div style="font-size:10px;color:#64748b;margin-bottom:5px;font-weight:600">${lbl}</div>
+    tip.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
+        <div style="font-size:10px;color:#64748b;font-weight:600">${lbl}</div>
+        <button onclick="document.getElementById('${tipId}').style.display='none'" style="background:rgba(255,255,255,0.1);border:none;color:#cbd5e1;font-size:12px;width:18px;height:18px;border-radius:5px;cursor:pointer;line-height:1;flex-shrink:0;margin:-2px -2px 0 8px">×</button>
+      </div>
       <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;margin-bottom:3px"><span style="color:#64748b">Open</span><span style="color:#f1f5f9;font-weight:700">₹${fmt(d.open)}</span></div>
       <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;margin-bottom:3px"><span style="color:#64748b">High</span><span style="color:#f1f5f9;font-weight:700">₹${fmt(d.high)}</span></div>
       <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;margin-bottom:3px"><span style="color:#64748b">Low</span><span style="color:#f1f5f9;font-weight:700">₹${fmt(d.low)}</span></div>
@@ -1044,9 +1049,10 @@ function openChartModal(id) {
 
 function renderChartModal(p) {
   const sorted = [...(p.ohlc||[])].sort((a,b)=>a.date.localeCompare(b.date));
+  const activeSL = p.currentSL || p.stopLoss;
   const refLines = [
     { label:'Entry', value:p.entry,             color:'#2563eb' },
-    { label:'SL',    value:p.stopLoss || null,   color:'#dc2626' },
+    { label:'SL',    value:activeSL || null,     color:'#dc2626' },
     { label:'TGT',   value:p.target  || null,    color:'#16a34a' },
     { label:'CMP',   value:p.cmp,                color:'#7c3aed', dash:false },
   ];
@@ -2226,7 +2232,7 @@ function confirmClose() {
     initialSL: p.stopLoss,
     entryDate:p.entryDate, exitDate, holdingDays:daysBetween(p.entryDate,exitDate),
     reason:document.getElementById('c-reason').value,
-    stopLoss:p.stopLoss, target:p.target,
+    stopLoss:p.stopLoss, currentSL:p.currentSL||p.stopLoss, target:p.target,
     isPartial, remainingQty: isPartial ? p.qty - closeQty : 0,
     cmpHistory: savedHistory,
     ohlc: savedOhlc
@@ -2265,7 +2271,7 @@ function openJournalDetail(id) {
         <div style="font-size:10px;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;font-weight:700;margin-bottom:10px">📊 Trade Chart</div>
         <div style="position:relative;user-select:none">
           <canvas id="jnl-candle-canvas" style="display:block;width:100%;border-radius:8px"></canvas>
-          <div id="jnl-candle-tip" style="display:none;position:fixed;background:#1e293b;border:1px solid rgba(255,255,255,0.1);color:#f1f5f9;border-radius:10px;padding:11px 14px;font-size:11px;pointer-events:none;z-index:150;min-width:150px;max-width:230px;box-shadow:0 8px 24px rgba(0,0,0,0.35)"></div>
+          <div id="jnl-candle-tip" style="display:none;position:fixed;background:#1e293b;border:1px solid rgba(255,255,255,0.1);color:#f1f5f9;border-radius:10px;padding:11px 14px;font-size:11px;pointer-events:auto;z-index:150;min-width:150px;max-width:230px;box-shadow:0 8px 24px rgba(0,0,0,0.35)"></div>
         </div>
       </div>`
     : '';
@@ -2297,7 +2303,7 @@ function openJournalDetail(id) {
     const refLines=[
       {label:'Entry', value:j.entryPrice, color:'#2563eb'},
       {label:'Exit',  value:j.exitPrice,  color:isW?'#16a34a':'#dc2626', dash:false},
-      {label:'SL',    value:j.stopLoss||null, color:'#dc2626'},
+      {label:'SL',    value:(j.currentSL||j.stopLoss)||null, color:'#dc2626'},
       {label:'TGT',   value:j.target||null,   color:'#16a34a'},
     ];
     setTimeout(()=>drawCandlestickChart('jnl-candle-canvas','jnl-candle-tip', sortedOhlc, refLines), 0);
