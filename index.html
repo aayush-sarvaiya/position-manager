@@ -610,11 +610,17 @@ function restoreData(event) {
 }
 
 // Web Share API — one-tap share of the backup file straight to Drive, WhatsApp, etc.
-// Only shown where the browser actually supports sharing files (mostly Android Chrome).
+// Only shown on mobile, where the OS share sheet actually lists Drive as a target.
+// Desktop browsers largely don't support file sharing this way even when the API
+// reports as present, so we gate on device type too, not just feature-detection.
+function isMobileDevice() {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
 function initShareButton() {
   try {
     const testFile = new File(['test'], 'test.json', {type:'application/json'});
-    if (navigator.canShare && navigator.canShare({files:[testFile]})) {
+    const supported = navigator.canShare && navigator.canShare({files:[testFile]}) && isMobileDevice();
+    if (supported) {
       const btn = document.getElementById('btn-share-backup');
       if (btn) btn.style.display = '';
     }
@@ -629,10 +635,13 @@ async function shareBackup() {
       setLastBackupDate();
       if (currentTab==='positions') renderPositions();
     } else {
+      alert('Sharing isn\'t supported in this browser. Downloading the backup file instead — drag it into Drive manually.');
       backupData();
     }
   } catch(e) {
-    // user cancelled the share sheet — nothing to report
+    if (e && e.name === 'AbortError') return; // user cancelled the share sheet — nothing to report
+    alert('Sharing failed here — downloading the backup file instead so you can upload it to Drive manually.');
+    backupData();
   }
 }
 
