@@ -2403,7 +2403,8 @@ function openJournalDetail(id) {
     ${candleHTML}
     ${journeyHTML}
     ${j.notes?`<div style="background:rgba(0,0,0,0.02);border:1px solid var(--border);border-radius:8px;padding:10px 13px;margin-top:12px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:6px">Notes</div><div style="font-size:13px;color:var(--text2);line-height:1.65">${j.notes}</div></div>`:''}
-    <button class="btn btn-danger" style="width:100%;margin-top:16px;padding:10px" onclick="deleteJournalEntry(${j.id})">Delete from Journal</button>`;
+    <button class="btn btn-secondary" style="width:100%;margin-top:16px;padding:10px" onclick="reopenFromJournal(${j.id})">↩ Reopen as New Position</button>
+    <button class="btn btn-danger" style="width:100%;margin-top:10px;padding:10px" onclick="deleteJournalEntry(${j.id})">Delete from Journal</button>`;
   openModal('modal-detail');
   if(j.ohlc && j.ohlc.length){
     const sortedOhlc=[...j.ohlc].sort((a,b)=>a.date.localeCompare(b.date));
@@ -2415,6 +2416,52 @@ function openJournalDetail(id) {
     ];
     setTimeout(()=>drawCandlestickChart('jnl-candle-canvas','jnl-candle-tip', sortedOhlc, refLines), 0);
   }
+}
+
+function mergeHistoryByDate(older, newer) {
+  const map = new Map();
+  (older||[]).forEach(e=>map.set(e.date, e));
+  (newer||[]).forEach(e=>map.set(e.date, e)); // newer wins on same date
+  return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date));
+}
+
+function reopenFromJournal(id) {
+  const j = state.journal.find(x=>x.id===id); if(!j) return;
+  const pnlWord = j.pnl>=0 ? 'gain' : 'loss';
+  if(!confirm(`Reopen ${j.symbol} back into Active Positions?\n\nThis undoes the ${sign(j.pnl)}${fmtC(j.pnl)} ${pnlWord} from this closed trade and restores its entry, SL/target and full price history — nothing to re-enter.`)) return;
+
+  const restoredCmp  = j.cmpHistory ? [...j.cmpHistory] : [];
+  const restoredOhlc = j.ohlc ? [...j.ohlc] : [];
+  const existing = state.positions.find(p=>p.symbol===j.symbol);
+
+  if(existing) {
+    // A remainder of this symbol is already open (e.g. this was a partial close) — merge back in.
+    const totalQty = existing.qty + j.qty;
+    existing.entry = Math.round((((existing.entry*existing.qty)+(j.entryPrice*j.qty))/totalQty)*100)/100;
+    existing.qty = totalQty;
+    if(j.entryDate && j.entryDate < existing.entryDate) existing.entryDate = j.entryDate;
+    existing.cmpHistory = mergeHistoryByDate(existing.cmpHistory, restoredCmp);
+    existing.ohlc       = mergeHistoryByDate(existing.ohlc, restoredOhlc);
+    existing.cmp = j.exitPrice;
+  } else {
+    state.positions.push({
+      id: Date.now(),
+      symbol: j.symbol, name: j.name, sector: j.sector,
+      entry: j.entryPrice, cmp: j.exitPrice, qty: j.qty,
+      stopLoss: j.stopLoss, currentSL: j.currentSL||j.stopLoss, target: j.target,
+      entryDate: j.entryDate,
+      cmpHistory: restoredCmp,
+      ohlc: restoredOhlc
+    });
+  }
+
+  state.capital = Math.round((state.capital - j.pnl)*100)/100; // undo this trade's effect on capital
+  state.journal = state.journal.filter(x=>x.id!==id);
+  saveState();
+  closeModal('modal-detail');
+  switchTab('positions');
+  renderMetrics();
+  renderTabCounts();
 }
 
 function deleteJournalEntry(id) {
