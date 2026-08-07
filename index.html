@@ -6,6 +6,7 @@
 <title>Position Manager</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ffffff">
 <style>
@@ -364,7 +365,7 @@
         </select>
       </div>
     </div>
-    <p class="form-hint">💡 Fill Entry + SL to unlock the position size calculator. Tap any card's CMP to edit it inline.</p>
+    <p class="form-hint" id="form-hint-text">💡 Fill Entry + SL to unlock the position size calculator. Tap any card's CMP to edit it inline.</p>
     <div class="calc-strip" id="calc-strip" style="display:none">
       <label>Risk %</label>
       <input id="f-riskpct" type="number" value="1" min="0.1" max="10" step="0.1" oninput="onCalcInput()">
@@ -1397,10 +1398,6 @@ function cardHTML(p) {
     </div>`:'';
   const cslNote=p.currentSL&&p.currentSL!==p.stopLoss
     ?`<span class="badge" style="background:rgba(124,58,237,0.07);border-color:rgba(124,58,237,0.2);color:var(--purple)">CSL ₹${fmt(p.currentSL)}</span>`:''
-  const todayStr = today();
-  const todayLogged = (p.ohlc||[]).some(d=>d.date===todayStr);
-  const ohlcNudgeBadge = (!todayLogged && !isWeekend(todayStr))
-    ?`<span class="badge" style="background:rgba(234,88,12,0.07);border-color:rgba(234,88,12,0.2);color:var(--orange);cursor:pointer" onclick="event.stopPropagation();openChartModal(${p.id})" title="Add today's OHLC">📊 log today</span>`:''
 
   return `
   <div class="card${cardClass}" onclick="openEditModal(${p.id})">
@@ -1416,7 +1413,7 @@ function cardHTML(p) {
     <div class="badges">
       <span class="badge badge-sector">${p.sector}</span>
       <span class="badge badge-days">${held}d held</span>
-      ${cslNote}${slBadge}${tgtBadge}${ohlcNudgeBadge}
+      ${cslNote}${slBadge}${tgtBadge}
     </div>
     <div class="sparkline">${sparklineSVG(p.entry,p.cmp)}</div>
     <div class="price-grid">
@@ -2146,6 +2143,7 @@ document.querySelectorAll('.modal-overlay').forEach(el=>{
 
 function openAddModal() {
   editingId=null;
+  pendingReopenHistory=null;
   document.getElementById('modal-add-title').textContent='Add Position';
   document.getElementById('btn-save-pos').textContent='Add Position';
   ['symbol','name','entry','cmp','qty','sl','csl','tgt'].forEach(id=>document.getElementById('f-'+id).value='');
@@ -2153,6 +2151,8 @@ function openAddModal() {
   document.getElementById('f-sector').value='Other';
   document.getElementById('f-riskpct').value='1';
   document.getElementById('calc-strip').style.display='none';
+  const hintEl=document.getElementById('form-hint-text');
+  if(hintEl) hintEl.textContent="💡 Fill Entry + SL to unlock the position size calculator. Tap any card's CMP to edit it inline.";
   openModal('modal-add');
   setTimeout(()=>document.getElementById('f-symbol').focus(),100);
 }
@@ -2160,6 +2160,9 @@ function openAddModal() {
 function openEditModal(id) {
   const p=state.positions.find(x=>x.id===id); if(!p) return;
   editingId=id;
+  pendingReopenHistory=null;
+  const hintEl=document.getElementById('form-hint-text');
+  if(hintEl) hintEl.textContent="💡 Fill Entry + SL to unlock the position size calculator. Tap any card's CMP to edit it inline.";
   document.getElementById('modal-add-title').textContent=`Edit — ${p.symbol}`;
   document.getElementById('btn-save-pos').textContent='Save Changes';
   document.getElementById('f-symbol').value=p.symbol;
@@ -2197,6 +2200,13 @@ function savePosition() {
     recordCMPSnapshot(p);
   } else {
     const p={id:Date.now(),symbol:sym,name,entry,cmp,qty,stopLoss:sl,currentSL:csl,target:tgt,trailPct:trail,sector:sec,entryDate:date,cmpHistory:[],ohlc:[]};
+    if(pendingReopenHistory){
+      if(pendingReopenHistory.cmpHistory && pendingReopenHistory.cmpHistory.length) p.cmpHistory = mergeHistoryByDate(pendingReopenHistory.cmpHistory, p.cmpHistory);
+      if(pendingReopenHistory.ohlc && pendingReopenHistory.ohlc.length) p.ohlc = mergeHistoryByDate(pendingReopenHistory.ohlc, p.ohlc);
+      pendingReopenHistory = null;
+      const hintEl=document.getElementById('form-hint-text');
+      if(hintEl) hintEl.textContent="💡 Fill Entry + SL to unlock the position size calculator. Tap any card's CMP to edit it inline.";
+    }
     recordCMPSnapshot(p);
     state.positions.push(p);
     checkAlerts(p);
@@ -2425,43 +2435,61 @@ function mergeHistoryByDate(older, newer) {
   return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date));
 }
 
+let pendingReopenHistory = null;
+
 function reopenFromJournal(id) {
   const j = state.journal.find(x=>x.id===id); if(!j) return;
-  const pnlWord = j.pnl>=0 ? 'gain' : 'loss';
-  if(!confirm(`Reopen ${j.symbol} back into Active Positions?\n\nThis undoes the ${sign(j.pnl)}${fmtC(j.pnl)} ${pnlWord} from this closed trade and restores its entry, SL/target and full price history — nothing to re-enter.`)) return;
-
   const restoredCmp  = j.cmpHistory ? [...j.cmpHistory] : [];
   const restoredOhlc = j.ohlc ? [...j.ohlc] : [];
   const existing = state.positions.find(p=>p.symbol===j.symbol);
 
   if(existing) {
-    // A remainder of this symbol is already open (e.g. this was a partial close) — merge back in.
+    // A remainder of this symbol is already open (e.g. this was a partial close).
+    // Ask for the actual re-entry price — the closed portion's realised P&L
+    // (the round-trip cost/gain) stays untouched in the journal.
+    const priceStr = prompt(`Re-entry price for ${j.qty} ${j.symbol} shares?\n\n(This merges into your existing open ${existing.qty}-share position. The ${sign(j.pnl)}${fmtC(j.pnl)} already realised on the closed portion stays recorded in your journal — that's a real round-trip cost/gain, not undone.)`, j.exitPrice);
+    if(priceStr===null) return;
+    const newPrice = parseFloat(priceStr);
+    if(!newPrice || newPrice<=0){ alert('Enter a valid price.'); return; }
     const totalQty = existing.qty + j.qty;
-    existing.entry = Math.round((((existing.entry*existing.qty)+(j.entryPrice*j.qty))/totalQty)*100)/100;
+    existing.entry = Math.round((((existing.entry*existing.qty)+(newPrice*j.qty))/totalQty)*100)/100;
     existing.qty = totalQty;
-    if(j.entryDate && j.entryDate < existing.entryDate) existing.entryDate = j.entryDate;
+    existing.cmp = newPrice;
     existing.cmpHistory = mergeHistoryByDate(existing.cmpHistory, restoredCmp);
     existing.ohlc       = mergeHistoryByDate(existing.ohlc, restoredOhlc);
-    existing.cmp = j.exitPrice;
-  } else {
-    state.positions.push({
-      id: Date.now(),
-      symbol: j.symbol, name: j.name, sector: j.sector,
-      entry: j.entryPrice, cmp: j.exitPrice, qty: j.qty,
-      stopLoss: j.stopLoss, currentSL: j.currentSL||j.stopLoss, target: j.target,
-      entryDate: j.entryDate,
-      cmpHistory: restoredCmp,
-      ohlc: restoredOhlc
-    });
+    recordCMPSnapshot(existing);
+    saveState();
+    closeModal('modal-detail');
+    switchTab('positions');
+    renderMetrics(); renderTabCounts();
+    return;
   }
 
-  state.capital = Math.round((state.capital - j.pnl)*100)/100; // undo this trade's effect on capital
-  state.journal = state.journal.filter(x=>x.id!==id);
-  saveState();
+  // No open remainder — prefill the Add Position form so there's almost nothing
+  // to retype. The earlier closed trade (and its realised round-trip P&L) is left
+  // exactly as recorded in the journal; you just confirm the actual re-entry price.
+  pendingReopenHistory = { cmpHistory: restoredCmp, ohlc: restoredOhlc };
+  editingId=null;
+  document.getElementById('modal-add-title').textContent = `Reopen — ${j.symbol}`;
+  document.getElementById('btn-save-pos').textContent = 'Reopen Position';
+  document.getElementById('f-symbol').value = j.symbol;
+  document.getElementById('f-name').value = j.name;
+  document.getElementById('f-entry').value = j.exitPrice;
+  document.getElementById('f-cmp').value = j.exitPrice;
+  document.getElementById('f-qty').value = j.qty;
+  document.getElementById('f-date').value = today();
+  document.getElementById('f-sl').value = j.stopLoss||'';
+  document.getElementById('f-csl').value = j.currentSL||j.stopLoss||'';
+  document.getElementById('f-tgt').value = j.target||'';
+  document.getElementById('f-trail').value = '';
+  document.getElementById('f-sector').value = j.sector||'Other';
+  document.getElementById('f-riskpct').value='1';
+  const hintEl=document.getElementById('form-hint-text');
+  if(hintEl) hintEl.textContent = `Reopening ${j.symbol} — that trade closed at ₹${fmt(j.exitPrice)} (${sign(j.pnl)}${fmtC(j.pnl)}) and stays in your journal as-is. Confirm the price you're actually buying back in at.`;
+  onCalcInput();
   closeModal('modal-detail');
   switchTab('positions');
-  renderMetrics();
-  renderTabCounts();
+  openModal('modal-add');
 }
 
 function deleteJournalEntry(id) {
