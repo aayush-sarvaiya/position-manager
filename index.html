@@ -476,7 +476,7 @@
       <div><div class="pnl-preview-label">Intraday Round-Trip</div><div class="pnl-preview-value" id="reopen-preview-val"></div></div>
       <div style="text-align:right"><div class="pnl-preview-label">On Qty</div><div class="pnl-preview-value" id="reopen-preview-qty" style="font-size:14px"></div></div>
     </div>
-    <p class="form-hint">Your position card comes back with its <b style="color:var(--text)">original entry, SL and target (₹<span id="reopen-orig-entry"></span>)</b> — only the CMP updates to your buy-back price. The gap between what you sold at and bought back at gets logged as its own journal entry, so your old closed trade stays untouched.</p>
+    <p class="form-hint">Your position card comes back with its <b style="color:var(--text)">original entry, SL and target (₹<span id="reopen-orig-entry"></span>)</b> — only the CMP updates to your buy-back price. The closed trade you're reopening gets replaced in the journal by a single round-trip entry (what you sold at vs. bought back at) — so you won't see it twice.</p>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-reopen')">Cancel</button>
       <button class="btn btn-primary" onclick="submitReopen()">Reopen &amp; Log</button>
@@ -514,7 +514,9 @@
     </div>
     <div id="chart-meta" style="font-size:11px;color:var(--text2);margin-bottom:10px;display:flex;gap:14px;flex-wrap:wrap;font-weight:600"></div>
     <div style="position:relative;user-select:none;margin-bottom:10px">
-      <canvas id="pos-candle-canvas" style="display:block;width:100%;border-radius:8px;border:1px solid var(--border)"></canvas>
+      <div id="pos-candle-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:1px solid var(--border)">
+        <canvas id="pos-candle-canvas" style="display:block"></canvas>
+      </div>
       <div id="pos-candle-tip" style="display:none;position:fixed;background:#1e293b;border:1px solid rgba(255,255,255,0.1);color:#f1f5f9;border-radius:10px;padding:11px 14px;font-size:11px;pointer-events:auto;z-index:150;min-width:150px;max-width:230px;box-shadow:0 8px 24px rgba(0,0,0,0.35)"></div>
     </div>
     <div style="display:flex;justify-content:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">
@@ -525,11 +527,12 @@
 
     <div style="font-size:10px;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;font-weight:700;margin-bottom:8px">＋ Add / update a day</div>
     <div class="form-grid" style="margin-bottom:2px">
-      <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="ohlc-date" type="date"></div>
+      <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="ohlc-date" type="date" onchange="prefillOHLCDay()"></div>
       <div class="form-group"><label class="form-label">Open</label><input class="form-input" id="ohlc-open" type="number" placeholder="0.00"></div>
       <div class="form-group"><label class="form-label">High</label><input class="form-input" id="ohlc-high" type="number" placeholder="0.00"></div>
       <div class="form-group"><label class="form-label">Low</label><input class="form-input" id="ohlc-low" type="number" placeholder="0.00"></div>
       <div class="form-group full"><label class="form-label">Close</label><input class="form-input" id="ohlc-close" type="number" placeholder="0.00"></div>
+      <div class="form-group full"><label class="form-label">Notes (optional)</label><input class="form-input" id="ohlc-note" placeholder="e.g. gap up post results, trimmed 50%"></div>
     </div>
     <div class="modal-footer" style="margin-bottom:20px">
       <button class="btn btn-primary" style="flex:1" onclick="addOHLCDay()">Save Day</button>
@@ -1002,10 +1005,11 @@ function drawCandlestickChart(canvasId, tipId, data, refLines) {
   const tip    = document.getElementById(tipId);
   if(!canvas) return;
   const n = data.length;
+  const scrollWrap = canvas.parentElement; // the overflow-x:auto wrapper around the canvas
 
   if(n === 0) {
     const DPR0 = window.devicePixelRatio||1;
-    const W0 = (canvas.parentElement && canvas.parentElement.clientWidth) || 400;
+    const W0 = (scrollWrap && scrollWrap.clientWidth) || 400;
     canvas.width = W0*DPR0; canvas.height = 200*DPR0;
     canvas.style.width = W0+'px'; canvas.style.height = '200px';
     const ctx0 = canvas.getContext('2d');
@@ -1019,9 +1023,15 @@ function drawCandlestickChart(canvasId, tipId, data, refLines) {
   }
 
   const DPR = window.devicePixelRatio || 1;
-  const W   = (canvas.parentElement && canvas.parentElement.clientWidth) || 400;
+  const containerW = (scrollWrap && scrollWrap.clientWidth) || 400;
   const H   = 240;
   const PL=54, PR=14, PT=16, PB=26;
+  const slot = 26; // fixed, comfortable candle spacing — never compresses, however many days you log
+  const bodyW = Math.max(3, Math.min(16, slot*0.72));
+  const usedWidth = slot*n;
+  // Canvas is at least as wide as the visible area, or wider if there are enough candles
+  // to need it — the wrapper's overflow-x:auto handles scrolling for the rest.
+  const W = Math.max(containerW, usedWidth + PL + PR);
   canvas.width = W*DPR; canvas.height = H*DPR;
   canvas.style.width = W+'px'; canvas.style.height = H+'px';
   const ctx = canvas.getContext('2d');
@@ -1034,11 +1044,7 @@ function drawCandlestickChart(canvasId, tipId, data, refLines) {
   const pad = Math.max((rawMax-rawMin)*0.1, rawMax*0.015, 1);
   const yMin = rawMin-pad, yMax = rawMax+pad, yR = (yMax-yMin)||1;
 
-  const CW = W-PL-PR, CH = H-PT-PB;
-  const rawSlot = CW/n;
-  const slot = Math.max(4, Math.min(28, rawSlot));
-  const usedWidth = slot*n;
-  const bodyW = Math.max(2, Math.min(16, slot*0.72));
+  const CH = H-PT-PB;
   const toX = i => PL + slot*i + slot/2;
   const toY = v => PT + CH - ((v-yMin)/yR)*CH;
 
@@ -1095,6 +1101,7 @@ function drawCandlestickChart(canvasId, tipId, data, refLines) {
     });
   }
   paint(-1);
+  if(scrollWrap) scrollWrap.scrollLeft = scrollWrap.scrollWidth; // land on the latest candle by default
 
   if(canvas._candleAbort) canvas._candleAbort.abort();
   canvas._candleAbort = new AbortController();
@@ -1121,7 +1128,7 @@ function drawCandlestickChart(canvasId, tipId, data, refLines) {
       <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;margin-bottom:3px"><span style="color:#64748b">High</span><span style="color:#f1f5f9;font-weight:700">₹${fmt(d.high)}</span></div>
       <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;margin-bottom:3px"><span style="color:#64748b">Low</span><span style="color:#f1f5f9;font-weight:700">₹${fmt(d.low)}</span></div>
       <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;margin-bottom:3px"><span style="color:#64748b">Close</span><span style="color:#f1f5f9;font-weight:700">₹${fmt(d.close)}</span></div>
-      <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px"><span style="color:#64748b">Day chg</span><span style="color:${cc};font-weight:700">${sign(chg)}${fmt(Math.abs(chg))} (${sign(chgPct)}${fmt(Math.abs(chgPct),2)}%)</span></div>`;
+      <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px"><span style="color:#64748b">Day chg</span><span style="color:${cc};font-weight:700">${sign(chg)}${fmt(Math.abs(chg))} (${sign(chgPct)}${fmt(Math.abs(chgPct),2)}%)</span></div>${d.note?`<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);font-size:10px;color:#cbd5e1;font-style:italic">📝 ${d.note}</div>`:''}`;
     const canvasRect = canvas.getBoundingClientRect();
     const vpX = canvasRect.left+toX(idx), vpY = canvasRect.top+toY(d.close);
     const tw = 220;
@@ -1151,11 +1158,12 @@ function openChartModal(id) {
   if(!p.ohlc) p.ohlc=[];
   document.getElementById('chart-modal-title').textContent = `📊 ${p.symbol} Chart`;
   document.getElementById('ohlc-date').value = today();
-  ['ohlc-open','ohlc-high','ohlc-low','ohlc-close'].forEach(fid=>document.getElementById(fid).value='');
+  ['ohlc-open','ohlc-high','ohlc-low','ohlc-close','ohlc-note'].forEach(fid=>document.getElementById(fid).value='');
   document.getElementById('ohlc-bulk-input').value='';
   document.getElementById('ohlc-bulk-result').style.display='none';
-  renderChartModal(p);
   openModal('modal-chart');
+  renderChartModal(p);
+  prefillOHLCDay();
 }
 
 function renderChartModal(p) {
@@ -1185,12 +1193,27 @@ function renderOHLCList(sorted) {
     const isUp = d.close>=d.open;
     const c = isUp?'var(--green)':'var(--red)';
     let lbl=d.date; try { lbl=new Date(d.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch(e){}
-    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px">
-      <span style="min-width:82px;color:var(--text2);font-weight:600">${lbl}</span>
-      <span style="flex:1;color:${c};font-weight:700">O ${fmt(d.open,2)} · H ${fmt(d.high,2)} · L ${fmt(d.low,2)} · C ${fmt(d.close,2)}</span>
-      <button style="background:rgba(220,38,38,0.07);border:1px solid rgba(220,38,38,0.18);border-radius:6px;color:#dc2626;width:22px;height:22px;font-size:13px;cursor:pointer;flex-shrink:0" onclick="deleteOHLCDay('${d.date}')">×</button>
+    const noteRow = d.note ? `<div style="font-size:10px;color:var(--text3);margin-top:2px;font-style:italic">📝 ${d.note}</div>` : '';
+    return `<div style="padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px;cursor:pointer" onclick="document.getElementById('ohlc-date').value='${d.date}';prefillOHLCDay();document.getElementById('ohlc-date').scrollIntoView({behavior:'smooth',block:'center'})">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="min-width:82px;color:var(--text2);font-weight:600">${lbl}</span>
+        <span style="flex:1;color:${c};font-weight:700">O ${fmt(d.open,2)} · H ${fmt(d.high,2)} · L ${fmt(d.low,2)} · C ${fmt(d.close,2)}</span>
+        <button style="background:rgba(220,38,38,0.07);border:1px solid rgba(220,38,38,0.18);border-radius:6px;color:#dc2626;width:22px;height:22px;font-size:13px;cursor:pointer;flex-shrink:0" onclick="event.stopPropagation();deleteOHLCDay('${d.date}')">×</button>
+      </div>
+      ${noteRow}
     </div>`;
   }).join('');
+}
+
+function prefillOHLCDay() {
+  const p=state.positions.find(x=>x.id===chartingId); if(!p) return;
+  const date=document.getElementById('ohlc-date').value;
+  const existing=(p.ohlc||[]).find(d=>d.date===date);
+  document.getElementById('ohlc-open').value  = existing ? existing.open  : '';
+  document.getElementById('ohlc-high').value  = existing ? existing.high  : '';
+  document.getElementById('ohlc-low').value   = existing ? existing.low   : '';
+  document.getElementById('ohlc-close').value = existing ? existing.close : '';
+  document.getElementById('ohlc-note').value  = existing ? (existing.note||'') : '';
 }
 
 function addOHLCDay() {
@@ -1200,14 +1223,15 @@ function addOHLCDay() {
   const h=+document.getElementById('ohlc-high').value;
   const l=+document.getElementById('ohlc-low').value;
   const c=+document.getElementById('ohlc-close').value;
+  const note=document.getElementById('ohlc-note').value.trim();
   if(!date||!o||!h||!l||!c) { alert('Please fill date, open, high, low and close.'); return; }
   if(h<l) { alert('High cannot be less than Low.'); return; }
   if(!p.ohlc) p.ohlc=[];
   const idx = p.ohlc.findIndex(d=>d.date===date);
-  const entry = {date, open:o, high:h, low:l, close:c};
+  const entry = {date, open:o, high:h, low:l, close:c, note};
   if(idx>=0) p.ohlc[idx]=entry; else p.ohlc.push(entry);
   saveState();
-  ['ohlc-open','ohlc-high','ohlc-low','ohlc-close'].forEach(fid=>document.getElementById(fid).value='');
+  ['ohlc-open','ohlc-high','ohlc-low','ohlc-close','ohlc-note'].forEach(fid=>document.getElementById(fid).value='');
   renderChartModal(p);
 }
 
@@ -2415,7 +2439,9 @@ function openJournalDetail(id) {
     ? `<div style="border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:14px;margin-bottom:14px">
         <div style="font-size:10px;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;font-weight:700;margin-bottom:10px">📊 Trade Chart</div>
         <div style="position:relative;user-select:none">
-          <canvas id="jnl-candle-canvas" style="display:block;width:100%;border-radius:8px"></canvas>
+          <div id="jnl-candle-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px">
+            <canvas id="jnl-candle-canvas" style="display:block"></canvas>
+          </div>
           <div id="jnl-candle-tip" style="display:none;position:fixed;background:#1e293b;border:1px solid rgba(255,255,255,0.1);color:#f1f5f9;border-radius:10px;padding:11px 14px;font-size:11px;pointer-events:auto;z-index:150;min-width:150px;max-width:230px;box-shadow:0 8px 24px rgba(0,0,0,0.35)"></div>
         </div>
       </div>`
@@ -2549,8 +2575,13 @@ function submitReopen() {
     isRoundTrip:true,
     cmpHistory:[], ohlc:[]
   };
+  // The original closed entry (j) is superseded by the round trip — selling at j.exitPrice
+  // and buying back at buyBackPrice already nets out to exactly roundTripPnl. Keeping both
+  // would double-count the 1350→1400 leg once as j.pnl and again once the reopened position
+  // is eventually closed from its original entry price.
+  state.journal = state.journal.filter(x=>x.id!==j.id);
   state.journal = [rtTrade, ...state.journal];
-  state.capital = Math.round((state.capital + roundTripPnl)*100)/100;
+  state.capital = Math.round((state.capital - j.pnl + roundTripPnl)*100)/100;
 
   saveState();
   closeModal('modal-reopen');
