@@ -6,7 +6,6 @@
 <title>Position Manager</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ffffff">
 <style>
@@ -365,7 +364,7 @@
         </select>
       </div>
     </div>
-    <p class="form-hint" id="form-hint-text">💡 Fill Entry + SL to unlock the position size calculator. Tap any card's CMP to edit it inline.</p>
+    <p class="form-hint">💡 Fill Entry + SL to unlock the position size calculator. Tap any card's CMP to edit it inline.</p>
     <div class="calc-strip" id="calc-strip" style="display:none">
       <label>Risk %</label>
       <input id="f-riskpct" type="number" value="1" min="0.1" max="10" step="0.1" oninput="onCalcInput()">
@@ -456,6 +455,31 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-capital')">Cancel</button>
       <button class="btn btn-primary" onclick="saveCapital()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reopen Position Modal -->
+<div class="modal-overlay" id="modal-reopen" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title" id="reopen-modal-title">↩ Reopen</div>
+      <button class="modal-close" onclick="closeModal('modal-reopen')">×</button>
+    </div>
+    <p class="form-hint" id="reopen-hint"></p>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Buy-back Price (₹)</label><input class="form-input" id="reopen-price" type="number" placeholder="0.00" oninput="updateReopenPreview()"></div>
+      <div class="form-group"><label class="form-label">Qty Bought Back</label><input class="form-input" id="reopen-qty" type="number" placeholder="0" oninput="updateReopenPreview()"></div>
+      <div class="form-group full"><label class="form-label">Buy-back Date</label><input class="form-input" id="reopen-date" type="date"></div>
+    </div>
+    <div id="reopen-preview-box" style="display:none" class="pnl-preview">
+      <div><div class="pnl-preview-label">Intraday Round-Trip</div><div class="pnl-preview-value" id="reopen-preview-val"></div></div>
+      <div style="text-align:right"><div class="pnl-preview-label">On Qty</div><div class="pnl-preview-value" id="reopen-preview-qty" style="font-size:14px"></div></div>
+    </div>
+    <p class="form-hint">Your position card comes back with its <b style="color:var(--text)">original entry, SL and target (₹<span id="reopen-orig-entry"></span>)</b> — only the CMP updates to your buy-back price. The gap between what you sold at and bought back at gets logged as its own journal entry, so your old closed trade stays untouched.</p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-reopen')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitReopen()">Reopen &amp; Log</button>
     </div>
   </div>
 </div>
@@ -824,7 +848,7 @@ function fmtC(n) {
 }
 function daysBetween(d1,d2) { return Math.max(0,Math.round((new Date(d2)-new Date(d1))/86400000)); }
 function reasonColor(r) {
-  return {'Target Hit':'#22c55e','Stop Loss Hit':'#ef4444','Manual Exit':'#60a5fa','Trailing Stop':'#a78bfa','News Event':'#fbbf24','Partial Profit':'#f97316','Other':'#9ca3af'}[r]||'#9ca3af';
+  return {'Target Hit':'#22c55e','Stop Loss Hit':'#ef4444','Manual Exit':'#60a5fa','Trailing Stop':'#a78bfa','News Event':'#fbbf24','Partial Profit':'#f97316','Other':'#9ca3af','Same-Day Reopen':'#0ea5e9'}[r]||'#9ca3af';
 }
 function col(w) { return w?'var(--green)':'var(--red)'; }
 function sign(n) { return n>=0?'+':''; }
@@ -2143,7 +2167,6 @@ document.querySelectorAll('.modal-overlay').forEach(el=>{
 
 function openAddModal() {
   editingId=null;
-  pendingReopenHistory=null;
   document.getElementById('modal-add-title').textContent='Add Position';
   document.getElementById('btn-save-pos').textContent='Add Position';
   ['symbol','name','entry','cmp','qty','sl','csl','tgt'].forEach(id=>document.getElementById('f-'+id).value='');
@@ -2151,8 +2174,6 @@ function openAddModal() {
   document.getElementById('f-sector').value='Other';
   document.getElementById('f-riskpct').value='1';
   document.getElementById('calc-strip').style.display='none';
-  const hintEl=document.getElementById('form-hint-text');
-  if(hintEl) hintEl.textContent="💡 Fill Entry + SL to unlock the position size calculator. Tap any card's CMP to edit it inline.";
   openModal('modal-add');
   setTimeout(()=>document.getElementById('f-symbol').focus(),100);
 }
@@ -2160,9 +2181,6 @@ function openAddModal() {
 function openEditModal(id) {
   const p=state.positions.find(x=>x.id===id); if(!p) return;
   editingId=id;
-  pendingReopenHistory=null;
-  const hintEl=document.getElementById('form-hint-text');
-  if(hintEl) hintEl.textContent="💡 Fill Entry + SL to unlock the position size calculator. Tap any card's CMP to edit it inline.";
   document.getElementById('modal-add-title').textContent=`Edit — ${p.symbol}`;
   document.getElementById('btn-save-pos').textContent='Save Changes';
   document.getElementById('f-symbol').value=p.symbol;
@@ -2199,17 +2217,27 @@ function savePosition() {
     Object.assign(p,{symbol:sym,name,entry,cmp,qty,stopLoss:sl,currentSL:csl,target:tgt,trailPct:trail,sector:sec,entryDate:date});
     recordCMPSnapshot(p);
   } else {
-    const p={id:Date.now(),symbol:sym,name,entry,cmp,qty,stopLoss:sl,currentSL:csl,target:tgt,trailPct:trail,sector:sec,entryDate:date,cmpHistory:[],ohlc:[]};
-    if(pendingReopenHistory){
-      if(pendingReopenHistory.cmpHistory && pendingReopenHistory.cmpHistory.length) p.cmpHistory = mergeHistoryByDate(pendingReopenHistory.cmpHistory, p.cmpHistory);
-      if(pendingReopenHistory.ohlc && pendingReopenHistory.ohlc.length) p.ohlc = mergeHistoryByDate(pendingReopenHistory.ohlc, p.ohlc);
-      pendingReopenHistory = null;
-      const hintEl=document.getElementById('form-hint-text');
-      if(hintEl) hintEl.textContent="💡 Fill Entry + SL to unlock the position size calculator. Tap any card's CMP to edit it inline.";
+    const existing = state.positions.find(x=>x.symbol===sym);
+    if(existing) {
+      if(!confirm(`You already hold ${existing.qty} ${sym} @ ₹${fmt(existing.entry)}.\n\nAdd ${qty} more @ ₹${fmt(entry)} to this position (new weighted-avg entry) instead of creating a separate card?`)) return;
+      const totalQty = existing.qty + qty;
+      existing.entry = Math.round((((existing.entry*existing.qty)+(entry*qty))/totalQty)*100)/100;
+      existing.qty = totalQty;
+      existing.cmp = cmp;
+      existing.stopLoss = sl;
+      existing.currentSL = csl;
+      existing.target = tgt;
+      existing.trailPct = trail;
+      if(sec) existing.sector = sec;
+      if(date && date < existing.entryDate) existing.entryDate = date;
+      recordCMPSnapshot(existing);
+      checkAlerts(existing);
+    } else {
+      const p={id:Date.now(),symbol:sym,name,entry,cmp,qty,stopLoss:sl,currentSL:csl,target:tgt,trailPct:trail,sector:sec,entryDate:date,cmpHistory:[],ohlc:[]};
+      recordCMPSnapshot(p);
+      state.positions.push(p);
+      checkAlerts(p);
     }
-    recordCMPSnapshot(p);
-    state.positions.push(p);
-    checkAlerts(p);
   }
   saveState(); closeModal('modal-add'); render();
 }
@@ -2413,7 +2441,7 @@ function openJournalDetail(id) {
     ${candleHTML}
     ${journeyHTML}
     ${j.notes?`<div style="background:rgba(0,0,0,0.02);border:1px solid var(--border);border-radius:8px;padding:10px 13px;margin-top:12px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase;margin-bottom:6px">Notes</div><div style="font-size:13px;color:var(--text2);line-height:1.65">${j.notes}</div></div>`:''}
-    <button class="btn btn-secondary" style="width:100%;margin-top:16px;padding:10px" onclick="reopenFromJournal(${j.id})">↩ Reopen as New Position</button>
+    <button class="btn btn-secondary" style="width:100%;margin-top:16px;padding:10px" onclick="openReopenModal(${j.id})">↩ Reopen Position</button>
     <button class="btn btn-danger" style="width:100%;margin-top:10px;padding:10px" onclick="deleteJournalEntry(${j.id})">Delete from Journal</button>`;
   openModal('modal-detail');
   if(j.ohlc && j.ohlc.length){
@@ -2428,6 +2456,39 @@ function openJournalDetail(id) {
   }
 }
 
+let reopeningId = null;
+
+function openReopenModal(id) {
+  const j = state.journal.find(x=>x.id===id); if(!j) return;
+  reopeningId = id;
+  document.getElementById('reopen-modal-title').textContent = `↩ Reopen ${j.symbol}`;
+  document.getElementById('reopen-hint').textContent = `You sold ${j.qty} @ ₹${fmt(j.exitPrice)} on ${j.exitDate}. Enter the price you actually bought back at.`;
+  document.getElementById('reopen-price').value = '';
+  document.getElementById('reopen-qty').value = j.qty;
+  document.getElementById('reopen-date').value = today();
+  document.getElementById('reopen-orig-entry').textContent = fmt(j.entryPrice);
+  document.getElementById('reopen-preview-box').style.display = 'none';
+  closeModal('modal-detail');
+  openModal('modal-reopen');
+  setTimeout(()=>document.getElementById('reopen-price').focus(),100);
+}
+
+function updateReopenPreview() {
+  const j = state.journal.find(x=>x.id===reopeningId); if(!j) return;
+  const price = +document.getElementById('reopen-price').value;
+  const qty = +document.getElementById('reopen-qty').value || j.qty;
+  const box = document.getElementById('reopen-preview-box');
+  if(!price || !qty) { box.style.display='none'; return; }
+  const pnl = Math.round((j.exitPrice - price) * qty * 100)/100;
+  const c = pnl>=0?'#22c55e':'#ef4444';
+  box.style.display='flex';
+  box.style.background = pnl>=0?'rgba(34,197,94,0.06)':'rgba(239,68,68,0.06)';
+  box.style.border = `1px solid ${pnl>=0?'rgba(34,197,94,0.18)':'rgba(239,68,38,0.18)'}`;
+  document.getElementById('reopen-preview-val').style.color = c;
+  document.getElementById('reopen-preview-val').textContent = `${sign(pnl)}${fmtC(pnl)}`;
+  document.getElementById('reopen-preview-qty').textContent = qty;
+}
+
 function mergeHistoryByDate(older, newer) {
   const map = new Map();
   (older||[]).forEach(e=>map.set(e.date, e));
@@ -2435,61 +2496,67 @@ function mergeHistoryByDate(older, newer) {
   return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date));
 }
 
-let pendingReopenHistory = null;
+function submitReopen() {
+  const j = state.journal.find(x=>x.id===reopeningId); if(!j) return;
+  const buyBackPrice = +document.getElementById('reopen-price').value;
+  const qty = +document.getElementById('reopen-qty').value || j.qty;
+  const buyBackDate = document.getElementById('reopen-date').value || today();
+  if(!buyBackPrice || buyBackPrice<=0) { alert('Enter the price you bought back at.'); return; }
+  if(!qty || qty<=0) { alert('Enter a valid quantity.'); return; }
 
-function reopenFromJournal(id) {
-  const j = state.journal.find(x=>x.id===id); if(!j) return;
   const restoredCmp  = j.cmpHistory ? [...j.cmpHistory] : [];
   const restoredOhlc = j.ohlc ? [...j.ohlc] : [];
   const existing = state.positions.find(p=>p.symbol===j.symbol);
 
   if(existing) {
-    // A remainder of this symbol is already open (e.g. this was a partial close).
-    // Ask for the actual re-entry price — the closed portion's realised P&L
-    // (the round-trip cost/gain) stays untouched in the journal.
-    const priceStr = prompt(`Re-entry price for ${j.qty} ${j.symbol} shares?\n\n(This merges into your existing open ${existing.qty}-share position. The ${sign(j.pnl)}${fmtC(j.pnl)} already realised on the closed portion stays recorded in your journal — that's a real round-trip cost/gain, not undone.)`, j.exitPrice);
-    if(priceStr===null) return;
-    const newPrice = parseFloat(priceStr);
-    if(!newPrice || newPrice<=0){ alert('Enter a valid price.'); return; }
-    const totalQty = existing.qty + j.qty;
-    existing.entry = Math.round((((existing.entry*existing.qty)+(newPrice*j.qty))/totalQty)*100)/100;
+    // A remainder of this symbol is already open (e.g. a partial close) — merge back in,
+    // keeping the ORIGINAL entry price for the reopened portion, per how the closed leg read.
+    const totalQty = existing.qty + qty;
+    existing.entry = Math.round((((existing.entry*existing.qty)+(j.entryPrice*qty))/totalQty)*100)/100;
     existing.qty = totalQty;
-    existing.cmp = newPrice;
+    if(j.entryDate && j.entryDate < existing.entryDate) existing.entryDate = j.entryDate;
     existing.cmpHistory = mergeHistoryByDate(existing.cmpHistory, restoredCmp);
     existing.ohlc       = mergeHistoryByDate(existing.ohlc, restoredOhlc);
-    recordCMPSnapshot(existing);
-    saveState();
-    closeModal('modal-detail');
-    switchTab('positions');
-    renderMetrics(); renderTabCounts();
-    return;
+    existing.cmp = buyBackPrice;
+  } else {
+    state.positions.push({
+      id: Date.now(),
+      symbol: j.symbol, name: j.name, sector: j.sector,
+      entry: j.entryPrice, cmp: buyBackPrice, qty: qty,
+      stopLoss: j.stopLoss, currentSL: j.currentSL||j.stopLoss, target: j.target,
+      entryDate: j.entryDate,
+      cmpHistory: restoredCmp,
+      ohlc: restoredOhlc
+    });
   }
 
-  // No open remainder — prefill the Add Position form so there's almost nothing
-  // to retype. The earlier closed trade (and its realised round-trip P&L) is left
-  // exactly as recorded in the journal; you just confirm the actual re-entry price.
-  pendingReopenHistory = { cmpHistory: restoredCmp, ohlc: restoredOhlc };
-  editingId=null;
-  document.getElementById('modal-add-title').textContent = `Reopen — ${j.symbol}`;
-  document.getElementById('btn-save-pos').textContent = 'Reopen Position';
-  document.getElementById('f-symbol').value = j.symbol;
-  document.getElementById('f-name').value = j.name;
-  document.getElementById('f-entry').value = j.exitPrice;
-  document.getElementById('f-cmp').value = j.exitPrice;
-  document.getElementById('f-qty').value = j.qty;
-  document.getElementById('f-date').value = today();
-  document.getElementById('f-sl').value = j.stopLoss||'';
-  document.getElementById('f-csl').value = j.currentSL||j.stopLoss||'';
-  document.getElementById('f-tgt').value = j.target||'';
-  document.getElementById('f-trail').value = '';
-  document.getElementById('f-sector').value = j.sector||'Other';
-  document.getElementById('f-riskpct').value='1';
-  const hintEl=document.getElementById('form-hint-text');
-  if(hintEl) hintEl.textContent = `Reopening ${j.symbol} — that trade closed at ₹${fmt(j.exitPrice)} (${sign(j.pnl)}${fmtC(j.pnl)}) and stays in your journal as-is. Confirm the price you're actually buying back in at.`;
-  onCalcInput();
-  closeModal('modal-detail');
+  // Log the round-trip (sold-then-bought-back) result as its own journal entry.
+  // The original closed trade (j) is left exactly as it was — untouched.
+  const roundTripPnl = Math.round((j.exitPrice - buyBackPrice) * qty * 100)/100;
+  const roundTripPct = j.exitPrice ? Math.round((roundTripPnl/(j.exitPrice*qty))*10000)/100 : 0;
+  const rtTrade = {
+    id: Date.now()+1, symbol:j.symbol, name:j.name, sector:j.sector,
+    entryPrice: j.exitPrice, exitPrice: buyBackPrice, qty,
+    grossPnl: roundTripPnl, grossPnlPct: roundTripPct,
+    charges: null, tradeType:'intraday',
+    pnl: roundTripPnl, pnlPct: roundTripPct,
+    capitalImpactPct: state.capital>0 ? (roundTripPnl/state.capital)*100 : 0,
+    rMultiple: null, initialSL: null,
+    entryDate: buyBackDate, exitDate: buyBackDate, holdingDays:0,
+    reason:'Same-Day Reopen',
+    stopLoss:null, target:null,
+    isPartial:false, remainingQty:0,
+    isRoundTrip:true,
+    cmpHistory:[], ohlc:[]
+  };
+  state.journal = [rtTrade, ...state.journal];
+  state.capital = Math.round((state.capital + roundTripPnl)*100)/100;
+
+  saveState();
+  closeModal('modal-reopen');
   switchTab('positions');
-  openModal('modal-add');
+  renderMetrics();
+  renderTabCounts();
 }
 
 function deleteJournalEntry(id) {
