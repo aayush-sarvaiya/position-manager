@@ -272,6 +272,13 @@
   .backup-nudge-btn { background:var(--blue); border:1px solid var(--blue); border-radius:8px; padding:6px 14px; font-size:11px; font-weight:700; color:#fff; cursor:pointer; font-family:'Montserrat',sans-serif; white-space:nowrap; }
   .backup-nudge-dismiss { background:#fff; border:1px solid rgba(37,99,235,0.3); border-radius:8px; padding:6px 14px; font-size:11px; font-weight:700; color:var(--blue); cursor:pointer; font-family:'Montserrat',sans-serif; white-space:nowrap; }
 
+  .week-digest { background:rgba(79,70,229,0.06); border:1px solid rgba(79,70,229,0.22); border-radius:12px; padding:12px 16px; margin-bottom:16px; }
+  .week-digest-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+  .week-digest-title { font-size:11px; color:var(--indigo); font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+  .week-digest-dismiss { background:#fff; border:1px solid rgba(79,70,229,0.3); border-radius:8px; padding:5px 12px; font-size:11px; font-weight:700; color:var(--indigo); cursor:pointer; font-family:'Montserrat',sans-serif; white-space:nowrap; flex-shrink:0; }
+  .week-digest-stats { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:#3730a3; font-weight:600; margin-bottom:6px; }
+  .week-digest-detail { font-size:11px; color:#4338ca; opacity:.85; }
+
   .card-mobile-actions { display: none; }
   @media (max-width: 768px) {
     .card-actions { display: none !important; }
@@ -295,6 +302,7 @@
       cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
     .loss-nudge, .backup-nudge { flex-direction:column; align-items:flex-start; }
+    .week-digest-head { flex-direction:column; }
   }
 
   .btn-ai { display:none; }
@@ -578,6 +586,7 @@ let sortBy     = 'default';
 let toastTimer = null;
 let lossNudge  = { date:null, dismissedAt:0 };
 let backupNudgeDismiss = { date:null };
+let weekDigestDismiss = { week:null };
 
 // ══════════════════════════════════════════
 //  PERSIST
@@ -593,6 +602,42 @@ function loadLossNudge() {
 }
 function loadBackupNudge() {
   try { const r=localStorage.getItem('pm-backup-nudge'); if(r) backupNudgeDismiss=JSON.parse(r); } catch(e) {}
+}
+function loadWeekDigestDismiss() {
+  try { const r=localStorage.getItem('pm-week-digest'); if(r) weekDigestDismiss=JSON.parse(r); } catch(e) {}
+}
+function getISOWeekKey(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = (date.getUTCDay()+6)%7; // Mon=0..Sun=6
+  date.setUTCDate(date.getUTCDate()-dayNum+3); // nearest Thursday
+  const firstThursday = new Date(Date.UTC(date.getUTCFullYear(),0,4));
+  const weekNum = 1+Math.round(((date-firstThursday)/86400000-3+((firstThursday.getUTCDay()+6)%7))/7);
+  return `${date.getUTCFullYear()}-W${String(weekNum).padStart(2,'0')}`;
+}
+function getLastWeekRange() {
+  const now = new Date();
+  const dow = (now.getDay()+6)%7; // Mon=0
+  const thisMonday = new Date(now); thisMonday.setDate(now.getDate()-dow); thisMonday.setHours(0,0,0,0);
+  const lastMonday = new Date(thisMonday); lastMonday.setDate(thisMonday.getDate()-7);
+  const lastSunday = new Date(thisMonday); lastSunday.setDate(thisMonday.getDate()-1);
+  return { from: lastMonday.toISOString().slice(0,10), to: lastSunday.toISOString().slice(0,10) };
+}
+function computeWeeklyDigest() {
+  const {from,to} = getLastWeekRange();
+  const trades = state.journal.filter(j=>j.exitDate>=from && j.exitDate<=to);
+  if(!trades.length) return null;
+  const wins = trades.filter(t=>t.pnl>0), losses = trades.filter(t=>t.pnl<=0);
+  const totalPnl = trades.reduce((s,t)=>s+t.pnl,0);
+  const winRate = (wins.length/trades.length)*100;
+  const avgHold = trades.reduce((s,t)=>s+t.holdingDays,0)/trades.length;
+  const best = trades.reduce((b,t)=>t.pnl>b.pnl?t:b, trades[0]);
+  const worst = trades.reduce((b,t)=>t.pnl<b.pnl?t:b, trades[0]);
+  return { from, to, count:trades.length, wins:wins.length, losses:losses.length, winRate, totalPnl, avgHold, best, worst };
+}
+function dismissWeekDigest() {
+  weekDigestDismiss = { week: getISOWeekKey(new Date()) };
+  try { localStorage.setItem('pm-week-digest', JSON.stringify(weekDigestDismiss)); } catch(e) {}
+  renderPositions();
 }
 function isWeekend(dateStr) {
   const day = new Date(dateStr).getDay();
@@ -1364,8 +1409,30 @@ function renderPositions() {
       <button class="loss-nudge-dismiss" onclick="dismissLossNudge(${lossStreak})">Got it</button>
     </div>` : '';
 
+  const digest = computeWeeklyDigest();
+  const curWeekKey = getISOWeekKey(new Date());
+  const showDigest = digest && weekDigestDismiss.week !== curWeekKey;
+  let digestHTML = '';
+  if(showDigest) {
+    const fmtD = s => { try { return new Date(s).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}); } catch(e){ return s; } };
+    const dc = digest.totalPnl>=0 ? '#16a34a' : '#dc2626';
+    digestHTML = `<div class="week-digest">
+      <div class="week-digest-head">
+        <div class="week-digest-title">📅 Last week — ${fmtD(digest.from)} to ${fmtD(digest.to)}</div>
+        <button class="week-digest-dismiss" onclick="dismissWeekDigest()">Got it</button>
+      </div>
+      <div class="week-digest-stats">
+        <span>${digest.count} trade${digest.count!==1?'s':''}</span>
+        <span>${fmt(digest.winRate,0)}% win rate</span>
+        <span style="color:${dc}">${sign(digest.totalPnl)}${fmtC(digest.totalPnl)}</span>
+        <span>avg hold ${digest.avgHold.toFixed(1)}d</span>
+      </div>
+      <div class="week-digest-detail">Best: ${digest.best.symbol} ${sign(digest.best.pnl)}${fmtC(digest.best.pnl)} &nbsp;·&nbsp; Worst: ${digest.worst.symbol} ${sign(digest.worst.pnl)}${fmtC(digest.worst.pnl)}</div>
+    </div>`;
+  }
+
   if(!state.positions.length){
-    el.innerHTML=backupNudgeHTML+nudgeHTML+`<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No active positions — click ＋ to add one</div></div>`;
+    el.innerHTML=digestHTML+backupNudgeHTML+nudgeHTML+`<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No active positions — click ＋ to add one</div></div>`;
     return;
   }
   const gains=state.positions.map(p=>(p.cmp-p.entry)/p.entry*100).filter(x=>x>0);
@@ -1395,7 +1462,7 @@ function renderPositions() {
     <button class="sort-btn${sortBy==='sym'?' active':''}" data-sort="sym" onclick="setSort('sym')">A–Z</button>
   </div>`;
 
-  el.innerHTML=backupNudgeHTML+nudgeHTML+`
+  el.innerHTML=digestHTML+backupNudgeHTML+nudgeHTML+`
     <div class="heatmap-wrap">
       <div class="heatmap-title">📊 Portfolio Heatmap</div>
       <div class="heatmap-grid">${hmCells}</div>
@@ -1422,6 +1489,24 @@ function cardHTML(p) {
   const cardClass=slHit?' sl-hit':tgtHit?' tgt-hit':'';
   const slBadge=slHit?`<span class="badge badge-sl">⚠ SL HIT</span>`:'';
   const tgtBadge=tgtHit?`<span class="badge badge-tgt">🎯 TGT HIT</span>`:'';
+  // Milestone badge — celebrates crossing 2R/3R/5R live, no target required
+  let milestoneBadge = '';
+  if(liveRNum != null) {
+    if(liveRNum >= 5) milestoneBadge = `<span class="badge" style="background:rgba(180,83,9,0.08);border-color:rgba(180,83,9,0.28);color:var(--yellow)">🚀 5R+</span>`;
+    else if(liveRNum >= 3) milestoneBadge = `<span class="badge" style="background:rgba(22,163,74,0.08);border-color:rgba(22,163,74,0.25);color:var(--green)">🚀 3R+</span>`;
+    else if(liveRNum >= 2) milestoneBadge = `<span class="badge" style="background:rgba(22,163,74,0.06);border-color:rgba(22,163,74,0.18);color:var(--green)">🚀 2R+</span>`;
+  }
+  // Trail-lag nudge — up 2R+ but Current SL has never been moved off the initial SL
+  const neverTrailed = (p.currentSL||p.stopLoss) === p.stopLoss;
+  const trailNudgeBadge = (liveRNum != null && liveRNum >= 2 && neverTrailed)
+    ? `<span class="badge" style="background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.25);color:var(--purple);cursor:pointer" onclick="event.stopPropagation();openEditModal(${p.id})" title="Up ${liveRNum.toFixed(1)}R and SL hasn't moved since entry">⇡ trail SL?</span>`
+    : '';
+  // Peak-pullback alert — how far CMP has slipped from the highest price seen since entry
+  const cmpPeak = Math.max(p.cmp, ...(p.cmpHistory||[]).map(h=>h.price));
+  const pullbackPct = cmpPeak>0 ? ((cmpPeak-p.cmp)/cmpPeak*100) : 0;
+  const pullbackBadge = (pullbackPct >= 3)
+    ? `<span class="badge" style="background:rgba(234,88,12,0.08);border-color:rgba(234,88,12,0.22);color:var(--orange);cursor:pointer" onclick="event.stopPropagation();openChartModal(${p.id})" title="Peak was ₹${fmt(cmpPeak)}">📉 ${fmt(pullbackPct,1)}% off peak</span>`
+    : '';
   const beCharges=calcCharges(p.entry,p.cmp,p.qty,'delivery');
   const breakEven=p.entry + beCharges.total/p.qty;
   const beColor=p.cmp>=breakEven?'var(--green)':'var(--red)';
@@ -1461,7 +1546,7 @@ function cardHTML(p) {
     <div class="badges">
       <span class="badge badge-sector">${p.sector}</span>
       <span class="badge badge-days">${held}d held</span>
-      ${cslNote}${slBadge}${tgtBadge}
+      ${cslNote}${slBadge}${tgtBadge}${milestoneBadge}${trailNudgeBadge}${pullbackBadge}
     </div>
     <div class="sparkline">${sparklineSVG(p.entry,p.cmp)}</div>
     <div class="price-grid">
@@ -2619,6 +2704,7 @@ document.addEventListener('keydown',e=>{
 loadState();
 loadLossNudge();
 loadBackupNudge();
+loadWeekDigestDismiss();
 requestNotifPermission();
 render();
 initShareButton();
