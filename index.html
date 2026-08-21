@@ -328,7 +328,6 @@
     <div class="header-right">
       <button class="btn btn-orange" onclick="openBulkCMPModal()">✏ Update CMPs</button>
       <button class="btn btn-backup" onclick="backupData()">⬇ Backup</button>
-      <button class="btn btn-backup" id="btn-share-backup" onclick="shareBackup()" style="display:none">📤 Share to Drive</button>
       <button class="btn btn-backup" onclick="document.getElementById('restoreInput').click()">⬆ Restore</button>
       <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(event)">
       <button class="btn btn-secondary" onclick="openCapitalModal()">⚙ Capital</button>
@@ -686,38 +685,6 @@ function restoreData(event) {
 // Only shown on mobile, where the OS share sheet actually lists Drive as a target.
 // Desktop browsers largely don't support file sharing this way even when the API
 // reports as present, so we gate on device type too, not just feature-detection.
-function isMobileDevice() {
-  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-}
-function initShareButton() {
-  try {
-    const testFile = new File(['test'], 'test.json', {type:'application/json'});
-    const supported = navigator.canShare && navigator.canShare({files:[testFile]}) && isMobileDevice();
-    if (supported) {
-      const btn = document.getElementById('btn-share-backup');
-      if (btn) btn.style.display = '';
-    }
-  } catch(e) {}
-}
-async function shareBackup() {
-  try {
-    const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
-    const file = new File([blob], `positions-backup-${today()}.json`, {type:'application/json'});
-    if (navigator.canShare && navigator.canShare({files:[file]})) {
-      await navigator.share({ files:[file], title:'Position Manager Backup', text:'Position Manager backup — '+today() });
-      setLastBackupDate();
-      if (currentTab==='positions') renderPositions();
-    } else {
-      alert('Sharing isn\'t supported in this browser. Downloading the backup file instead — drag it into Drive manually.');
-      backupData();
-    }
-  } catch(e) {
-    if (e && e.name === 'AbortError') return; // user cancelled the share sheet — nothing to report
-    alert('Sharing failed here — downloading the backup file instead so you can upload it to Drive manually.');
-    backupData();
-  }
-}
-
 // Weekly silent fallback: if it's been 7+ days since a backup and the person
 // hasn't opened the app today, auto-trigger a download once. This can't push
 // to Drive/cloud on its own (no server, no OAuth) — but if the phone's Drive
@@ -1534,6 +1501,16 @@ function cardHTML(p) {
   const slHit=activeSL&&p.cmp<=activeSL;
   const tgtHit=p.target&&p.cmp>=p.target;
   const cardClass=slHit?' sl-hit':tgtHit?' tgt-hit':'';
+  // Risk-based glow: what happens if SL is hit?
+  let glowStyle = '';
+  if(activeSL && activeSL > 0) {
+    const pnlAtSL = Math.round((activeSL - p.entry) * p.qty * 100)/100;
+    let glowColor = 'transparent';
+    if(pnlAtSL < 0) glowColor = 'rgba(234,88,12,0.3)'; // light orange — would be a loss
+    else if(pnlAtSL <= 500) glowColor = 'rgba(202,138,4,0.25)'; // light yellow — breakeven-ish
+    else glowColor = 'rgba(34,197,94,0.25)'; // light green — good profit
+    glowStyle = `box-shadow: 0 0 20px ${glowColor}, inset 0 0 20px ${glowColor.replace('0.', '0.05')};`;
+  }
   const slBadge=slHit?`<span class="badge badge-sl">⚠ SL HIT</span>`:'';
   const tgtBadge=tgtHit?`<span class="badge badge-tgt">🎯 TGT HIT</span>`:'';
   // Milestone badge — celebrates crossing 2R/3R/5R live, no target required
@@ -1587,7 +1564,7 @@ function cardHTML(p) {
     ?`<span class="badge" style="background:rgba(124,58,237,0.07);border-color:rgba(124,58,237,0.2);color:var(--purple)">CSL ₹${fmt(p.currentSL)}</span>`:''
 
   return `
-  <div class="card${cardClass}" onclick="openEditModal(${p.id})">
+  <div class="card${cardClass}" style="${glowStyle}" onclick="openEditModal(${p.id})">
     <div class="card-actions">
       <button class="btn-chart" onclick="event.stopPropagation();openChartModal(${p.id})">📊</button>
       <button class="btn-close-trade" onclick="event.stopPropagation();openCloseModal(${p.id})">CLOSE</button>
@@ -2762,7 +2739,6 @@ loadBackupNudge();
 loadWeekDigestDismiss();
 requestNotifPermission();
 render();
-initShareButton();
 maybeAutoBackup();
 </script>
 <script>
