@@ -55,7 +55,7 @@
   .btn:active { transform: scale(0.97); }
   .btn-primary { background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; box-shadow: 0 2px 8px rgba(22,163,74,0.3); }
   .btn-primary:hover { box-shadow: 0 4px 14px rgba(22,163,74,0.4); }
-  .btn-secondary { background: #fff; border: 1px solid var(--border2) !important; color: var(--text2); box-shadow: var(--shadow); }
+  .btn-secondary { background: var(--card-bg); border: 1px solid var(--border2) !important; color: var(--text2); box-shadow: var(--shadow); }
   .btn-secondary:hover { background: #f8fafc; }
   .btn-danger { background: rgba(220,38,38,0.07); border: 1px solid rgba(220,38,38,0.2) !important; color: #dc2626; }
   .btn-backup { background: rgba(37,99,235,0.07); border: 1px solid rgba(37,99,235,0.18) !important; color: var(--blue); }
@@ -121,7 +121,7 @@
   .star-badge { font-size:10px; margin-left:4px; }
 
   .metrics { display: flex; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
-  .metric { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; flex: 1; min-width: 120px; box-shadow: var(--shadow); }
+  .metric { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; flex: 1; min-width: 120px; box-shadow: var(--shadow); }
   .metric.glow { background: #f0fdf4; border-color: rgba(22,163,74,0.3); }
   .metric.glow-blue { background: #eff6ff; border-color: rgba(37,99,235,0.25); }
   .metric-label { font-size: 9px; letter-spacing: .14em; color: var(--text3); text-transform: uppercase; margin-bottom: 7px; font-weight: 700; }
@@ -129,13 +129,13 @@
   .metric-sub { font-size: 10px; color: var(--text3); margin-top: 5px; font-weight: 500; }
   .metric-split { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 
-  .tabs { display: flex; gap: 3px; margin-bottom: 20px; background: #fff; border: 1px solid var(--border); border-radius: 11px; padding: 4px; width: fit-content; box-shadow: var(--shadow); }
+  .tabs { display: flex; gap: 3px; margin-bottom: 20px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 11px; padding: 4px; width: fit-content; box-shadow: var(--shadow); }
   .tab-btn { background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 7px 18px; color: var(--text3); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; font-family: 'Montserrat', sans-serif; white-space: nowrap; }
   .tab-btn.active { background: var(--text); border-color: var(--text); color: #fff; }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
 
-  .card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; position: relative; cursor: pointer; transition: all .2s ease; box-shadow: var(--shadow); }
+  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; position: relative; cursor: pointer; transition: all .2s ease; box-shadow: var(--shadow); }
   .card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--shadow2); }
   .card-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 5px; opacity: 0; transition: opacity .15s; }
   .card:hover .card-actions { opacity: 1; }
@@ -179,7 +179,7 @@
   .empty-text { font-size: 14px; color: var(--text3); font-weight: 500; }
 
   .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.5); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
-  .modal { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 26px; width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(15,23,42,0.15); }
+  .modal { background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px; padding: 26px; width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(15,23,42,0.15); }
   .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
   .modal-title { font-weight: 800; font-size: 16px; color: var(--text); }
   .modal-close { background: #f1f5f9; border: none; color: var(--text3); font-size: 18px; cursor: pointer; line-height: 1; padding: 4px 8px; border-radius: 6px; }
@@ -189,7 +189,7 @@
   .form-group.full { grid-column: 1/-1; }
   .form-label { display: block; font-size: 10px; color: var(--text2); margin-bottom: 5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; }
   .form-input, .form-select, .form-textarea { width: 100%; background: #f8fafc; border: 1px solid var(--border2); border-radius: 9px; padding: 10px 13px; color: var(--text); font-size: 14px; outline: none; font-family: 'Montserrat', sans-serif; font-weight: 500; transition: border-color .15s, box-shadow .15s; }
-  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: rgba(22,163,74,0.5); box-shadow: 0 0 0 3px rgba(22,163,74,0.08); background: #fff; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: rgba(22,163,74,0.5); box-shadow: 0 0 0 3px rgba(22,163,74,0.08); background: var(--card-bg); }
   .form-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
   .form-textarea { resize: vertical; min-height: 70px; line-height: 1.6; }
   .form-hint { font-size: 11px; color: var(--text3); margin-bottom: 14px; font-weight: 500; }
@@ -220,7 +220,7 @@
   .ts-value { font-size: 13px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 
   .journal-stats { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-  .j-table { background: #fff; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; overflow-x: auto; box-shadow: var(--shadow); }
+  .j-table { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; overflow-x: auto; box-shadow: var(--shadow); }
   .j-table-head { display: grid; grid-template-columns: 75px minmax(0,1fr) 80px 80px 50px 50px 90px 75px 85px; padding: 10px 16px; border-bottom: 1px solid var(--border); min-width: 680px; background:#f8fafc; }
   .j-table-head span { font-size: 9px; color: var(--text3); letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
   .j-row { display: grid; grid-template-columns: 75px minmax(0,1fr) 80px 80px 50px 50px 90px 75px 85px; padding: 11px 16px; align-items: center; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .15s; min-width: 680px; }
@@ -1398,7 +1398,13 @@ function calcMetrics() {
     if(dc){ dayPnL+=dc.chgAbs; dayTrackedCount++; }
   });
   dayPnL = Math.round(dayPnL*100)/100;
-  return {invested,currentVal,totalPnL,totalRisk,pctInv,openRisk,jTotal,freeCapital,freePct,dayPnL,dayTrackedCount};
+  let lockedProfit=0, lockedTrackedCount=0;
+  ps.forEach(p=>{
+    const activeSL=p.currentSL||p.stopLoss;
+    if(activeSL && activeSL>0){ lockedProfit+=(activeSL-p.entry)*p.qty; lockedTrackedCount++; }
+  });
+  lockedProfit = Math.round(lockedProfit*100)/100;
+  return {invested,currentVal,totalPnL,totalRisk,pctInv,openRisk,jTotal,freeCapital,freePct,dayPnL,dayTrackedCount,lockedProfit,lockedTrackedCount};
 }
 
 // ══════════════════════════════════════════
@@ -1412,13 +1418,18 @@ function renderMetrics() {
   const dayPnLSub = state.positions.length
     ? `${m.dayTrackedCount} of ${state.positions.length} tracked`
     : 'no open positions';
+  const lockedValue = m.lockedTrackedCount>0 ? `${sign(m.lockedProfit)}${fmtC(m.lockedProfit)}` : '—';
+  const lockedSub = state.positions.length
+    ? `${m.lockedTrackedCount} of ${state.positions.length} w/ SL`
+    : 'no open positions';
   const items=[
-    {label:"Day P&L",      value:dayPnLValue,                              sub:dayPnLSub,                                                         color:m.dayTrackedCount===0?'#475569':m.dayPnL>=0?'#16a34a':'#b91c1c', glow:m.dayTrackedCount>0&&m.dayPnL>0},
-    {label:'% Invested',   value:`${fmt(m.pctInv,1)}%`,                    sub:`${fmtC(m.invested)} of ${fmtC(state.capital)}`,                  color:'#1e40af'},
-    {label:'Open P&L',     value:`${sign(m.totalPnL)}${fmtC(m.totalPnL)}`, sub:`${fmt(m.invested>0?(m.totalPnL/m.invested)*100:0,2)}% return`,   color:m.totalPnL>=0?'#16a34a':'#b91c1c', glow:m.totalPnL>0},
-    {label:'Open Risk',    value:`${fmt(m.openRisk,2)}%`,                   sub:`${fmtC(m.totalRisk)} at risk`,                                   color:m.openRisk>3?'#d97706':'#475569', isLeft:true},
-    {label:'Locked Profit', value:`${sign(m.jTotal)}${fmtC(m.jTotal)}`,     sub:`${js.length} closed trades`,                                     color:m.jTotal>=0?'#16a34a':'#b91c1c', isRight:true},
-    {label:'Free Capital', value:`${fmtC(m.freeCapital)}`,                  sub:`${fmt(m.freePct,1)}% undeployed`,                                color:m.freeCapital>0?'#1e40af':'#b91c1c', glow2:m.freeCapital>0},
+    {label:"Day P&L",       value:dayPnLValue,                              sub:dayPnLSub,                                                       color:m.dayTrackedCount===0?'#475569':m.dayPnL>=0?'#16a34a':'#b91c1c', glow:m.dayTrackedCount>0&&m.dayPnL>0},
+    {label:'% Invested',    value:`${fmt(m.pctInv,1)}%`,                    sub:`${fmtC(m.invested)} of ${fmtC(state.capital)}`,                color:'#1e40af'},
+    {label:'Open P&L',      value:`${sign(m.totalPnL)}${fmtC(m.totalPnL)}`, sub:`${fmt(m.invested>0?(m.totalPnL/m.invested)*100:0,2)}% return`, color:m.totalPnL>=0?'#16a34a':'#b91c1c', glow:m.totalPnL>0},
+    {label:'Open Risk',     value:`${fmt(m.openRisk,2)}%`,                  sub:`${fmtC(m.totalRisk)} at risk`,                                 color:m.openRisk>3?'#d97706':'#475569', isLeft:true},
+    {label:'Locked Profit', value:lockedValue,                              sub:lockedSub,                                                       color:m.lockedTrackedCount===0?'#475569':m.lockedProfit>=0?'#16a34a':'#b91c1c', isRight:true},
+    {label:'Free Capital',  value:`${fmtC(m.freeCapital)}`,                 sub:`${fmt(m.freePct,1)}% undeployed`,                              color:m.freeCapital>0?'#1e40af':'#b91c1c', glow2:m.freeCapital>0},
+    {label:'Realised P&L',  value:`${sign(m.jTotal)}${fmtC(m.jTotal)}`,     sub:`${js.length} closed trades`,                                   color:m.jTotal>=0?'#16a34a':'#b91c1c'},
   ];
   let html = '';
   for(let i=0; i<items.length; i++){
