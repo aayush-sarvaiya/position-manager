@@ -127,6 +127,7 @@
   .metric-label { font-size: 9px; letter-spacing: .14em; color: var(--text3); text-transform: uppercase; margin-bottom: 7px; font-weight: 700; }
   .metric-value { font-size: 20px; font-weight: 800; letter-spacing: -.5px; line-height: 1; font-variant-numeric: tabular-nums; }
   .metric-sub { font-size: 10px; color: var(--text3); margin-top: 5px; font-weight: 500; }
+  .metric-split { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 
   .tabs { display: flex; gap: 3px; margin-bottom: 20px; background: #fff; border: 1px solid var(--border); border-radius: 11px; padding: 4px; width: fit-content; box-shadow: var(--shadow); }
   .tab-btn { background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 7px 18px; color: var(--text3); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; font-family: 'Montserrat', sans-serif; white-space: nowrap; }
@@ -326,6 +327,7 @@
       <h1>Position Manager</h1>
     </div>
     <div class="header-right">
+      <button class="btn btn-secondary" id="theme-toggle" onclick="toggleTheme()">🌙</button>
       <button class="btn btn-orange" onclick="openBulkCMPModal()">✏ Update CMPs</button>
       <button class="btn btn-backup" onclick="backupData()">⬇ Backup</button>
       <button class="btn btn-backup" onclick="document.getElementById('restoreInput').click()">⬆ Restore</button>
@@ -586,6 +588,40 @@ let toastTimer = null;
 let lossNudge  = { date:null, dismissedAt:0 };
 let backupNudgeDismiss = { date:null };
 let weekDigestDismiss = { week:null };
+let currentTheme = 'dark'; // 'dark' or 'light'
+
+function loadTheme() {
+  try { const t = localStorage.getItem('pm-theme'); if(t) currentTheme = t; } catch(e) {}
+  applyTheme();
+}
+function applyTheme() {
+  const root = document.documentElement;
+  if(currentTheme === 'light') {
+    root.style.setProperty('--bg', '#ffffff');
+    root.style.setProperty('--text', '#0f172a');
+    root.style.setProperty('--text2', '#475569');
+    root.style.setProperty('--text3', '#94a3b8');
+    root.style.setProperty('--border', 'rgba(0,0,0,0.1)');
+    root.style.setProperty('--card-bg', '#f8fafc');
+    document.body.style.background = '#ffffff';
+    document.body.style.color = '#0f172a';
+  } else {
+    root.style.setProperty('--bg', '#0f172a');
+    root.style.setProperty('--text', '#f1f5f9');
+    root.style.setProperty('--text2', '#cbd5e1');
+    root.style.setProperty('--text3', '#94a3b8');
+    root.style.setProperty('--border', 'rgba(255,255,255,0.1)');
+    root.style.setProperty('--card-bg', '#1e293b');
+    document.body.style.background = '#0f172a';
+    document.body.style.color = '#f1f5f9';
+  }
+  document.getElementById('theme-toggle').textContent = currentTheme === 'light' ? '🌙' : '☀️';
+}
+function toggleTheme() {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  try { localStorage.setItem('pm-theme', currentTheme); } catch(e) {}
+  applyTheme();
+}
 
 // ══════════════════════════════════════════
 //  PERSIST
@@ -1377,19 +1413,40 @@ function renderMetrics() {
     ? `${m.dayTrackedCount} of ${state.positions.length} tracked`
     : 'no open positions';
   const items=[
-    {label:"Day P&L",      value:dayPnLValue,                              sub:dayPnLSub,                                                         color:m.dayTrackedCount===0?'#94a3b8':m.dayPnL>=0?'#22c55e':'#ef4444', glow:m.dayTrackedCount>0&&m.dayPnL>0},
-    {label:'% Invested',   value:`${fmt(m.pctInv,1)}%`,                    sub:`${fmtC(m.invested)} of ${fmtC(state.capital)}`,                  color:'#60a5fa'},
-    {label:'Open P&L',     value:`${sign(m.totalPnL)}${fmtC(m.totalPnL)}`, sub:`${fmt(m.invested>0?(m.totalPnL/m.invested)*100:0,2)}% return`,   color:m.totalPnL>=0?'#22c55e':'#ef4444', glow:m.totalPnL>0},
-    {label:'Open Risk',    value:`${fmt(m.openRisk,2)}%`,                   sub:`${fmtC(m.totalRisk)} at risk`,                                   color:m.openRisk>3?'#f97316':'#e5e7eb'},
-    {label:'Free Capital', value:`${fmtC(m.freeCapital)}`,                  sub:`${fmt(m.freePct,1)}% undeployed`,                                color:m.freeCapital>0?'#60a5fa':'#ef4444', glow2:m.freeCapital>0},
-    {label:'Realised P&L', value:`${sign(m.jTotal)}${fmtC(m.jTotal)}`,     sub:`${js.length} closed trades`,                                     color:m.jTotal>=0?'#22c55e':'#ef4444'},
+    {label:"Day P&L",      value:dayPnLValue,                              sub:dayPnLSub,                                                         color:m.dayTrackedCount===0?'#475569':m.dayPnL>=0?'#16a34a':'#b91c1c', glow:m.dayTrackedCount>0&&m.dayPnL>0},
+    {label:'% Invested',   value:`${fmt(m.pctInv,1)}%`,                    sub:`${fmtC(m.invested)} of ${fmtC(state.capital)}`,                  color:'#1e40af'},
+    {label:'Open P&L',     value:`${sign(m.totalPnL)}${fmtC(m.totalPnL)}`, sub:`${fmt(m.invested>0?(m.totalPnL/m.invested)*100:0,2)}% return`,   color:m.totalPnL>=0?'#16a34a':'#b91c1c', glow:m.totalPnL>0},
+    {label:'Open Risk',    value:`${fmt(m.openRisk,2)}%`,                   sub:`${fmtC(m.totalRisk)} at risk`,                                   color:m.openRisk>3?'#d97706':'#475569', isLeft:true},
+    {label:'Locked Profit', value:`${sign(m.jTotal)}${fmtC(m.jTotal)}`,     sub:`${js.length} closed trades`,                                     color:m.jTotal>=0?'#16a34a':'#b91c1c', isRight:true},
+    {label:'Free Capital', value:`${fmtC(m.freeCapital)}`,                  sub:`${fmt(m.freePct,1)}% undeployed`,                                color:m.freeCapital>0?'#1e40af':'#b91c1c', glow2:m.freeCapital>0},
   ];
-  document.getElementById('metricsBar').innerHTML=items.map(i=>`
-    <div class="metric${i.glow?' glow':i.glow2?' glow-blue':''}">
-      <div class="metric-label">${i.label}</div>
-      <div class="metric-value" style="color:${i.color}">${i.value}</div>
-      <div class="metric-sub">${i.sub}</div>
-    </div>`).join('');
+  let html = '';
+  for(let i=0; i<items.length; i++){
+    const it = items[i];
+    if(it.isLeft) {
+      const right = items[i+1];
+      html += `<div class="metric-split">
+        <div class="metric${it.glow?' glow':it.glow2?' glow-blue':''}">
+          <div class="metric-label">${it.label}</div>
+          <div class="metric-value" style="color:${it.color}">${it.value}</div>
+          <div class="metric-sub">${it.sub}</div>
+        </div>
+        <div class="metric${right.glow?' glow':right.glow2?' glow-blue':''}">
+          <div class="metric-label">${right.label}</div>
+          <div class="metric-value" style="color:${right.color}">${right.value}</div>
+          <div class="metric-sub">${right.sub}</div>
+        </div>
+      </div>`;
+      i++; // skip next item since we just rendered it
+    } else if(!it.isRight) {
+      html += `<div class="metric${it.glow?' glow':it.glow2?' glow-blue':''}">
+        <div class="metric-label">${it.label}</div>
+        <div class="metric-value" style="color:${it.color}">${it.value}</div>
+        <div class="metric-sub">${it.sub}</div>
+      </div>`;
+    }
+  }
+  document.getElementById('metricsBar').innerHTML = html;
 }
 
 function renderTabCounts() {
@@ -2734,6 +2791,7 @@ document.addEventListener('keydown',e=>{
 //  INIT
 // ══════════════════════════════════════════
 loadState();
+loadTheme();
 loadLossNudge();
 loadBackupNudge();
 loadWeekDigestDismiss();
