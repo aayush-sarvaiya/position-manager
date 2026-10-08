@@ -2801,7 +2801,86 @@ document.addEventListener('keydown',e=>{
 // ══════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════
-loadState();
+
+ // ══════════════════════════════════════════
+//  PATCH: collapsed journal months + weekly equity curve
+// ══════════════════════════════════════════
+function weekStartStr(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // back to Monday
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+(function () {
+  const G = (0, eval);
+  function patchFn(name, edits) {
+    let s = G(name).toString();
+    edits.forEach(([a, b]) => { s = (typeof a === 'string') ? s.split(a).join(b) : s.replace(a, b); });
+    G(name + ' = ' + s);
+  }
+
+  // Weekly grouping
+  patchFn('getEqFilteredPts', [
+    [/const m = \(t\.exitDate\|\|''\)\.slice\(0,7\);/,
+     `const m = (window._eqCurMode==='weekly') ? weekStartStr(t.exitDate||'') : (t.exitDate||'').slice(0,7);`]
+  ]);
+
+  // Chart treats weekly like the aggregated (monthly) style, with week labels
+  patchFn('drawEquityChart', [
+    [/const mode\s*=\s*window\._eqCurMode \|\| 'trades';/,
+     `const WK = window._eqCurMode==='weekly'; const mode = WK ? 'monthly' : (window._eqCurMode || 'trades');`],
+    [`mode==='monthly'?'months':'trades'`, `mode==='monthly'?(WK?'weeks':'months'):'trades'`],
+    [`mode === 'monthly' ? 5.5 : 3.5`, `mode === 'monthly' ? (WK?4.5:5.5) : 3.5`],
+    [`pt.ym+'-01'`, `(WK?pt.ym+'T00:00:00':pt.ym+'-01')`],
+    [`{month:'short'}`, `(WK?{day:'2-digit',month:'short'}:{month:'short'})`],
+    [`{month:'long',year:'numeric'}`, `(WK?{day:'2-digit',month:'short'}:{month:'long',year:'numeric'})`],
+    [`Profitable month`, `Profitable \${WK?'week':'month'}`],
+    [`Loss month`, `Loss \${WK?'week':'month'}`],
+    [`>\${mLabel}</div>`, `>\${WK?'Week of ':''}\${mLabel}</div>`]
+  ]);
+
+  patchFn('setModeEq', [[`['trades','monthly']`, `['weekly','trades','monthly']`]]);
+
+  // Months stay closed until tapped (and remember what you opened)
+  toggleMonth = function (m) {
+    const rows = document.getElementById('month-rows-' + m);
+    const tog  = document.getElementById('toggle-' + m);
+    if (!rows) return;
+    const open = rows.style.display === 'none';
+    rows.style.display = open ? '' : 'none';
+    if (tog) tog.textContent = (open ? '▼ ' : '▶ ') + tog.textContent.replace(/[▼▶] /, '');
+    const s = window._openMonths || (window._openMonths = new Set());
+    open ? s.add(m) : s.delete(m);
+  };
+
+  const _renderJournal = renderJournal;
+  renderJournal = function () {
+    _renderJournal();
+    const open = window._openMonths || (window._openMonths = new Set());
+    document.querySelectorAll('[id^="month-rows-"]').forEach(r => {
+      const m = r.id.replace('month-rows-', '');
+      if (!open.has(m)) {
+        r.style.display = 'none';
+        const t = document.getElementById('toggle-' + m);
+        if (t) t.textContent = '▶ ' + t.textContent.replace(/[▼▶] /, '');
+      }
+    });
+    // Add the Weekly button and make it the default view
+    const grp = document.getElementById('eq-mode-grp');
+    if (grp && !document.getElementById('eq-m-weekly')) {
+      const b = document.createElement('button');
+      b.id = 'eq-m-weekly';
+      b.textContent = 'Weekly';
+      b.style.cssText = document.getElementById('eq-m-trades').style.cssText;
+      b.onclick = () => setModeEq('weekly');
+      grp.insertBefore(b, grp.firstChild);
+      setModeEq('weekly');
+    }
+  };
+})();
+ 
+ loadState();
 loadTheme();
 loadLossNudge();
 loadBackupNudge();
