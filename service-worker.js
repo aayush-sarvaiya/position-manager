@@ -1,50 +1,35 @@
-const CACHE_NAME = 'pm-v2'; // 🔥 change version every update
+// Position Manager service worker
+// Network-first: whenever you're online you get the latest files from GitHub Pages;
+// when offline it falls back to the last copy it saw.
+// Bump VERSION when you push an update — open apps will then show a "tap to reload" prompt.
+const VERSION = '2026-11-26-v2';
+const CACHE = 'pm-cache-' + VERSION;
 
-const FILES_TO_CACHE = [
-  './',
-  './index.html'
-];
+self.addEventListener('install', () => self.skipWaiting());
 
-// INSTALL → cache files
-self.addEventListener('install', event => {
-  self.skipWaiting(); // 🔥 activate immediately
-
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(FILES_TO_CACHE);
-    })
-  );
-});
-
-// ACTIVATE → delete old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.map(key => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      )
-    )
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-
-  self.clients.claim(); // 🔥 take control immediately
 });
 
-// FETCH → network first (important)
 self.addEventListener('fetch', event => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+
   event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        // update cache in background
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, clone);
-        });
-        return response;
+    fetch(req)
+      .then(res => {
+        if (res && (res.ok || res.type === 'opaque')) {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
+        }
+        return res;
       })
-      .catch(() => caches.match(event.request)) // fallback offline
+      .catch(() => caches.match(req).then(hit => hit || caches.match('./')))
   );
 });
